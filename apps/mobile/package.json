@@ -1,0 +1,37 @@
+{
+  "name": "@ideah/mobile",
+  "version": "0.0.1",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ideah/types": "*",
+    "@ideah/utils": "*",
+    "expo": "~51.0.0",
+    "expo-router": "~3.5.0",
+    "expo-status-bar": "~1.12.0",
+    "expo-secure-store": "~13.0.0",
+    "react": "18.2.0",
+    "react-native": "0.74.0",
+    "react-native-safe-area-context": "4.10.1",
+    "react-native-screens": "3.31.1",
+    "axios": "^1.7.0",
+    "zustand": "^4.5.0",
+    "@tanstack/react-query": "^5.45.0",
+    "react-hook-form": "^7.52.0",
+    "zod": "^3.23.0",
+    "@hookform/resolvers": "^3.6.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.0",
+    "typescript": "^5.4.0"
+  }
+}

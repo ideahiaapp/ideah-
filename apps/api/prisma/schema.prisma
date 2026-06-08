@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(THERAPIST)
+  avatarUrl String?
+
+  subscription     Subscription?
+  clients          Client[]
+  supervisions     SupervisionSession[]
+  evolutions       Evolution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum Role {
+  THERAPIST
+  ADMIN
+}
+
+// ─── Subscription ────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id])
+  plan              Plan               @default(TRIAL)
+  status            SubscriptionStatus @default(TRIAL)
+  trialEndsAt       DateTime?
+  currentPeriodEnd  DateTime?
+  externalId        String?            // Stripe/Pagar.me ID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscriptions")
+}
+
+enum Plan {
+  TRIAL
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  CANCELED
+  EXPIRED
+}
+
+// ─── Client ──────────────────────────────────────────────────────────────────
+
+model Client {
+  id          String              @id @default(cuid())
+  therapistId String
+  therapist   User                @relation(fields: [therapistId], references: [id])
+  name        String
+  email       String?
+  phone       String?
+  birthDate   DateTime?
+  status      ClientStatus        @default(ACTIVE)
+  approach    TherapeuticApproach
+  notes       String?
+
+  evolutions   Evolution[]
+  supervisions SupervisionSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("clients")
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  WAITLIST
+}
+
+enum TherapeuticApproach {
+  PSYCHOANALYSIS
+  COGNITIVE_BEHAVIORAL
+  SOMATIC
+  HUMANISTIC
+  SYSTEMIC
+  JUNGIAN
+  GESTALT
+  ACCEPTANCE_COMMITMENT
+}
+
+// ─── Clinical Evolution ──────────────────────────────────────────────────────
+
+model Evolution {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id])
+  therapistId String
+  therapist   User     @relation(fields: [therapistId], references: [id])
+  sessionDate DateTime
+  content     String
+  hypothesis  String?
+  resources   String?
+
+  createdAt DateTime @default(now())
+
+  @@map("evolutions")
+}
+
+// ─── Supervision Session ─────────────────────────────────────────────────────
+
+model SupervisionSession {
+  id          String              @id @default(cuid())
+  therapistId String
+  therapist   User                @relation(fields: [therapistId], references: [id])
+  clientId    String?
+  client      Client?             @relation(fields: [clientId], references: [id])
+  approach    TherapeuticApproach
+  title       String
+
+  messages SupervisionMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("supervision_sessions")
+}
+
+model SupervisionMessage {
+  id         String            @id @default(cuid())
+  sessionId  String
+  session    SupervisionSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       MessageRole
+  content    String
+
+  createdAt DateTime @default(now())
+
+  @@map("supervision_messages")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
