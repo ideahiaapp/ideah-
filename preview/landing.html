@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IDEAH – Landing Page Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand-50:  #F9F0F9;
+      --brand-100: #F1DDF1;
+      --brand-200: #E0BDE0;
+      --brand-300: #C98DC9;
+      --brand-400: #B065B0;
+      --brand-500: #924B92;
+      --brand-600: #7A3C7A;
+      --brand-700: #622F62;
+      --ink:       #2D2D2D;
+    }
+    body { font-family: 'Inter', sans-serif; color: var(--ink); background: #fff; }
+    a { text-decoration: none; }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .header-inner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-inner img { height: 40px; width: auto; }
+    nav { display: flex; gap: 32px; }
+    nav a { font-size: 14px; font-weight: 500; color: #555; }
+    nav a:hover { color: var(--brand-500); }
+    .header-cta { display: flex; gap: 12px; align-items: center; }
+    .btn-ghost { font-size: 14px; font-weight: 600; color: var(--brand-600); padding: 8px 16px; border-radius: 10px; }
+    .btn-ghost:hover { background: var(--brand-50); }
+    .btn-filled { font-size: 14px; font-weight: 600; color: #fff; background: var(--brand-500); padding: 9px 20px; border-radius: 12px; }
+    .btn-filled:hover { background: var(--brand-600); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--brand-50) 0%, #fff 60%);
+      padding: 96px 24px 112px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -120px; right: -120px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, var(--brand-300) 0%, transparent 70%);
+      opacity: 0.15;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--brand-100); color: var(--brand-700);
+      font-size: 12px; font-weight: 600;
+      padding: 6px 16px; border-radius: 999px; margin-bottom: 24px;
+    }
+    .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-500); }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 800; line-height: 1.15;
+      color: var(--ink); max-width: 800px; margin: 0 auto 20px;
+    }
+    .hero h1 span { color: var(--brand-500); }
+    .hero-sub {
+      font-size: 18px; color: #6B7280; max-width: 620px;
+      margin: 0 auto 14px; line-height: 1.7;
+    }
+    .hero-sub2 { font-size: 13px; color: #9CA3AF; margin-bottom: 36px; }
+    .hero-quote {
+      display: inline-block;
+      background: #fff; border: 1.5px solid var(--brand-200);
+      border-radius: 16px; padding: 16px 24px;
+      color: var(--brand-700); font-weight: 500; font-size: 15px;
+      margin-bottom: 40px; box-shadow: 0 2px 12px rgba(146,75,146,0.08);
+    }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .hero-btn-primary {
+      background: var(--brand-500); color: #fff;
+      font-weight: 700; font-size: 16px;
+      padding: 16px 32px; border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(146,75,146,0.3);
+    }
+    .hero-btn-primary:hover { background: var(--brand-600); }
+    .hero-btn-secondary {
+      border: 1.5px solid #E5E7EB; color: #555;
+      font-weight: 600; font-size: 15px;
+      padding: 15px 32px; border-radius: 14px;
+    }
+    .hero-btn-secondary:hover { border-color: var(--brand-300); color: var(--brand-600); }
+    .hero-fine { font-size: 12px; color: #9CA3AF; margin-top: 14px; }
+
+    /* ── SECTIONS COMMONS ── */
+    section { padding: 88px 24px; }
+    .section-max { max-width: 1100px; margin: 0 auto; }
+    .section-tag { font-size: 12px; font-weight: 700; color: var(--brand-500); text-transform: uppercase; letter-spacing: 2px; display: block; margin-bottom: 12px; }
+    .section-title { font-size: clamp(26px, 3vw, 40px); font-weight: 800; color: var(--ink); margin-bottom: 16px; }
+    .section-sub { font-size: 16px; color: #6B7280; max-width: 580px; line-height: 1.7; }
+
+    /* ── HOW IT WORKS ── */
+    .how-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 24px; margin-top: 56px; }
+    @media(max-width:900px) { .how-grid { grid-template-columns: repeat(2,1fr); } }
+    .how-card {
+      background: var(--brand-50); border-radius: 20px; padding: 28px;
+      transition: background .2s;
+    }
+    .how-card:hover { background: var(--brand-100); }
+    .how-num { font-size: 28px; font-weight: 800; color: var(--brand-200); }
+    .how-icon { font-size: 28px; margin-bottom: 12px; }
+    .how-card h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin: 10px 0 8px; }
+    .how-card p { font-size: 13px; color: #6B7280; line-height: 1.6; }
+
+    /* ── WHAT IS ── */
+    .what-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
+    @media(max-width:700px) { .what-grid { grid-template-columns: 1fr; } }
+    .what-card {
+      background: #fff; border-radius: 20px; padding: 32px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .what-card.is { border: 1.5px solid #DCFCE7; }
+    .what-card.not { border: 1.5px solid #FEE2E2; }
+    .what-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      font-weight: 700; font-size: 14px; margin-bottom: 20px;
+    }
+    .badge-green { background: #DCFCE7; color: #16A34A; }
+    .badge-red   { background: #FEE2E2; color: #DC2626; }
+    .what-card h3 { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 16px; }
+    .what-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .what-list li { display: flex; gap: 10px; font-size: 13px; color: #4B5563; line-height: 1.6; }
+    .what-note { text-align: center; font-size: 13px; color: #9CA3AF; margin-top: 28px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+
+    /* ── FOR WHOM ── */
+    .whom-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-top: 56px; }
+    @media(max-width:900px) { .whom-grid { grid-template-columns: 1fr; } }
+    .whom-card {
+      background: #fff; border: 1.5px solid #F3F4F6; border-radius: 20px; padding: 32px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .whom-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .whom-emoji { font-size: 36px; margin-bottom: 16px; }
+    .whom-tag { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; display: inline-block; margin-bottom: 16px; }
+    .tag-green  { background: #DCFCE7; color: #16A34A; }
+    .tag-blue   { background: #DBEAFE; color: #1D4ED8; }
+    .tag-purple { background: var(--brand-100); color: var(--brand-700); }
+    .whom-need-label { font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .whom-need { font-size: 14px; font-weight: 600; color: var(--brand-600); margin-bottom: 12px; }
+    .whom-desc { font-size: 13px; color: #6B7280; line-height: 1.65; }
+
+    /* ── THEORY ── */
+    .theory-section {
+      background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+      color: #fff; padding: 88px 24px; position: relative; overflow: hidden;
+    }
+    .theory-section::before {
+      content: '';
+      position: absolute; bottom: -100px; left: -100px;
+      width: 400px; height: 400px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    }
+    .theory-inner { max-width: 1000px; margin: 0 auto; position: relative; }
+    .theory-title { font-size: clamp(26px,3vw,40px); font-weight: 800; text-align: center; margin-bottom: 16px; }
+    .theory-sub { font-size: 16px; color: rgba(255,255,255,0.7); text-align: center; max-width: 640px; margin: 0 auto 56px; line-height: 1.7; }
+    .theory-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-bottom: 48px; }
+    @media(max-width:700px) { .theory-cards { grid-template-columns: 1fr; } }
+    .theory-card {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 24px;
+      backdrop-filter: blur(4px);
+    }
+    .theory-card-icon { font-size: 28px; margin-bottom: 12px; }
+    .theory-card p { font-size: 13px; color: rgba(255,255,255,0.9); line-height: 1.65; font-weight: 500; }
+    .theory-card-author { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+    .theory-author-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .theory-author-name { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+    /* Chat mockup */
+    .chat-mockup {
+      max-width: 620px; margin: 0 auto;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px; overflow: hidden;
+      backdrop-filter: blur(4px);
+    }
+    .chat-topbar {
+      background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 20px; display: flex; align-items: center; gap: 8px;
+    }
+    .chat-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .chat-topbar-label { font-size: 12px; color: rgba(255,255,255,0.4); margin-left: 8px; }
+    .chat-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .msg-user { align-self: flex-end; background: rgba(255,255,255,0.2); border-radius: 18px 18px 4px 18px; padding: 12px 16px; max-width: 80%; font-size: 13px; color: #fff; line-height: 1.6; }
+    .msg-ai { align-self: flex-start; background: #fff; border-radius: 18px 18px 18px 4px; padding: 14px 18px; max-width: 85%; font-size: 13px; color: #374151; line-height: 1.7; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .msg-ai-source { font-size: 11px; color: var(--brand-500); font-weight: 600; margin-top: 8px; }
+
+    /* ── FEATURES ── */
+    .features-section { background: #F9FAFB; }
+    .features-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 56px; }
+    @media(max-width:900px) { .features-grid { grid-template-columns: repeat(2,1fr); } }
+    .feature-card {
+      background: #fff; border: 1.5px solid #F3F4F6; border-radius: 18px; padding: 24px;
+      text-align: center; transition: border-color .2s, box-shadow .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .feature-card:hover { border-color: var(--brand-200); box-shadow: 0 4px 16px rgba(146,75,146,0.1); }
+    .feature-icon { font-size: 30px; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+    .feature-card p { font-size: 12px; color: #9CA3AF; line-height: 1.5; }
+
+    /* ── ETHICS ── */
+    .ethics-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 48px; }
+    @media(max-width:900px) { .ethics-grid { grid-template-columns: 1fr 1fr; } }
+    @media(max-width:600px) { .ethics-grid { grid-template-columns: 1fr; } }
+    .ethics-card {
+      background: var(--brand-50); border: 1.5px solid var(--brand-100);
+      border-radius: 18px; padding: 24px; transition: background .2s;
+    }
+    .ethics-card:hover { background: var(--brand-100); }
+    .ethics-icon { font-size: 24px; margin-bottom: 12px; }
+    .ethics-card h3 { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .ethics-card p { font-size: 13px; color: #6B7280; line-height: 1.6; }
+    .ethics-disclaimer {
+      background: #F9FAFB; border: 1.5px solid #E5E7EB;
+      border-radius: 18px; padding: 24px; text-align: center;
+      margin-top: 32px;
+    }
+    .ethics-disclaimer p { font-size: 13px; color: #6B7280; line-height: 1.7; max-width: 560px; margin: 0 auto; }
+
+    /* ── PRICING ── */
+    .pricing-section { background: #F9FAFB; }
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 720px; margin: 56px auto 0; }
+    @media(max-width:700px) { .pricing-grid { grid-template-columns: 1fr; } }
+    .price-card {
+      background: #fff; border: 1.5px solid #E5E7EB;
+      border-radius: 24px; padding: 36px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .price-card.featured {
+      background: var(--brand-500); border-color: transparent;
+      box-shadow: 0 8px 32px rgba(146,75,146,0.35); position: relative;
+    }
+    .price-badge {
+      position: absolute; top: 16px; right: 16px;
+      background: #fff; color: var(--brand-600);
+      font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px;
+    }
+    .price-label { font-size: 13px; font-weight: 600; color: #9CA3AF; margin-bottom: 8px; }
+    .price-card.featured .price-label { color: rgba(255,255,255,0.6); }
+    .price-amount { font-size: 44px; font-weight: 800; color: var(--ink); }
+    .price-card.featured .price-amount { color: #fff; }
+    .price-decimal { font-size: 28px; font-weight: 800; }
+    .price-period { font-size: 14px; color: #9CA3AF; font-weight: 500; }
+    .price-card.featured .price-period { color: rgba(255,255,255,0.5); }
+    .price-yearly { font-size: 12px; color: #9CA3AF; margin: 4px 0 24px; }
+    .price-card.featured .price-yearly { color: rgba(255,255,255,0.4); }
+    .price-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+    .price-features li { display: flex; gap: 8px; font-size: 13px; color: #4B5563; }
+    .price-card.featured .price-features li { color: rgba(255,255,255,0.85); }
+    .price-features li span { flex-shrink: 0; }
+    .price-btn {
+      display: block; text-align: center;
+      border: 1.5px solid var(--brand-300); color: var(--brand-600);
+      font-weight: 700; font-size: 14px;
+      padding: 14px; border-radius: 14px;
+    }
+    .price-btn:hover { background: var(--brand-50); }
+    .price-btn.white {
+      background: #fff; color: var(--brand-600); border-color: transparent;
+    }
+    .price-btn.white:hover { background: var(--brand-50); }
+    .price-fine { text-align: center; font-size: 13px; color: #9CA3AF; margin-top: 20px; }
+
+    /* ── FAQ ── */
+    .faq-list { max-width: 640px; margin: 48px auto 0; background: #fff; border: 1.5px solid #F3F4F6; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .faq-item { border-bottom: 1px solid #F3F4F6; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 24px; background: none; border: none; cursor: pointer; text-align: left; gap: 16px;
+    }
+    .faq-q-text { font-size: 14px; font-weight: 600; color: var(--ink); }
+    .faq-icon { font-size: 16px; color: #9CA3AF; flex-shrink: 0; transition: transform .2s; }
+    .faq-a { padding: 0 24px 20px; font-size: 13px; color: #6B7280; line-height: 1.7; display: none; }
+    .faq-item.open .faq-a { display: block; }
+    .faq-item.open .faq-icon { transform: rotate(180deg); color: var(--brand-500); }
+    .faq-item.open .faq-q-text { color: var(--brand-600); }
+
+    /* ── FOOTER CTA ── */
+    .footer-cta {
+      background: var(--brand-500); text-align: center; padding: 80px 24px; color: #fff;
+    }
+    .footer-cta h2 { font-size: clamp(22px,3vw,34px); font-weight: 800; margin-bottom: 12px; }
+    .footer-cta p { font-size: 16px; color: rgba(255,255,255,0.7); margin-bottom: 36px; }
+    .footer-cta-btn {
+      display: inline-block; background: #fff; color: var(--brand-600);
+      font-weight: 700; font-size: 16px; padding: 16px 40px;
+      border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .footer-cta-btn:hover { background: var(--brand-50); }
+
+    /* ── FOOTER ── */
+    footer { background: var(--ink); color: #fff; }
+    .footer-grid { max-width: 1100px; margin: 0 auto; padding: 56px 24px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+    @media(max-width:900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+    .footer-logo { height: 36px; filter: brightness(0) invert(1); margin-bottom: 14px; }
+    .footer-tagline { font-size: 12px; color: rgba(255,255,255,0.35); line-height: 1.7; }
+    .footer-col-title { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col ul li a { font-size: 13px; color: rgba(255,255,255,0.55); }
+    .footer-col ul li a:hover { color: #fff; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); text-align: center; padding: 20px; font-size: 12px; color: rgba(255,255,255,0.25); }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="header-inner">
+    <img src="ideah-logo.png" alt="IDEAH" />
+    <nav>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#para-quem">Para quem</a>
+      <a href="#etica">Ética e CFP</a>
+      <a href="#precos">Preços</a>
+    </nav>
+    <div class="header-cta">
+      <a href="#" class="btn-ghost">Entrar</a>
+      <a href="#" class="btn-filled">Começar grátis</a>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    Em conformidade com o CFP · LGPD
+  </div>
+  <h1>Converse com a teoria.<br/><span>Supervisão Clínica dialógica.</span></h1>
+  <p class="hero-sub">
+    Você dialoga com a base teórica de sua abordagem para levantar perguntas, hipóteses abertas e recursos clínicos,
+    <strong> sem diagnóstico nem rótulos.</strong>
+  </p>
+  <p class="hero-sub2">Um supervisor clínico dialógico que respeita a orientação do Conselho Federal de Psicologia quanto ao uso de IA.</p>
+  <div class="hero-quote">"Base teórica curada e fechada. Você decide o que registrar e exportar."</div>
+  <div class="hero-btns">
+    <a href="#" class="hero-btn-primary">Começar grátis — 7 dias sem cobrança</a>
+    <a href="#como-funciona" class="hero-btn-secondary">Ver como funciona ↓</a>
+  </div>
+  <p class="hero-fine">Sem cartão de crédito · Cancele quando quiser</p>
+</section>
+
+<!-- ═══ COMO FUNCIONA ═══ -->
+<section id="como-funciona" style="background:#fff">
+  <div class="section-max" style="text-align:center">
+    <span class="section-tag">Passo a passo</span>
+    <h2 class="section-title">Como funciona?</h2>
+    <div class="how-grid">
+      <div class="how-card">
+        <span class="how-icon">🧭</span>
+        <span class="how-num">01</span>
+        <h3>Escolha sua abordagem</h3>
+        <p>Psicanálise, psicologia corporal, psicossomática, cognitivo-comportamental, e outras.</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">💬</span>
+        <span class="how-num">02</span>
+        <h3>Converse com a teoria</h3>
+        <p>Levante questões sobre o seu cliente, hipóteses e recursos clínicos com citação quando pertinente.</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">📝</span>
+        <span class="how-num">03</span>
+        <h3>Registre a evolução viva</h3>
+        <p>Possibilidades e próximos focos — não apenas relato. Hipóteses abertas que acompanham o processo.</p>
+      </div>
+      <div class="how-card">
+        <span class="how-icon">📱</span>
+        <span class="how-num">04</span>
+        <h3>Tudo no app ou browser</h3>
+        <p>Histórico, dashboard, anexos, pagamento e agendamento — sem sair do celular.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ O QUE É / O QUE NÃO É ═══ -->
+<section style="background:#F9FAFB">
+  <div class="section-max" style="text-align:center">
+    <span class="section-tag">Transparência</span>
+    <h2 class="section-title">O que é · O que não é</h2>
+    <div class="what-grid">
+      <div class="what-card is">
+        <span class="what-badge badge-green">✓</span>
+        <h3>É</h3>
+        <ul class="what-list">
+          <li><span style="color:#22c55e">✓</span> Um Supervisor Clínico Dialógico: um espaço para pensar com a teoria que você escolheu.</li>
+          <li><span style="color:#22c55e">✓</span> Um ambiente de estudo aplicado: cada resposta é ancorada em base teórica curada.</li>
+          <li><span style="color:#22c55e">✓</span> Um registro vivo da evolução (hipóteses abertas e próximos passos).</li>
+        </ul>
+      </div>
+      <div class="what-card not">
+        <span class="what-badge badge-red">✗</span>
+        <h3>Não é</h3>
+        <ul class="what-list">
+          <li><span style="color:#ef4444">✗</span> Ferramenta de diagnóstico ou rotulação.</li>
+          <li><span style="color:#ef4444">✗</span> Substituto da tua escuta clínica e do teu juízo profissional.</li>
+          <li><span style="color:#ef4444">✗</span> Chatbot para pacientes.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="what-note">O ideah não confirma vontades; ele ancora na teoria e pode contrapor pedidos que contrariem a abordagem, <strong>convidando à reflexão ética.</strong></p>
+  </div>
+</section>
+
+<!-- ═══ PARA QUEM ═══ -->
+<section id="para-quem" style="background:#fff">
+  <div class="section-max" style="text-align:center">
+    <span class="section-tag">Público</span>
+    <h2 class="section-title">Para quem é</h2>
+    <div class="whom-grid">
+      <div class="whom-card">
+        <div class="whom-emoji">🌱</div>
+        <span class="whom-tag tag-green">Iniciante (recém-formado)</span>
+        <div class="whom-need-label">Precisa:</div>
+        <div class="whom-need">Conduzir evolução clínica dentro da abordagem escolhida.</div>
+        <p class="whom-desc">Apoio teórico para as primeiras sessões, sem diagnósticos antecipados — só perguntas, hipóteses e a teoria como parceira.</p>
+      </div>
+      <div class="whom-card">
+        <div class="whom-emoji">🔬</div>
+        <span class="whom-tag tag-blue">Clínico em prática</span>
+        <div class="whom-need-label">Precisa:</div>
+        <div class="whom-need">Ampliar estudos de caso e orientar outros com base teórica.</div>
+        <p class="whom-desc">Aprofunde casos complexos, dialogue com autores que você já conhece e registre evoluções com rigor conceitual.</p>
+      </div>
+      <div class="whom-card">
+        <div class="whom-emoji">💭</div>
+        <span class="whom-tag tag-purple">Cuidado do cuidador</span>
+        <div class="whom-need-label">Precisa:</div>
+        <div class="whom-need">Espaço de escuta de si.</div>
+        <p class="whom-desc">Um lugar para processar o que a clínica te move — com a proteção de uma base teórica e sem a pressão de dar respostas imediatas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ THEORY ═══ -->
+<section class="theory-section">
+  <div class="theory-inner">
+    <h2 class="theory-title">Converse com quem te formou</h2>
+    <p class="theory-sub">Não é a IA "dizendo o que você quer ouvir". É a sua abordagem teórica respondendo em diálogo: perguntas, hipóteses abertas e referências. Quando não há respaldo textual, o ideah <strong>explicita a lacuna e propõe caminhos de estudo.</strong></p>
+
+    <div class="theory-cards">
+      <div class="theory-card">
+        <div class="theory-card-icon">🪞</div>
+        <p>Pergunte a Freud sobre luto (sem rótulos).</p>
+        <div class="theory-card-author">
+          <div class="theory-author-avatar">F</div>
+          <span class="theory-author-name">Freud</span>
+        </div>
+      </div>
+      <div class="theory-card">
+        <div class="theory-card-icon">🌀</div>
+        <p>Convide Reich a observar couraças corporais.</p>
+        <div class="theory-card-author">
+          <div class="theory-author-avatar">R</div>
+          <span class="theory-author-name">Reich</span>
+        </div>
+      </div>
+      <div class="theory-card">
+        <div class="theory-card-icon">🌙</div>
+        <p>Peça a Jung um olhar simbólico sobre um sonho.</p>
+        <div class="theory-card-author">
+          <div class="theory-author-avatar">J</div>
+          <span class="theory-author-name">Jung</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-mockup">
+      <div class="chat-topbar">
+        <span class="chat-dot" style="background:#FF5F57"></span>
+        <span class="chat-dot" style="background:#FEBC2E"></span>
+        <span class="chat-dot" style="background:#28C840"></span>
+        <span class="chat-topbar-label">Supervisão · Psicanálise</span>
+      </div>
+      <div class="chat-body">
+        <div class="msg-user">Minha paciente perdeu a mãe há 3 meses e diz que "não chora porque não adianta". Como entender isso?</div>
+        <div class="msg-ai">
+          Em "Luto e Melancolia" (1917), Freud distingue o trabalho de luto — que implica o desinvestimento gradual do objeto — da melancolia. A frase "não adianta" pode indicar uma <strong>inibição do trabalho de luto</strong> ou uma defesa contra o afeto. Que outros indícios ela traz sobre a relação com a mãe?
+          <div class="msg-ai-source">— Base: Freud (1917)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="features-section">
+  <div class="section-max" style="text-align:center">
+    <span class="section-tag">Tudo em um lugar</span>
+    <h2 class="section-title">Do relato ao registro vivo</h2>
+    <p class="section-sub" style="margin: 0 auto">Evolua casos com hipóteses abertas; anexe desenhos, consulte o histórico e visualize sua dashboard. <strong>Tudo sem sair do celular.</strong></p>
+    <div class="features-grid">
+      <div class="feature-card"><div class="feature-icon">📝</div><h3>Evolução viva</h3><p>Hipóteses abertas e próximos focos</p></div>
+      <div class="feature-card"><div class="feature-icon">📎</div><h3>Anexos</h3><p>Desenhos, imagens e documentos</p></div>
+      <div class="feature-card"><div class="feature-icon">📊</div><h3>Dashboard</h3><p>Visualize seu progresso</p></div>
+      <div class="feature-card"><div class="feature-icon">📋</div><h3>Anamnese</h3><p>Envie o link para seu cliente</p></div>
+      <div class="feature-card"><div class="feature-icon">📱</div><h3>Histórico</h3><p>Acesso completo aos casos</p></div>
+      <div class="feature-card"><div class="feature-icon">💳</div><h3>Pagamento & Recibo</h3><p>Gestão financeira integrada</p></div>
+      <div class="feature-card"><div class="feature-icon">📅</div><h3>Agendamento</h3><p>Agenda integrada ao caso</p></div>
+      <div class="feature-card"><div class="feature-icon">🔒</div><h3>LGPD</h3><p>Você controla seus dados</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ÉTICA ═══ -->
+<section id="etica" style="background:#fff">
+  <div class="section-max" style="text-align:center">
+    <span class="section-tag">Responsabilidade</span>
+    <h2 class="section-title">Ética e conformidade</h2>
+    <p class="section-sub" style="margin:0 auto 8px">Como o ideah respeita o Conselho Federal de Psicologia e o uso da I.A.</p>
+    <a href="#" style="font-size:14px;color:var(--brand-500);font-weight:600">Veja na íntegra a nota de posicionamento do CFP →</a>
+    <div class="ethics-grid">
+      <div class="ethics-card"><div class="ethics-icon">🚫</div><h3>Sem diagnóstico/rotulação</h3><p>Entregamos perguntas, hipóteses abertas e recursos — e você decide.</p></div>
+      <div class="ethics-card"><div class="ethics-icon">📚</div><h3>Base teórica fechada/curada</h3><p>Respostas ancoradas na obra; quando não há base, não inventamos.</p></div>
+      <div class="ethics-card"><div class="ethics-icon">🧠</div><h3>Supervisão humana obrigatória</h3><p>O juízo clínico é sempre seu.</p></div>
+      <div class="ethics-card"><div class="ethics-icon">🔐</div><h3>Consentimento e LGPD</h3><p>Você controla o que registrar/exportar e por quanto tempo.</p></div>
+      <div class="ethics-card"><div class="ethics-icon">⚖️</div><h3>Coerência de abordagem</h3><p>Se um pedido contrariar a teoria, o sistema explica o limite e oferece alternativas (ou comparação opt-in).</p></div>
+    </div>
+    <div class="ethics-disclaimer">
+      <p>ideah é um espaço de supervisão dialógica, alinhado às orientações do CFP para o uso de tecnologias. Não realiza diagnósticos nem substitui o julgamento profissional. O uso pressupõe consentimento informado e respeito à LGPD.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PREÇOS ═══ -->
+<section id="precos" class="pricing-section">
+  <div class="section-max" style="text-align:center">
+    <span class="section-tag">Preços</span>
+    <h2 class="section-title">Simples e transparente</h2>
+    <p class="section-sub" style="margin:0 auto">7 dias gratuitos com acesso completo. Sem cartão de crédito para começar.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-label">Mensal</div>
+        <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
+          <span class="price-amount">R$ 49</span><span class="price-decimal">,90</span>
+          <span class="price-period">/mês</span>
+        </div>
+        <div class="price-yearly">Cobrado mensalmente</div>
+        <ul class="price-features">
+          <li><span style="color:#22c55e">✓</span> Supervisão dialógica ilimitada</li>
+          <li><span style="color:#22c55e">✓</span> Gestão de casos</li>
+          <li><span style="color:#22c55e">✓</span> Evolução viva</li>
+          <li><span style="color:#22c55e">✓</span> Anexos e dashboard</li>
+          <li><span style="color:#22c55e">✓</span> Suporte via e-mail</li>
+        </ul>
+        <a href="#" class="price-btn">Começar grátis</a>
+      </div>
+
+      <div class="price-card featured">
+        <span class="price-badge">20% OFF</span>
+        <div class="price-label">Anual</div>
+        <div style="display:flex;align-items:flex-end;gap:2px;margin-bottom:4px">
+          <span class="price-amount" style="color:#fff">R$ 39</span><span class="price-decimal" style="color:#fff">,92</span>
+          <span class="price-period">/mês</span>
+        </div>
+        <div class="price-yearly">Cobrado anualmente · R$ 479,04/ano</div>
+        <ul class="price-features">
+          <li><span>✓</span> Tudo do plano mensal</li>
+          <li><span>✓</span> Economia de R$ 119,76/ano</li>
+          <li><span>✓</span> Prioridade no suporte</li>
+          <li><span>✓</span> Novos recursos primeiro</li>
+        </ul>
+        <a href="#" class="price-btn white">Começar grátis</a>
+      </div>
+    </div>
+    <p class="price-fine">Garantia de reembolso integral durante o período de trial.</p>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section style="background:#fff">
+  <div class="section-max" style="text-align:center">
+    <span class="section-tag">Dúvidas</span>
+    <h2 class="section-title">Perguntas frequentes</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <span class="faq-q-text">O ideah faz diagnóstico?</span>
+          <span class="faq-icon">▾</span>
+        </button>
+        <div class="faq-a">Não. É um supervisor dialógico. Traz perguntas, hipóteses abertas e recursos — a decisão é sempre sua.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <span class="faq-q-text">Como a ferramenta lida com ética e CFP?</span>
+          <span class="faq-icon">▾</span>
+        </button>
+        <div class="faq-a">Respeitamos a orientação do CFP: supervisão humana, sem diagnóstico, base curada e controle do registro pelo profissional.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <span class="faq-q-text">E a LGPD?</span>
+          <span class="faq-icon">▾</span>
+        </button>
+        <div class="faq-a">Você escolhe o que registrar e exportar. Recomendamos pseudonimização quando cabível.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+          <span class="faq-q-text">Funciona só com uma abordagem?</span>
+          <span class="faq-icon">▾</span>
+        </button>
+        <div class="faq-a">Você escolhe a abordagem ativa. Comparações com outras só ocorrem se você optar por isso (e sempre de forma descritiva).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER CTA ═══ -->
+<div class="footer-cta">
+  <h2>Pronto para conversar com a teoria?</h2>
+  <p>7 dias grátis com acesso completo. Sem cartão de crédito.</p>
+  <a href="#" class="footer-cta-btn">Começar grátis agora</a>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <img src="ideah-logo.png" alt="IDEAH" class="footer-logo" />
+      <p class="footer-tagline">Supervisão Clínica Dialógica.<br/>Em conformidade com o CFP e a LGPD.</p>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Produto</div>
+      <ul>
+        <li><a href="#como-funciona">Como funciona</a></li>
+        <li><a href="#para-quem">Para quem</a></li>
+        <li><a href="#etica">Ética e CFP</a></li>
+        <li><a href="#precos">Preços</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Conta</div>
+      <ul>
+        <li><a href="#">Entrar</a></li>
+        <li><a href="#">Criar conta</a></li>
+        <li><a href="#">Recuperar senha</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Legal</div>
+      <ul>
+        <li><a href="#">Termos de Uso</a></li>
+        <li><a href="#">Política de Privacidade</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 IDEAH — Inteligência Dialógica. Todos os direitos reservados.</div>
+</footer>
+
+</body>
+</html>

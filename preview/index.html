@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IDEAH – Preview Mobile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a2e;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 40px;
+      padding: 40px 20px;
+      flex-wrap: wrap;
+    }
+
+    .scene-label {
+      color: #ffffff60;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    /* ── Phone frame ── */
+    .phone-wrap { display: flex; flex-direction: column; align-items: center; }
+
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: #F9F0F9;
+      border-radius: 50px;
+      border: 10px solid #111;
+      box-shadow:
+        0 0 0 2px #333,
+        0 40px 80px rgba(0,0,0,0.6),
+        inset 0 0 0 1px #444;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Notch */
+    .notch {
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 30px;
+      background: #111;
+      border-radius: 0 0 18px 18px;
+      z-index: 10;
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 28px 0;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2D2D2D;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .status-right { display: flex; gap: 6px; align-items: center; font-size: 11px; }
+
+    /* Screen content */
+    .screen {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 24px 32px;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: none;
+    }
+    .screen::-webkit-scrollbar { display: none; }
+
+    /* Logo */
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 28px;
+      margin-top: 12px;
+    }
+    .logo-wrap img {
+      width: 180px;
+      height: auto;
+    }
+
+    /* Títulos */
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #2D2D2D;
+      margin-bottom: 4px;
+    }
+    .page-sub {
+      font-size: 13px;
+      color: #6B7280;
+      margin-bottom: 28px;
+    }
+
+    /* Campos */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 13px; font-weight: 500; color: #374151; }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .forgot { font-size: 11px; color: #924B92; font-weight: 500; }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrap .icon {
+      position: absolute;
+      left: 12px;
+      font-size: 14px;
+      opacity: 0.4;
+    }
+    input {
+      width: 100%;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 13px 14px 13px 38px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #2D2D2D;
+      background: #fff;
+      outline: none;
+      appearance: none;
+    }
+    input::placeholder { color: #9CA3AF; }
+    input:focus { border-color: #924B92; box-shadow: 0 0 0 3px #924B9220; }
+
+    .eye-btn {
+      position: absolute;
+      right: 12px;
+      font-size: 14px;
+      cursor: pointer;
+      opacity: 0.5;
+    }
+
+    /* Botão principal */
+    .btn-primary {
+      width: 100%;
+      background: #924B92;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background .2s;
+    }
+    .btn-primary:hover { background: #7A3C7A; }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .divider-line { flex: 1; height: 1px; background: #E5E7EB; }
+    .divider-text { font-size: 11px; color: #9CA3AF; white-space: nowrap; }
+
+    /* Botão outline */
+    .btn-outline {
+      width: 100%;
+      background: transparent;
+      color: #7A3C7A;
+      border: 1.5px solid #C98DC9;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-outline:hover { background: #F9F0F9; }
+
+    /* Legal */
+    .legal {
+      text-align: center;
+      font-size: 10px;
+      color: #9CA3AF;
+      margin-top: 24px;
+    }
+
+    /* ── Register extras ── */
+    .trial-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #F1DDF1;
+      color: #7A3C7A;
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      align-self: flex-start;
+    }
+
+    .strength-bars {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .strength-bar {
+      flex: 1;
+      height: 3px;
+      border-radius: 2px;
+    }
+    .bar-fill { background: #22C55E; }
+    .bar-empty { background: #E5E7EB; }
+    .strength-text { font-size: 10px; color: #22C55E; margin-top: 3px; }
+
+    .match-text { font-size: 11px; color: #22C55E; margin-top: 3px; }
+
+    .terms-text {
+      font-size: 10px;
+      color: #9CA3AF;
+      text-align: center;
+      line-height: 1.6;
+      margin-top: 2px;
+    }
+    .terms-link { color: #924B92; }
+
+    /* ── Home button ── */
+    .home-bar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding-bottom: 4px;
+    }
+    .home-indicator {
+      width: 120px;
+      height: 4px;
+      background: #2D2D2D;
+      border-radius: 2px;
+      opacity: 0.2;
+    }
+
+    /* ── Tab bar (para screen de register) ── */
+    .tab-nav {
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #E5E7EB;
+      padding: 10px 0 4px;
+      flex-shrink: 0;
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      color: #9CA3AF;
+      font-weight: 500;
+    }
+    .tab-item.active { color: #924B92; }
+    .tab-icon { font-size: 18px; }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════ LOGIN ══════════════════════════════════════════ -->
+  <div class="phone-wrap">
+    <p class="scene-label">📱 Login</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-right">
+          <span>●●●●</span>
+          <span>WiFi</span>
+          <span>🔋</span>
+        </div>
+      </div>
+
+      <div class="screen">
+        <!-- Logo -->
+        <div class="logo-wrap">
+          <img src="ideah-logo.png" alt="IDEAH" />
+        </div>
+
+        <p class="page-title">Bem-vindo de volta</p>
+        <p class="page-sub">Entre na sua conta para continuar</p>
+
+        <!-- Email -->
+        <div class="field">
+          <label>E-mail</label>
+          <div class="input-wrap">
+            <span class="icon">✉️</span>
+            <input type="email" placeholder="seu@email.com" value="terapeuta@email.com" />
+          </div>
+        </div>
+
+        <!-- Senha -->
+        <div class="field">
+          <div class="label-row">
+            <label>Senha</label>
+            <span class="forgot">Esqueci minha senha</span>
+          </div>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" placeholder="••••••••" value="senha123" />
+            <span class="eye-btn">👁</span>
+          </div>
+        </div>
+
+        <button class="btn-primary">Entrar</button>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-text">Não tem conta?</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <button class="btn-outline">Criar conta grátis — 7 dias sem cobrança</button>
+
+        <p class="legal">Em conformidade com o CFP e a LGPD</p>
+      </div>
+
+      <div class="home-bar"><div class="home-indicator"></div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ CADASTRO ══════════════════════════════════════════ -->
+  <div class="phone-wrap">
+    <p class="scene-label">📱 Cadastro</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-right">
+          <span>●●●●</span>
+          <span>WiFi</span>
+          <span>🔋</span>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="logo-wrap" style="margin-bottom:16px">
+          <img src="ideah-logo.png" alt="IDEAH" style="width:150px"/>
+        </div>
+
+        <span class="trial-badge">✨ 7 dias grátis · Sem cartão de crédito</span>
+
+        <p class="page-title">Crie sua conta</p>
+        <p class="page-sub">Comece agora sua supervisão clínica</p>
+
+        <!-- Nome -->
+        <div class="field">
+          <label>Nome completo</label>
+          <div class="input-wrap">
+            <span class="icon">👤</span>
+            <input type="text" placeholder="Seu nome" value="Ana Martins" />
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="field">
+          <label>E-mail</label>
+          <div class="input-wrap">
+            <span class="icon">✉️</span>
+            <input type="email" placeholder="seu@email.com" value="ana@email.com" />
+          </div>
+        </div>
+
+        <!-- Senha -->
+        <div class="field">
+          <label>Senha</label>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" placeholder="Mínimo 6 caracteres" value="Senha@123" />
+            <span class="eye-btn">👁</span>
+          </div>
+          <div class="strength-bars">
+            <div class="strength-bar bar-fill"></div>
+            <div class="strength-bar bar-fill"></div>
+            <div class="strength-bar bar-fill"></div>
+            <div class="strength-bar bar-fill"></div>
+          </div>
+          <span class="strength-text">Força: Forte</span>
+        </div>
+
+        <!-- Confirmar -->
+        <div class="field">
+          <label>Confirmar senha</label>
+          <div class="input-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" value="Senha@123" style="border-color:#22C55E" />
+          </div>
+          <span class="match-text">✅ Senhas coincidem</span>
+        </div>
+
+        <button class="btn-primary" style="margin-top:4px">Criar conta grátis</button>
+
+        <p class="terms-text">
+          Ao criar sua conta, você concorda com os
+          <span class="terms-link">Termos de Uso</span> e a
+          <span class="terms-link">Política de Privacidade</span>.
+        </p>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-text">Já tem conta?</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <button class="btn-outline">Fazer login</button>
+
+        <p class="legal">Em conformidade com o CFP e a LGPD</p>
+      </div>
+
+      <div class="home-bar"><div class="home-indicator"></div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ ESQUECI SENHA ══════════════════════════════════════════ -->
+  <div class="phone-wrap">
+    <p class="scene-label">📱 Esqueci a Senha</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-right">
+          <span>●●●●</span>
+          <span>WiFi</span>
+          <span>🔋</span>
+        </div>
+      </div>
+
+      <div class="screen">
+        <span style="font-size:13px;color:#924B92;font-weight:500;margin-bottom:20px;display:block">← Voltar</span>
+
+        <div class="logo-wrap" style="margin-bottom:28px">
+          <img src="ideah-logo.png" alt="IDEAH" style="width:160px"/>
+        </div>
+
+        <p class="page-title">Recuperar senha</p>
+        <p class="page-sub" style="margin-bottom:24px;line-height:1.6">
+          Informe seu e-mail e enviaremos as instruções de recuperação.
+        </p>
+
+        <div class="field">
+          <label>E-mail</label>
+          <div class="input-wrap">
+            <span class="icon">✉️</span>
+            <input type="email" placeholder="seu@email.com" />
+          </div>
+        </div>
+
+        <button class="btn-primary" style="margin-top:8px">Enviar instruções</button>
+
+        <div style="border-top:1px solid #E5E7EB;margin-top:auto;padding-top:24px;margin-top:40px">
+          <p style="text-align:center;font-size:13px;color:#924B92;font-weight:500">
+            ← Voltar para o login
+          </p>
+        </div>
+
+        <p class="legal">Em conformidade com o CFP e a LGPD</p>
+      </div>
+
+      <div class="home-bar"><div class="home-indicator"></div></div>
+    </div>
+  </div>
+
+</body>
+</html>

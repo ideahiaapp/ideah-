@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "preview-mobile",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "preview", "-p", "4444", "--no-clipboard"],
+      "port": 4444
+    }
+  ]
+}
