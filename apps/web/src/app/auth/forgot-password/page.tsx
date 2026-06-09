@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, ArrowLeft, CheckCircle2, Home } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function ForgotPasswordPage() {

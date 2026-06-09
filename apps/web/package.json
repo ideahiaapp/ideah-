@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.102.0",
     "@hookform/resolvers": "^3.6.0",
     "@ideah/types": "*",
     "@ideah/utils": "*",
