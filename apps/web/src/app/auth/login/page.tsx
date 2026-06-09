@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/auth.store";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -74,6 +74,15 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full max-w-md">
+          {/* Voltar para a landing */}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-brand-500 transition-colors mb-8"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar ao início
+          </Link>
+
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-ink">Bem-vindo de volta</h1>
             <p className="text-gray-500 mt-1">Entre na sua conta para continuar</p>

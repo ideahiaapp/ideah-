@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2, Home } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
@@ -34,6 +34,14 @@ export default function ForgotPasswordPage() {
         <div className="flex justify-center mb-10">
           <Image src="/ideah-logo.png" alt="IDEAH" width={180} height={68} priority />
         </div>
+
+        <Link
+          href="/auth/login"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-brand-500 transition-colors mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar ao login
+        </Link>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           {!sent ? (
