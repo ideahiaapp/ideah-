@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   LogOut, TrendingUp, Users, DollarSign, Activity,
-  ChevronDown, Search, ArrowDownToLine, ShieldCheck,
+  ChevronDown, Search, FileDown, ShieldCheck,
   CheckCircle2, AlertTriangle, XCircle, Clock,
   Monitor, Smartphone,
 } from "lucide-react";
@@ -258,7 +258,7 @@ export default function AdminPage() {
                     onClick={exportCSV}
                     className="flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-xs font-medium text-gray-300 transition-colors"
                   >
-                    <ArrowDownToLine className="w-3.5 h-3.5" /> Exportar CSV
+                    <FileDown className="w-3.5 h-3.5" /> Exportar CSV
                   </button>
                 </>
               )}
