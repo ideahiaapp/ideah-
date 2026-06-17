@@ -40,7 +40,15 @@ export async function POST(req: NextRequest) {
       .select("session_date, content, hypothesis, next_session_plan, mood, ai_hypothesis, session_number")
       .eq("client_id", clientId)
       .eq("therapist_id", therapistId)
-      .order("session_date", { ascending: true });
+      .order("session_date", { ascending: true }) as { data: Array<{
+        session_date: string;
+        content: string;
+        hypothesis: string | null;
+        next_session_plan: string | null;
+        mood: number | null;
+        ai_hypothesis: string | null;
+        session_number: number | null;
+      }> | null };
 
     if (!evolutions || evolutions.length === 0) {
       return NextResponse.json({ error: "Nenhuma evolução registrada para este paciente." }, { status: 422 });
