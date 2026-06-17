@@ -8,7 +8,7 @@ import {
   ChevronRight, Search, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
 } from "lucide-react";
 import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
-import { getAuthHeaders } from "@/lib/api-key";
+import { aiHeaders } from "@/lib/api-key";
 import { getClinicSettings } from "@/lib/clinic-settings";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
@@ -166,7 +166,7 @@ function PatientProspect({ clients, therapistId }: { clients: Client[]; therapis
     try {
       const res = await fetch("/api/reports/patient-prospect", {
         method: "POST",
-        headers: await getAuthHeaders(),
+        headers: await aiHeaders(),
         body: JSON.stringify({ clientId, therapistId }),
       });
       const data = await res.json();
