@@ -12,7 +12,7 @@ import {
 import { useAdminStore } from "@/store/admin.store";
 import {
   mockSales, mockLoginEvents, mockMonthlySales,
-  type Plan,
+  type Plan, type SaleStatus, type Sale,
 } from "@/lib/mock-admin-data";
 import { cn } from "@/lib/utils";
 
