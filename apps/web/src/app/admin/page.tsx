@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  LogOut, TrendingUp, Users, DollarSign, Activity,
-  ChevronDown, Search, FileDown, ShieldCheck,
+  LogOut, TrendingUp, Users, Activity,
+  Search, FileDown, ShieldCheck,
   CheckCircle2, AlertTriangle, XCircle, Clock,
   Monitor, Smartphone,
 } from "lucide-react";
