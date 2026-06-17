@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       .select("name, approach_label, start_date, total_sessions, main_demand")
       .eq("id", clientId)
       .eq("therapist_id", therapistId)
-      .single();
+      .single() as { data: { name: string; approach_label: string | null; start_date: string | null; total_sessions: number; main_demand: string | null } | null };
 
     if (!client) return NextResponse.json({ error: "Cliente não encontrado." }, { status: 404 });
 
