@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { aiHeaders } from "@/lib/api-key";
@@ -9,9 +9,11 @@ import {
   AlertCircle, CheckCircle2, User, Calendar, FileText,
   Lightbulb, Target, Mic,
 } from "lucide-react";
-import { mockClients } from "@/lib/mock-data";
+import { getClients, createEvolution } from "@/lib/db";
+import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { VoiceTextarea, VoiceInput } from "@/components/ui/VoiceField";
+import type { Client } from "@/lib/database.types";
 
 const MOOD_OPTIONS = [
   { value: 1, label: "Muito difícil", emoji: "😟", color: "border-red-300 bg-red-50 text-red-700" },
@@ -29,17 +31,21 @@ interface AISuggestion {
 }
 
 export default function NewEvolutionPage() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
+  const { user }     = useAuthStore();
+
+  const [clients,  setClients]  = useState<Client[]>([]);
+  const [saveErr,  setSaveErr]  = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    clientId:       searchParams.get("clientId") ?? "",
-    sessionDate:    new Date().toISOString().split("T")[0],
-    content:        "",
-    hypothesis:     "",
-    interventions:  "",
-    nextSessionPlan:"",
-    mood:           0,
+    clientId:        searchParams.get("clientId") ?? "",
+    sessionDate:     new Date().toISOString().split("T")[0],
+    content:         "",
+    hypothesis:      "",
+    interventions:   "",
+    nextSessionPlan: "",
+    mood:            0,
   });
 
   const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
@@ -48,7 +54,12 @@ export default function NewEvolutionPage() {
   const [saving,       setSaving]       = useState(false);
   const [saved,        setSaved]        = useState(false);
 
-  const selectedClient = mockClients.find(c => c.id === form.clientId);
+  useEffect(() => {
+    if (!user) return;
+    getClients(user.id).then(setClients).catch(() => {});
+  }, [user]);
+
+  const selectedClient = clients.find(c => c.id === form.clientId);
   const canSuggest = form.content.trim().length >= 50;
   const canSave    = form.clientId && form.content.trim().length >= 20 && form.mood > 0;
 
@@ -65,7 +76,7 @@ export default function NewEvolutionPage() {
         headers: await aiHeaders(),
         body: JSON.stringify({
           content:    form.content,
-          approach:   selectedClient?.approachLabel,
+          approach:   selectedClient?.approach_label,
           clientName: selectedClient?.name,
         }),
       });
@@ -88,17 +99,31 @@ export default function NewEvolutionPage() {
   }
 
   async function handleSave() {
-    if (!canSave) return;
-    setSaving(true);
-    await new Promise(r => setTimeout(r, 900));
-    setSaving(false); setSaved(true);
-    setTimeout(() => router.push("/dashboard/evolutions"), 1200);
+    if (!canSave || !user) return;
+    setSaving(true); setSaveErr(null);
+    try {
+      await createEvolution({
+        therapist_id:      user.id,
+        client_id:         form.clientId,
+        session_date:      form.sessionDate,
+        content:           form.content.trim(),
+        hypothesis:        form.hypothesis.trim() || null,
+        ai_hypothesis:     aiSuggestion?.hypothesis ?? null,
+        interventions:     form.interventions.trim() || null,
+        next_session_plan: form.nextSessionPlan.trim() || null,
+        mood:              form.mood || null,
+      });
+      setSaved(true);
+      setTimeout(() => router.push("/dashboard/evolutions"), 1200);
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : "Erro ao salvar");
+      setSaving(false);
+    }
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
 
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/dashboard/evolutions"
           className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600">
@@ -108,14 +133,12 @@ export default function NewEvolutionPage() {
           <h1 className="text-xl font-bold text-ink">Nova Evolução</h1>
           <p className="text-gray-500 text-sm">Registro clínico pós-sessão</p>
         </div>
-        {/* Aviso de voz */}
         <div className="ml-auto hidden sm:flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
           <Mic className="w-3.5 h-3.5" />
           Todos os campos aceitam voz
         </div>
       </div>
 
-      {/* ── BLOCO 1: Identificação ── */}
       <Section icon={User} title="Identificação">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2 md:col-span-1">
@@ -126,8 +149,8 @@ export default function NewEvolutionPage() {
               <select value={form.clientId} onChange={e => set("clientId", e.target.value)}
                 className="w-full appearance-none px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-10 text-gray-800">
                 <option value="">Selecionar paciente...</option>
-                {mockClients.filter(c => c.status !== "WAITLIST").map(c => (
-                  <option key={c.id} value={c.id}>{c.name} — {c.approachLabel}</option>
+                {clients.filter(c => c.status !== "WAITLIST").map(c => (
+                  <option key={c.id} value={c.id}>{c.name} — {c.approach_label}</option>
                 ))}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -145,7 +168,6 @@ export default function NewEvolutionPage() {
           </div>
         </div>
 
-        {/* Tom */}
         <div className="mt-4">
           <label className="block text-xs font-semibold text-gray-600 mb-2">
             Tom geral da sessão <span className="text-red-400">*</span>
@@ -164,24 +186,18 @@ export default function NewEvolutionPage() {
         </div>
       </Section>
 
-      {/* ── BLOCO 2: Conteúdo da sessão ── */}
       <Section icon={FileText} title="Conteúdo da sessão">
-
         <VoiceTextarea
-          label="O que aconteceu"
-          required
+          label="O que aconteceu" required
           hint={
             form.content.length < 50
               ? `${50 - form.content.length} caracteres para habilitar sugestão IA · ${form.content.length} digitados`
               : `${form.content.length} caracteres`
           }
-          value={form.content}
-          onChange={v => set("content", v)}
+          value={form.content} onChange={v => set("content", v)}
           placeholder="Descreva os temas trazidos pelo paciente, dinâmicas observadas, momentos significativos, falas relevantes..."
-          rows={5}
-        />
+          rows={5} />
 
-        {/* Botão sugerir IA */}
         <button onClick={suggestWithAI} disabled={!canSuggest || aiLoading}
           className={cn(
             "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all border-2",
@@ -194,7 +210,6 @@ export default function NewEvolutionPage() {
             : <><Sparkles className="w-4 h-4" /> Sugerir hipótese com IA</>}
         </button>
 
-        {/* Erro IA */}
         {aiError && (
           <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-xs text-red-600">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -202,15 +217,12 @@ export default function NewEvolutionPage() {
               <p className="font-medium">Erro na sugestão</p>
               <p className="text-red-500 mt-0.5">{aiError}</p>
               {(aiError.includes("API") || aiError.includes("key") || aiError.includes("configurad")) && (
-                <p className="text-red-400 mt-1">
-                  Configure sua chave em <strong>Configurações → API Key</strong>
-                </p>
+                <p className="text-red-400 mt-1">Configure sua chave em <strong>Configurações → API Key</strong></p>
               )}
             </div>
           </div>
         )}
 
-        {/* Card sugestão IA */}
         {aiSuggestion && (
           <div className="bg-gradient-to-br from-purple-50 to-brand-50 border border-purple-200 rounded-2xl p-5 space-y-4">
             <div className="flex items-center gap-2">
@@ -260,36 +272,26 @@ export default function NewEvolutionPage() {
         )}
       </Section>
 
-      {/* ── BLOCO 3: Hipóteses e intervenções ── */}
       <Section icon={Lightbulb} title="Hipóteses clínicas">
-        <VoiceInput
-          label="Hipótese principal"
+        <VoiceInput label="Hipótese principal"
           hint="Sua interpretação clínica — pode ser preenchida pela IA ou digitada/ditada"
-          value={form.hypothesis}
-          onChange={v => set("hypothesis", v)}
-          placeholder="Ex: Luto complicado com traços melancólicos"
-        />
-        <VoiceTextarea
-          label="Intervenções realizadas"
-          value={form.interventions}
-          onChange={v => set("interventions", v)}
-          placeholder="O que você fez/disse na sessão? Técnicas utilizadas, perguntas feitas..."
-          rows={3}
-        />
+          value={form.hypothesis} onChange={v => set("hypothesis", v)}
+          placeholder="Ex: Luto complicado com traços melancólicos" />
+        <VoiceTextarea label="Intervenções realizadas"
+          value={form.interventions} onChange={v => set("interventions", v)}
+          placeholder="O que você fez/disse na sessão? Técnicas utilizadas, perguntas feitas..." rows={3} />
       </Section>
 
-      {/* ── BLOCO 4: Plano ── */}
       <Section icon={Target} title="Plano para próxima sessão">
-        <VoiceTextarea
-          label="O que retomar ou explorar"
-          value={form.nextSessionPlan}
-          onChange={v => set("nextSessionPlan", v)}
-          placeholder="Pontos a retomar, temas a explorar, tarefas combinadas..."
-          rows={3}
-        />
+        <VoiceTextarea label="O que retomar ou explorar"
+          value={form.nextSessionPlan} onChange={v => set("nextSessionPlan", v)}
+          placeholder="Pontos a retomar, temas a explorar, tarefas combinadas..." rows={3} />
       </Section>
 
-      {/* ── Salvar ── */}
+      {saveErr && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">{saveErr}</div>
+      )}
+
       <div className="flex items-center gap-3 pb-6">
         <Link href="/dashboard/evolutions"
           className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -311,10 +313,7 @@ export default function NewEvolutionPage() {
   );
 }
 
-/* ── Componentes auxiliares ── */
-function Section({ icon: Icon, title, children }: {
-  icon: React.ElementType; title: string; children: React.ReactNode;
-}) {
+function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-50 bg-gray-50/50">

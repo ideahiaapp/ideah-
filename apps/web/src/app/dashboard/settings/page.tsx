@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getApiKey, saveApiKey, removeApiKey, aiHeaders, maskApiKey } from "@/lib/api-key";
 import { getClinicSettings, saveClinicSettings } from "@/lib/clinic-settings";
 import {
   User, Lock, CreditCard, Key, Save, Loader2, CheckCircle2,
   Eye, EyeOff, Camera, ExternalLink, AlertTriangle, Sparkles,
   ChevronDown, ShieldCheck, Zap, Crown, Check, Copy, DollarSign,
+  Scale, ShieldAlert, FileText, Info, BookOpen, Upload, Trash2,
 } from "lucide-react";
-import { mockUser } from "@/lib/mock-data";
+import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 
-type Tab = "perfil" | "seguranca" | "plano" | "api";
+type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica";
 
 /* ─── Helpers ─────────────────────────────────────── */
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
@@ -47,18 +48,47 @@ function SaveButton({ saving, saved, disabled, onClick, label = "Salvar alteraç
 
 /* ─── Aba Perfil ─────────────────────────────────── */
 function TabPerfil() {
+  const { user } = useAuthStore();
   const [form, setForm] = useState({
-    name:         mockUser.name,
-    email:        mockUser.email,
-    phone:        "(11) 98888-7777",
-    crp:          "06/123456",
-    bio:          "Psicólogo clínico com ênfase em psicanálise e terapia de grupo. Atendo adultos e adolescentes.",
+    name:         user?.name ?? "",
+    email:        user?.email ?? "",
+    phone:        "",
+    crp:          "",
+    bio:          "",
     approach:     "Psicanálise",
-    city:         "São Paulo — SP",
-    instagram:    "@carlos.magno.psi",
+    city:         "",
+    instagram:    "",
   });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved]   = useState(false);
+  const [saving,       setSaving]       = useState(false);
+  const [saved,        setSaved]        = useState(false);
+  const [avatarUrl,    setAvatarUrl]    = useState(user?.avatarUrl ?? "");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError,  setAvatarError]  = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 2 * 1024 * 1024) { setAvatarError("Arquivo muito grande. Máx. 2MB."); return; }
+    setAvatarError(null);
+    setUploadingAvatar(true);
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const ext  = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+      await supabase.auth.updateUser({ data: { avatar_url: publicUrl } });
+      useAuthStore.setState(s => s.user ? { user: { ...s.user, avatarUrl: publicUrl } } : {});
+      setAvatarUrl(publicUrl);
+    } catch (err: unknown) {
+      setAvatarError(err instanceof Error ? err.message : "Erro ao enviar foto.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -67,6 +97,10 @@ function TabPerfil() {
     setTimeout(() => setSaved(false), 3000);
   }
 
+  const initials = user?.name
+    ? user.name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join("")
+    : "?";
+
   return (
     <div className="space-y-6">
       {/* Avatar */}
@@ -74,18 +108,35 @@ function TabPerfil() {
         <p className="text-sm font-semibold text-gray-700 mb-4">Foto de perfil</p>
         <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-20 h-20 rounded-2xl bg-brand-500 flex items-center justify-center text-white text-2xl font-bold shadow-sm">
-              CM
-            </div>
-            <button className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
-              <Camera className="w-3.5 h-3.5 text-gray-600" />
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-20 h-20 rounded-2xl object-cover shadow-sm" />
+            ) : (
+              <div className="w-20 h-20 rounded-2xl bg-brand-500 flex items-center justify-center text-white text-2xl font-bold shadow-sm">
+                {initials}
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+              {uploadingAvatar
+                ? <Loader2 className="w-3.5 h-3.5 text-brand-500 animate-spin" />
+                : <Camera className="w-3.5 h-3.5 text-gray-600" />}
             </button>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-700">Carregar nova foto</p>
             <p className="text-xs text-gray-400 mt-0.5">PNG, JPG ou WEBP · Máx. 2MB</p>
-            <button className="mt-2 text-xs text-brand-500 hover:text-brand-700 font-medium">Selecionar arquivo</button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="mt-2 text-xs text-brand-500 hover:text-brand-700 font-medium disabled:opacity-50">
+              {uploadingAvatar ? "Enviando..." : "Selecionar arquivo"}
+            </button>
+            {avatarError && <p className="text-xs text-red-500 mt-1">{avatarError}</p>}
           </div>
+          <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp"
+            className="hidden" onChange={handleAvatarChange} />
         </div>
       </div>
 
@@ -411,9 +462,7 @@ function TabPlano() {
           <div>
             <p className="text-sm font-bold text-amber-800">Você está no Trial</p>
             <p className="text-xs text-amber-600 mt-0.5">
-              {mockUser.subscription.trialEndsAt
-                ? `Expira em ${Math.max(0, Math.ceil((new Date(mockUser.subscription.trialEndsAt).getTime() - Date.now()) / 86400000))} dias`
-                : "Trial ativo"}
+              {"Trial ativo"}
             </p>
           </div>
         </div>
@@ -715,8 +764,352 @@ function TabAPI() {
   );
 }
 
+/* ─── Aba Ética CFP ──────────────────────────────── */
+function TabEtica() {
+  const [confirmed, setConfirmed] = useState({
+    nodiag: false,
+    juizo: false,
+    sigilo: false,
+    lgpd: false,
+  });
+
+  const allConfirmed = Object.values(confirmed).every(Boolean);
+
+  return (
+    <div className="space-y-6">
+      {/* Banner de referência */}
+      <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
+        <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Scale className="w-5 h-5 text-amber-700" strokeWidth={1.8} />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-amber-900">Resolução CFP nº 21/2025</p>
+          <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+            Esta plataforma foi projetada em conformidade com as orientações do Conselho Federal de Psicologia
+            para o uso de Inteligência Artificial na prática profissional. O profissional é o único responsável
+            pelo juízo clínico e pelas decisões tomadas a partir do conteúdo gerado pela IA.
+          </p>
+          <a
+            href="https://site.cfp.org.br/resolucoes/resolucao-cfp-no-21-2025/"
+            target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-amber-700 hover:text-amber-900"
+          >
+            Ler a resolução completa <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+      </div>
+
+      {/* Compromissos do profissional */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
+            <ShieldCheck className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+          </div>
+          <p className="text-sm font-semibold text-gray-700">Compromissos éticos do profissional</p>
+        </div>
+        <p className="text-xs text-gray-500">
+          Confirme que está ciente das suas responsabilidades no uso desta ferramenta, conforme a Res. CFP nº 21/2025:
+        </p>
+        <div className="space-y-3">
+          {[
+            {
+              id: "nodiag" as const,
+              title: "Sem diagnóstico automático",
+              desc: "Compreendo que a IA não realiza diagnósticos. Toda hipótese diagnóstica é de minha exclusiva responsabilidade profissional.",
+            },
+            {
+              id: "juizo" as const,
+              title: "Juízo clínico humano",
+              desc: "Reconheço que as sugestões da IA são apenas suporte ao meu raciocínio. O juízo clínico final é sempre meu.",
+            },
+            {
+              id: "sigilo" as const,
+              title: "Sigilo e proteção de dados",
+              desc: "Comprometo-me a não inserir dados que identifiquem diretamente o(a) paciente nas interações com a IA. Usarei pseudonimização sempre que possível.",
+            },
+            {
+              id: "lgpd" as const,
+              title: "Consentimento e LGPD",
+              desc: "Obtive o TCLE (Termo de Consentimento Livre e Esclarecido) de cada pessoa atendida antes de cadastrá-la nesta plataforma.",
+            },
+          ].map(item => (
+            <label key={item.id} className="flex items-start gap-3 cursor-pointer group">
+              <div
+                className={cn(
+                  "w-5 h-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors",
+                  confirmed[item.id] ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
+                )}
+                onClick={() => setConfirmed(p => ({ ...p, [item.id]: !p[item.id] }))}
+              >
+                {confirmed[item.id] && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">{item.title}</p>
+                <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{item.desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+        {allConfirmed && (
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-xs text-green-800">
+            <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" strokeWidth={1.8} />
+            <span>Todos os compromissos confirmados. Obrigado por usar o ideah com responsabilidade ética.</span>
+          </div>
+        )}
+      </div>
+
+      {/* Como o ideah protege os dados */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center">
+            <ShieldAlert className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
+          </div>
+          <p className="text-sm font-semibold text-gray-700">Como o ideah protege os dados clínicos</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            { icon: FileText, title: "Pseudonimização opcional", desc: "Você pode ativar a pseudonimização por cliente, impedindo que o nome real apareça nas interações com a IA." },
+            { icon: Info,     title: "Base fechada de conhecimento", desc: "A IA responde apenas com base em referências teóricas curadas. Não acessa dados de outros usuários." },
+            { icon: Lock,     title: "API Key local", desc: "Sua chave da Anthropic é armazenada localmente no navegador, criptografada. O servidor não a vê." },
+            { icon: ShieldCheck, title: "Sem retenção para treino", desc: "Os dados clínicos não são usados para treinar modelos. Consulte a política de privacidade da Anthropic." },
+          ].map(item => (
+            <div key={item.title} className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+              <item.icon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+              <div>
+                <p className="text-xs font-semibold text-gray-700">{item.title}</p>
+                <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Aba Base de Conhecimento (admin only) ────────── */
+const APPROACH_LIST = [
+  { key: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { key: "JUNGIAN",              label: "Junguiana" },
+  { key: "SOMATIC",              label: "Somática / Corporal" },
+  { key: "GESTALT",              label: "Gestalt-terapia" },
+  { key: "PSYCHODRAMA",          label: "Psicodrama" },
+  { key: "SYSTEMIC",             label: "Constelação Familiar" },
+];
+
+function TabBase() {
+  const { user } = useAuthStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  type RagDoc = { id: string; name: string; size_bytes: number; chunk_count: number; approach: string; created_at: string };
+  const [docs,        setDocs]        = useState<RagDoc[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [uploading,   setUploading]   = useState(false);
+  const [uploadMsg,   setUploadMsg]   = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [deleting,    setDeleting]    = useState<string | null>(null);
+  const [approach,    setApproach]    = useState("PSYCHOANALYSIS");
+
+  function loadDocs() {
+    if (!user) return;
+    fetch(`/api/rag/documents?therapistId=${user.id}`)
+      .then(r => r.json())
+      .then(d => setDocs(d.documents ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(loadDocs, [user]);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length || !user) return;
+    e.target.value = "";
+    setUploading(true);
+    setUploadMsg(null);
+
+    const label = APPROACH_LIST.find(a => a.key === approach)?.label ?? approach;
+    const results = { ok: 0, fail: 0, errors: [] as string[] };
+
+    for (const file of files) {
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("therapistId", user.id);
+        fd.append("approach", approach);
+        const res = await fetch("/api/rag/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        results.ok++;
+      } catch (err) {
+        results.fail++;
+        results.errors.push(`${file.name}: ${err instanceof Error ? err.message : "erro"}`);
+      }
+    }
+
+    if (results.fail === 0) {
+      setUploadMsg({ type: "ok", text: `${results.ok} arquivo(s) indexado(s) em ${label}.` });
+    } else if (results.ok === 0) {
+      setUploadMsg({ type: "err", text: results.errors[0] });
+    } else {
+      setUploadMsg({ type: "ok", text: `${results.ok} indexado(s), ${results.fail} com erro. ${results.errors[0]}` });
+    }
+
+    loadDocs();
+    setUploading(false);
+  }
+
+  async function handleDelete(docId: string) {
+    if (!user) return;
+    setDeleting(docId);
+    try {
+      await fetch("/api/rag/documents", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId: docId, therapistId: user.id }),
+      });
+      setDocs(prev => prev.filter(d => d.id !== docId));
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  function fmtSize(bytes: number) {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  // Agrupa por abordagem
+  const grouped = APPROACH_LIST.map(ap => ({
+    ...ap,
+    docs: docs.filter(d => d.approach === ap.key),
+  })).filter(g => g.docs.length > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Banner */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-5 flex items-start gap-4">
+        <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <BookOpen className="w-5 h-5 text-indigo-600" strokeWidth={1.8} />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-indigo-800">Base de Conhecimento — RAG</p>
+          <p className="text-xs text-indigo-600 mt-1 leading-relaxed">
+            Envie livros e artigos por abordagem teórica. O supervisor IA consultará automaticamente os materiais da abordagem selecionada em cada supervisão.
+          </p>
+        </div>
+      </div>
+
+      {/* Upload */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+        <p className="text-sm font-semibold text-gray-700">Enviar documento</p>
+
+        {/* Seletor de abordagem */}
+        <Field label="Abordagem teórica">
+          <div className="relative">
+            <select value={approach} onChange={e => setApproach(e.target.value)}
+              className={inputCls + " appearance-none pr-9"}>
+              {APPROACH_LIST.map(a => (
+                <option key={a.key} value={a.key}>{a.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+        </Field>
+
+        <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+          className={cn(
+            "w-full flex flex-col items-center gap-3 py-8 rounded-xl border-2 border-dashed transition-colors",
+            uploading ? "border-gray-200 bg-gray-50 cursor-not-allowed"
+                      : "border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer"
+          )}>
+          {uploading
+            ? <Loader2 className="w-7 h-7 text-indigo-400 animate-spin" />
+            : <Upload className="w-7 h-7 text-indigo-300" strokeWidth={1.5} />}
+          <div className="text-center">
+            <p className="text-sm font-semibold text-gray-600">{uploading ? "Indexando…" : "Clique para selecionar"}</p>
+            <p className="text-xs text-gray-400 mt-0.5">PDF ou TXT · Múltiplos arquivos · Máx. 200MB cada</p>
+          </div>
+        </button>
+
+        <input ref={fileInputRef} type="file" accept=".pdf,.txt,application/pdf,text/plain"
+          multiple className="hidden" onChange={handleUpload} />
+
+        {uploadMsg && (
+          <div className={cn(
+            "flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium",
+            uploadMsg.type === "ok" ? "bg-green-50 border border-green-100 text-green-700"
+                                   : "bg-red-50 border border-red-100 text-red-600"
+          )}>
+            {uploadMsg.type === "ok"
+              ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+            {uploadMsg.text}
+          </div>
+        )}
+      </div>
+
+      {/* Documentos agrupados por abordagem */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <p className="text-sm font-semibold text-gray-700 mb-4">
+          Documentos indexados
+          {docs.length > 0 && <span className="ml-2 text-xs font-normal text-gray-400">({docs.length} no total)</span>}
+        </p>
+
+        {loading ? (
+          <div className="flex items-center gap-2 py-6 text-xs text-gray-400 justify-center">
+            <Loader2 className="w-4 h-4 animate-spin" /> Carregando…
+          </div>
+        ) : grouped.length === 0 ? (
+          <div className="text-center py-8">
+            <BookOpen className="w-8 h-8 text-gray-200 mx-auto mb-2" strokeWidth={1.5} />
+            <p className="text-sm text-gray-400">Nenhum documento ainda</p>
+            <p className="text-xs text-gray-300 mt-0.5">Selecione uma abordagem e envie um PDF ou TXT</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {grouped.map(group => (
+              <div key={group.key}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide">{group.label}</span>
+                  <span className="text-xs text-gray-400">({group.docs.length})</span>
+                </div>
+                <div className="space-y-1.5">
+                  {group.docs.map(doc => (
+                    <div key={doc.id} className="flex items-center gap-3 py-2.5 px-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                      <FileText className="w-4 h-4 text-indigo-300 flex-shrink-0" strokeWidth={1.8} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {fmtSize(doc.size_bytes)} · {doc.chunk_count} trechos · {new Date(doc.created_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                      <button onClick={() => handleDelete(doc.id)} disabled={deleting === doc.id}
+                        className="p-1.5 text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 flex-shrink-0">
+                        {deleting === doc.id
+                          ? <Loader2 className="w-4 h-4 animate-spin" />
+                          : <Trash2 className="w-4 h-4" strokeWidth={1.8} />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Página principal ───────────────────────────── */
 export default function SettingsPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
   const [tab, setTab] = useState<Tab>("perfil");
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
 
@@ -731,10 +1124,12 @@ export default function SettingsPage() {
   }
 
   const tabs = [
-    { id: "perfil"    as Tab, label: "Perfil",     icon: User       },
-    { id: "seguranca" as Tab, label: "Segurança",  icon: Lock       },
-    { id: "plano"     as Tab, label: "Plano",      icon: CreditCard },
-    { id: "api"       as Tab, label: "API Key",    icon: Key        },
+    { id: "perfil"    as Tab, label: "Perfil",     icon: User,     adminOnly: false },
+    { id: "seguranca" as Tab, label: "Segurança",  icon: Lock,     adminOnly: false },
+    { id: "plano"     as Tab, label: "Plano",      icon: CreditCard, adminOnly: false },
+    { id: "api"       as Tab, label: "API Key",    icon: Key,      adminOnly: false },
+    { id: "base"      as Tab, label: "Base RAG",   icon: BookOpen, adminOnly: true  },
+    { id: "etica"     as Tab, label: "Ética CFP",  icon: Scale,    adminOnly: false },
   ];
 
   return (
@@ -747,7 +1142,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto">
-        {tabs.map((t) => (
+        {tabs.filter(t => !t.adminOnly || isAdmin).map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={cn(
               "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
@@ -770,6 +1165,8 @@ export default function SettingsPage() {
       {tab === "seguranca" && <TabSeguranca />}
       {tab === "plano"     && <TabPlano />}
       {tab === "api"       && <TabAPI />}
+      {tab === "base"      && <TabBase />}
+      {tab === "etica"     && <TabEtica />}
     </div>
   );
 }

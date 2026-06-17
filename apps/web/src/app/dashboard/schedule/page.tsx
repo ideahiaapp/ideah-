@@ -1,18 +1,51 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, Plus, X, Save, Loader2,
   CheckCircle2, Clock, User, Calendar, FileText,
-  MessageSquare, ChevronDown,
+  MessageSquare, ChevronDown, Trash2,
 } from "lucide-react";
-import {
-  mockSchedule, mockClients, ScheduleSession, SessionStatus,
-} from "@/lib/mock-data";
+import { getClients, getSessions, createSession, updateSession, deleteSession } from "@/lib/db";
+import type { SessionWithClient } from "@/lib/db/sessions";
+import { useAuthStore } from "@/store/auth.store";
 import { getClinicSettings } from "@/lib/clinic-settings";
+import type { Client } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
 import { VoiceTextarea } from "@/components/ui/VoiceField";
+
+type SessionStatus = "confirmed" | "pending" | "cancelled" | "done";
+
+interface ScheduleSession {
+  id: string;
+  clientId: string;
+  clientName: string;
+  initials: string;
+  color: string;
+  date: string;
+  startTime: string;
+  duration: number;
+  status: SessionStatus;
+  notes?: string;
+  price?: number;
+}
+
+function dbToSchedule(s: SessionWithClient): ScheduleSession {
+  return {
+    id:         s.id,
+    clientId:   s.client_id,
+    clientName: s.clients?.name ?? "Cliente",
+    initials:   s.clients?.initials ?? s.clients?.name?.[0] ?? "?",
+    color:      s.clients?.color ?? "#924B92",
+    date:       s.date,
+    startTime:  s.start_time.slice(0, 5),
+    duration:   s.duration,
+    status:     s.status as SessionStatus,
+    notes:      s.notes ?? undefined,
+    price:      s.price ?? undefined,
+  };
+}
 
 /* ─── Constantes ─────────────────────────────────── */
 const HOUR_START = 7;   // primeira linha visível
@@ -70,6 +103,41 @@ function formatDayHeader(date: Date): { weekday: string; day: number; isToday: b
   };
 }
 
+/* ─── Google Calendar URL ────────────────────────── */
+function buildGoogleCalendarUrl(params: {
+  clientName: string;
+  date: string;
+  startTime: string;
+  duration: number;
+  notes?: string;
+}): string {
+  const start = params.date.replace(/-/g, "") + "T" + params.startTime.replace(":", "") + "00";
+  const endMin = timeToMinutes(params.startTime) + params.duration;
+  const endStr = minutesToTime(endMin).replace(":", "") + "00";
+  const end = params.date.replace(/-/g, "") + "T" + endStr;
+  const search = new URLSearchParams({
+    action:  "TEMPLATE",
+    text:    `Sessão — ${params.clientName}`,
+    dates:   `${start}/${end}`,
+    details: params.notes || "Sessão registrada via IDEAh",
+  });
+  return `https://calendar.google.com/calendar/render?${search.toString()}`;
+}
+
+/* ─── Ícone Google Calendar ──────────────────────── */
+function GoogleCalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="18" height="18" rx="2" fill="white" stroke="#dadce0" strokeWidth="1.5"/>
+      <rect x="3" y="3" width="18" height="5" rx="2" fill="#4285F4"/>
+      <rect x="3" y="6" width="18" height="2" fill="#4285F4"/>
+      <path d="M8 13h2v2H8zm3 0h2v2h-2zm3 0h2v2h-2zM8 16h2v2H8zm3 0h2v2h-2z" fill="#4285F4"/>
+      <rect x="8" y="1" width="2" height="4" rx="1" fill="#4285F4"/>
+      <rect x="14" y="1" width="2" height="4" rx="1" fill="#4285F4"/>
+    </svg>
+  );
+}
+
 /* ─── Modal de sessão ────────────────────────────── */
 interface ModalState {
   mode: "create" | "view";
@@ -80,57 +148,98 @@ interface ModalState {
 
 function SessionModal({
   state,
+  clients,
+  therapistId,
   onClose,
   onCreate,
   onStatusChange,
+  onDelete,
 }: {
   state: ModalState;
+  clients: Client[];
+  therapistId: string;
   onClose: () => void;
-  onCreate: (s: Omit<ScheduleSession, "id">) => void;
+  onCreate: (s: ScheduleSession) => void;
   onStatusChange: (id: string, status: SessionStatus) => void;
+  onDelete: (id: string) => void;
 }) {
   const clinicCfg = getClinicSettings();
   const [form, setForm] = useState({
-    clientId:  "",
-    date:      state.date || toDateStr(new Date()),
-    startTime: state.startTime || "09:00",
-    duration:  clinicCfg.sessionDuration,
-    status:    "confirmed" as SessionStatus,
-    notes:     "",
-    price:     clinicCfg.sessionPrice,
+    clientId:        "",
+    date:            state.date || toDateStr(new Date()),
+    startTime:       state.startTime || "09:00",
+    duration:        clinicCfg.sessionDuration,
+    status:          "confirmed" as SessionStatus,
+    notes:           "",
+    price:           clinicCfg.sessionPrice,
+    addToCalendar:   true,
   });
-  const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [saving,      setSaving]      = useState(false);
+  const [saved,       setSaved]       = useState(false);
+  const [calendarUrl, setCalendarUrl] = useState<string | null>(null);
+  const [deleting,    setDeleting]    = useState(false);
 
   const isView   = state.mode === "view";
   const session  = state.session;
   const client   = isView
-    ? mockClients.find(c => c.id === session?.clientId)
-    : mockClients.find(c => c.id === form.clientId);
+    ? clients.find(c => c.id === session?.clientId)
+    : clients.find(c => c.id === form.clientId);
 
   const canSave  = !isView && form.clientId && form.date && form.startTime;
 
   async function handleSave() {
     if (!canSave) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
-    const c = mockClients.find(c => c.id === form.clientId)!;
-    const defaultPrice = getClinicSettings().sessionPrice;
-    onCreate({
-      clientId:   form.clientId,
-      clientName: c.name,
-      initials:   c.initials,
-      color:      c.color,
-      date:       form.date,
-      startTime:  form.startTime,
-      duration:   form.duration,
-      status:     form.status,
-      notes:      form.notes || undefined,
-      price:      form.price !== defaultPrice ? form.price : undefined,
-    });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(onClose, 800);
+    try {
+      const c = clients.find(c => c.id === form.clientId)!;
+      const defaultPrice = getClinicSettings().sessionPrice;
+      const saved = await createSession({
+        therapist_id: therapistId,
+        client_id:    form.clientId,
+        date:         form.date,
+        start_time:   form.startTime,
+        duration:     form.duration,
+        status:       form.status,
+        notes:        form.notes || null,
+        price:        form.price !== defaultPrice ? form.price : null,
+      });
+      onCreate(dbToSchedule({ ...saved, clients: { name: c.name, initials: c.initials, color: c.color } }));
+      setSaved(true);
+      if (form.addToCalendar) {
+        setCalendarUrl(buildGoogleCalendarUrl({
+          clientName: c.name,
+          date:       form.date,
+          startTime:  form.startTime,
+          duration:   form.duration,
+          notes:      form.notes || undefined,
+        }));
+      } else {
+        setTimeout(onClose, 800);
+      }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao salvar sessão");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!state.session || !confirm("Excluir esta sessão?")) return;
+    setDeleting(true);
+    try {
+      await deleteSession(state.session.id);
+      onDelete(state.session.id);
+      onClose();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao excluir");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function handleStatusChange(id: string, status: SessionStatus) {
+    await updateSession(id, { status });
+    onStatusChange(id, status);
   }
 
   // Calcula horário de término
@@ -190,7 +299,7 @@ function SessionModal({
                   {(["confirmed","pending","cancelled","done"] as SessionStatus[]).map(s => (
                     <button
                       key={s}
-                      onClick={() => onStatusChange(session.id, s)}
+                      onClick={() => handleStatusChange(session.id, s)}
                       className={cn(
                         "text-xs px-2.5 py-1 rounded-full border font-medium transition-all",
                         session.status === s
@@ -243,20 +352,47 @@ function SessionModal({
               {/* Ações rápidas */}
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <Link
-                  href={`/dashboard/evolutions/new?clientId=${session.clientId}`}
+                  href={`/dashboard/supervision?client=${session.clientId}`}
                   onClick={onClose}
                   className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <FileText className="w-3.5 h-3.5" /> Registrar evolução
                 </Link>
                 <Link
-                  href={`/dashboard/supervision/new?client=${session.clientId}`}
+                  href={`/dashboard/supervision?client=${session.clientId}`}
                   onClick={onClose}
                   className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-brand-50 border border-brand-200 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition-colors"
                 >
                   <MessageSquare className="w-3.5 h-3.5" /> Supervisionar
                 </Link>
               </div>
+
+              {/* Excluir sessão */}
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 border border-red-100 transition-colors"
+              >
+                {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Excluir sessão
+              </button>
+
+              {/* Google Calendar */}
+              <a
+                href={buildGoogleCalendarUrl({
+                  clientName: session.clientName,
+                  date:       session.date,
+                  startTime:  session.startTime,
+                  duration:   session.duration,
+                  notes:      session.notes,
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-blue-200 hover:text-blue-700 transition-colors"
+              >
+                <GoogleCalendarIcon className="w-4 h-4" />
+                Adicionar ao Google Calendar
+              </a>
             </>
           )}
 
@@ -275,7 +411,7 @@ function SessionModal({
                     className="w-full appearance-none px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
                   >
                     <option value="">Selecionar paciente...</option>
-                    {mockClients.filter(c => c.status !== "WAITLIST").map(c => (
+                    {clients.filter(c => c.status !== "WAITLIST").map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
@@ -391,21 +527,67 @@ function SessionModal({
                 rows={2}
               />
 
+              {/* Google Calendar */}
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => setForm(p => ({ ...p, addToCalendar: !p.addToCalendar }))}
+                  className={cn(
+                    "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                    form.addToCalendar ? "border-blue-500 bg-blue-500" : "border-gray-300 hover:border-blue-300"
+                  )}
+                >
+                  {form.addToCalendar && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <GoogleCalendarIcon className="w-4 h-4" />
+                  <span className="text-sm text-gray-700">Adicionar ao Google Calendar</span>
+                </div>
+              </label>
+
               {/* Botão salvar */}
-              <button
-                onClick={handleSave}
-                disabled={!canSave || saving || saved}
-                className={cn(
-                  "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                  saved ? "bg-green-500 text-white"
-                    : canSave && !saving ? "bg-brand-500 hover:bg-brand-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                )}
-              >
-                {saved   ? <><CheckCircle2 className="w-4 h-4" /> Sessão criada!</>
-                 : saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
-                 :          <><Save className="w-4 h-4" /> Marcar sessão</>}
-              </button>
+              {!calendarUrl ? (
+                <button
+                  onClick={handleSave}
+                  disabled={!canSave || saving || saved}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                    saved ? "bg-green-500 text-white"
+                      : canSave && !saving ? "bg-brand-500 hover:bg-brand-600 text-white shadow-sm"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  )}
+                >
+                  {saved   ? <><CheckCircle2 className="w-4 h-4" /> Sessão criada!</>
+                   : saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+                   :          <><Save className="w-4 h-4" /> Marcar sessão</>}
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <p className="text-sm font-semibold text-green-700">Sessão criada!</p>
+                  </div>
+                  <a
+                    href={calendarUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setTimeout(onClose, 400)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-white border-2 border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors"
+                  >
+                    <GoogleCalendarIcon className="w-4 h-4" />
+                    Abrir no Google Calendar
+                  </a>
+                  <button
+                    onClick={onClose}
+                    className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    Fechar sem adicionar
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -464,10 +646,18 @@ function SessionBlock({
 
 /* ─── Página principal ───────────────────────────── */
 export default function SchedulePage() {
-  const today       = new Date();
+  const { user } = useAuthStore();
+  const today    = new Date();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
-  const [sessions,  setSessions]  = useState<ScheduleSession[]>(mockSchedule);
+  const [sessions,  setSessions]  = useState<ScheduleSession[]>([]);
   const [modal,     setModal]     = useState<ModalState | null>(null);
+  const [clients,   setClients]   = useState<Client[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getClients(user.id).then(setClients).catch(() => {});
+    getSessions(user.id).then(rows => setSessions(rows.map(dbToSchedule))).catch(() => {});
+  }, [user]);
 
   // 5 dias úteis: seg → sex
   const weekDays = useMemo(
@@ -523,9 +713,12 @@ export default function SchedulePage() {
     setModal({ mode: "view", session });
   }
 
-  const handleCreate = useCallback((data: Omit<ScheduleSession, "id">) => {
-    const newSession: ScheduleSession = { ...data, id: `ss-${Date.now()}` };
-    setSessions(prev => [...prev, newSession]);
+  const handleCreate = useCallback((session: ScheduleSession) => {
+    setSessions(prev => [...prev, session]);
+  }, []);
+
+  const handleDelete = useCallback((id: string) => {
+    setSessions(prev => prev.filter(s => s.id !== id));
   }, []);
 
   const handleStatusChange = useCallback((id: string, status: SessionStatus) => {
@@ -723,12 +916,15 @@ export default function SchedulePage() {
       </div>
 
       {/* ── Modal ── */}
-      {modal && (
+      {modal && user && (
         <SessionModal
           state={modal}
+          clients={clients}
+          therapistId={user.id}
           onClose={() => setModal(null)}
           onCreate={handleCreate}
           onStatusChange={handleStatusChange}
+          onDelete={handleDelete}
         />
       )}
     </div>

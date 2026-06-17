@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   BarChart2, Users, FileText, Brain, TrendingUp, TrendingDown,
   CalendarDays, Clock, Sparkles, ArrowUpRight, Minus, X,
-  ChevronRight, Filter, Search,
+  ChevronRight, Search, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
 } from "lucide-react";
-import {
-  mockClients, mockEvolutions, mockSchedule, mockSupervisions,
-} from "@/lib/mock-data";
+import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
+import { getAuthHeaders } from "@/lib/api-key";
 import { getClinicSettings } from "@/lib/clinic-settings";
+import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
+import type { Client } from "@/lib/db/clients";
+import type { EvolutionWithClient } from "@/lib/db/evolutions";
+import type { Supervision } from "@/lib/db/supervisions";
 
 /* ─── Paleta ─────────────────────────────────────────────────────── */
 const APPROACH_COLORS: Record<string, string> = {
@@ -20,38 +23,23 @@ const APPROACH_COLORS: Record<string, string> = {
   SYSTEMIC: "#EC4899", SOMATIC: "#F97316",
   GESTALT: "#14B8A6", ACCEPTANCE_COMMITMENT: "#6366F1",
 };
+const APPROACH_LABEL: Record<string, string> = {
+  PSYCHOANALYSIS: "Psicanálise", COGNITIVE_BEHAVIORAL: "TCC",
+  JUNGIAN: "Junguiana", HUMANISTIC: "Humanista",
+  SYSTEMIC: "Sistêmica", SOMATIC: "Somática",
+  GESTALT: "Gestalt", ACCEPTANCE_COMMITMENT: "ACT",
+};
 const MOOD_COLOR = ["", "#EF4444", "#F97316", "#EAB308", "#22C55E", "#10B981"];
 const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Excelente"];
 const MOOD_EMOJI = ["", "😟", "😕", "😐", "🙂", "😊"];
 
-const STATUS_LABEL: Record<string, string> = {
-  confirmed: "Confirmada", pending: "Pendente",
-  done: "Realizada", cancelled: "Cancelada",
-};
-const STATUS_CLS: Record<string, string> = {
-  confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-  pending:   "bg-amber-50 text-amber-700 border-amber-200",
-  done:      "bg-green-50 text-green-700 border-green-200",
-  cancelled: "bg-red-50 text-red-400 border-red-200",
-};
-
 type Tab       = "geral" | "producao" | "clientes" | "clinico";
 type DrillType = "sessions" | "clients" | "hours" | "evolutions";
 
-/* ─── Dados mensais simulados ────────────────────────────────────── */
-const now = new Date();
-const MONTHS = Array.from({ length: 6 }, (_, i) => {
-  const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-  return {
-    label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
-    full:  d.toLocaleDateString("pt-BR", { month: "long" }),
-    sessions:   [12, 15, 11, 18, 14, 17][i],
-    evolutions: [8, 10, 7, 14, 11, 13][i],
-    newClients: [1, 2, 0, 1, 0, 1][i],
-  };
-});
-const CURRENT_MONTH = MONTHS[MONTHS.length - 1];
-const PREV_MONTH    = MONTHS[MONTHS.length - 2];
+type MonthData = {
+  label: string; full: string;
+  sessions: number; evolutions: number; newClients: number; ym: string;
+};
 
 /* ─── SVG Charts ─────────────────────────────────────────────────── */
 function BarChart({ data, valueKey, color = "#924B92", height = 140 }: {
@@ -140,6 +128,201 @@ function KpiCard({ label, value, sub, icon: Icon, color, trend, trendLabel, onCl
   );
 }
 
+/* ─── Prospecto de Paciente ──────────────────────────────────────── */
+type ProspectResult = {
+  verdict:       "evoluiu" | "estável" | "regrediu";
+  score:         number;
+  summary:       string;
+  mood_trend:    "crescente" | "estável" | "decrescente";
+  key_themes:    string[];
+  strengths:     string;
+  challenges:    string;
+  recommendation: string;
+  clientName:    string;
+  sessionCount:  number;
+  period:        string;
+};
+
+const VERDICT_CONFIG = {
+  evoluiu:  { label: "Evoluiu",  color: "text-green-600",  bg: "bg-green-50  border-green-200",  icon: TrendingUp   },
+  estável:  { label: "Estável",  color: "text-amber-600",  bg: "bg-amber-50  border-amber-200",  icon: Activity     },
+  regrediu: { label: "Regrediu", color: "text-red-600",    bg: "bg-red-50    border-red-200",    icon: TrendingDown },
+};
+
+const TREND_LABEL = { crescente: "↗ Crescente", estável: "→ Estável", decrescente: "↘ Decrescente" };
+
+function PatientProspect({ clients, therapistId }: { clients: Client[]; therapistId: string }) {
+  const activeClients = clients.filter(c => c.status === "ACTIVE");
+  const [clientId,  setClientId]  = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [result,    setResult]    = useState<ProspectResult | null>(null);
+  const [error,     setError]     = useState<string | null>(null);
+
+  async function generate() {
+    if (!clientId) return;
+    setLoading(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/reports/patient-prospect", {
+        method: "POST",
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({ clientId, therapistId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao gerar prospecto");
+      setResult(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro desconhecido");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const cfg = result ? VERDICT_CONFIG[result.verdict] : null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+        <h3 className="text-sm font-semibold text-gray-800">Prospecto de Evolução do Paciente</h3>
+        <span className="ml-auto text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100 font-medium">IA</span>
+      </div>
+
+      {/* Seletor + botão */}
+      <div className="px-5 py-4 flex gap-3">
+        <div className="relative flex-1">
+          <select
+            value={clientId}
+            onChange={e => { setClientId(e.target.value); setResult(null); setError(null); }}
+            className="w-full appearance-none px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
+          >
+            <option value="">Selecionar paciente...</option>
+            {activeClients.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        </div>
+        <button
+          onClick={generate}
+          disabled={!clientId || loading}
+          className={cn(
+            "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex-shrink-0",
+            clientId && !loading
+              ? "bg-brand-500 hover:bg-brand-600 text-white shadow-sm"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          )}
+        >
+          {loading
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> Analisando...</>
+            : <><Sparkles className="w-4 h-4" /> Gerar análise</>}
+        </button>
+      </div>
+
+      {/* Erro */}
+      {error && (
+        <div className="mx-5 mb-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Resultado */}
+      {result && cfg && (
+        <div className="px-5 pb-5 space-y-4">
+          {/* Veredito */}
+          <div className={cn("flex items-center gap-4 rounded-2xl border px-5 py-4", cfg.bg)}>
+            <cfg.icon className={cn("w-8 h-8 flex-shrink-0", cfg.color)} strokeWidth={1.8} />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className={cn("text-lg font-bold", cfg.color)}>{result.clientName} — {cfg.label}</p>
+                <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", cfg.bg, cfg.color)}>
+                  {result.score}/10
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {result.sessionCount} sessões analisadas · {result.period}
+              </p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-xs text-gray-400">Humor</p>
+              <p className="text-xs font-semibold text-gray-600">{TREND_LABEL[result.mood_trend]}</p>
+            </div>
+          </div>
+
+          {/* Resumo */}
+          <div className="bg-gray-50 rounded-xl px-4 py-3">
+            <p className="text-sm text-gray-700 leading-relaxed">{result.summary}</p>
+          </div>
+
+          {/* Temas + progresso + desafios */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Temas recorrentes</p>
+              <div className="flex flex-wrap gap-1.5">
+                {result.key_themes.map(t => (
+                  <span key={t} className="text-xs bg-brand-50 text-brand-700 border border-brand-100 px-2.5 py-1 rounded-full font-medium">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Barra de progresso</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${result.score * 10}%`,
+                      backgroundColor: result.verdict === "evoluiu" ? "#22C55E" : result.verdict === "regrediu" ? "#EF4444" : "#F59E0B",
+                    }}
+                  />
+                </div>
+                <span className="text-sm font-bold text-gray-700 w-8 text-right">{result.score}/10</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                <p className="text-xs font-semibold text-green-700">Pontos de evolução</p>
+              </div>
+              <p className="text-xs text-green-800 leading-relaxed">{result.strengths}</p>
+            </div>
+            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <p className="text-xs font-semibold text-amber-700">Pontos de atenção</p>
+              </div>
+              <p className="text-xs text-amber-800 leading-relaxed">{result.challenges}</p>
+            </div>
+          </div>
+
+          {/* Recomendação */}
+          <div className="border border-brand-100 bg-brand-50 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Brain className="w-3.5 h-3.5 text-brand-500" />
+              <p className="text-xs font-semibold text-brand-700">Recomendação clínica</p>
+            </div>
+            <p className="text-xs text-brand-800 leading-relaxed">{result.recommendation}</p>
+          </div>
+        </div>
+      )}
+
+      {!result && !loading && !error && (
+        <div className="px-5 pb-6 text-center text-sm text-gray-400">
+          Selecione um paciente e clique em <strong>Gerar análise</strong> para ver o prospecto de evolução gerado pela IA.
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Drawer de drill-down ───────────────────────────────────────── */
 function DrillDrawer({ title, subtitle, onClose, children }: {
   title: string; subtitle?: string; onClose: () => void; children: React.ReactNode;
@@ -165,168 +348,43 @@ function DrillDrawer({ title, subtitle, onClose, children }: {
 
 /* ═══ Drill: Sessões ═══════════════════════════════════════════════ */
 function DrillSessions({ onClose }: { onClose: () => void }) {
-  const clinicCfg = getClinicSettings();
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo,   setDateTo]   = useState("");
-  const [search,   setSearch]   = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const sessions = useMemo(() => {
-    return mockSchedule
-      .filter(s => {
-        if (dateFrom && s.date < dateFrom) return false;
-        if (dateTo   && s.date > dateTo)   return false;
-        if (search && !s.clientName.toLowerCase().includes(search.toLowerCase())) return false;
-        return true;
-      })
-      .sort((a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime));
-  }, [dateFrom, dateTo, search]);
-
-  const selectedSession = selected ? mockSchedule.find(s => s.id === selected) : null;
-  const selectedClient  = selectedSession ? mockClients.find(c => c.id === selectedSession.clientId) : null;
-
   return (
-    <DrillDrawer
-      title="Sessões no semestre"
-      subtitle={`${sessions.length} sessões encontradas`}
-      onClose={onClose}
-    >
-      {/* Filtros */}
-      <div className="px-6 py-4 border-b border-gray-50 space-y-3 bg-gray-50/50">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por paciente..."
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-300" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-          <span className="text-xs text-gray-500 flex-shrink-0">Período:</span>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-300" />
-          <span className="text-xs text-gray-400">até</span>
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-300" />
-          {(dateFrom || dateTo || search) && (
-            <button onClick={() => { setDateFrom(""); setDateTo(""); setSearch(""); }}
-              className="text-xs text-brand-500 font-medium hover:text-brand-700 flex-shrink-0">Limpar</button>
-          )}
-        </div>
-      </div>
-
-      {/* Detalhe da sessão selecionada */}
-      {selectedSession && selectedClient && (
-        <div className="mx-6 mt-4 mb-1 bg-brand-50 border border-brand-200 rounded-2xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                style={{ backgroundColor: selectedSession.color }}>{selectedSession.initials}</div>
-              <div>
-                <p className="text-sm font-bold text-gray-900">{selectedSession.clientName}</p>
-                <p className="text-xs text-gray-500">
-                  {selectedSession.date.split("-").reverse().join("/")} · {selectedSession.startTime} · {selectedSession.duration}min
-                </p>
-              </div>
-            </div>
-            <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-white rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Status</p>
-              <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full border", STATUS_CLS[selectedSession.status])}>
-                {STATUS_LABEL[selectedSession.status]}
-              </span>
-            </div>
-            <div className="bg-white rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Valor</p>
-              <p className="text-sm font-bold text-gray-800">
-                R$ {(selectedSession.price ?? getClinicSettings().sessionPrice).toLocaleString("pt-BR")}
-                {selectedSession.price && <span className="text-[10px] text-amber-600 ml-1">custom</span>}
-              </p>
-            </div>
-            <div className="bg-white rounded-xl p-3">
-              <p className="text-xs text-gray-400 mb-1">Abordagem</p>
-              <p className="text-xs font-semibold text-gray-700">{selectedClient.approachLabel}</p>
-            </div>
-          </div>
-          {selectedSession.notes && (
-            <div className="bg-white rounded-xl px-4 py-2.5 text-xs text-gray-600">{selectedSession.notes}</div>
-          )}
-          <div className="flex gap-2 pt-1">
-            <Link href={`/dashboard/evolutions/new?clientId=${selectedSession.clientId}`} onClick={onClose}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors">
-              <FileText className="w-3.5 h-3.5" /> Registrar evolução
-            </Link>
-            <Link href={`/dashboard/clients/${selectedSession.clientId}`} onClick={onClose}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors">
-              <Users className="w-3.5 h-3.5" /> Ver prontuário
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Tabela */}
-      <div className="divide-y divide-gray-50">
-        {sessions.length === 0 ? (
-          <div className="px-6 py-16 text-center text-sm text-gray-400">Nenhuma sessão encontrada</div>
-        ) : sessions.map(s => (
-          <button key={s.id} onClick={() => setSelected(s.id === selected ? null : s.id)}
-            className={cn(
-              "w-full flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 transition-colors text-left",
-              selected === s.id && "bg-brand-50/60"
-            )}>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-              style={{ backgroundColor: s.color }}>{s.initials}</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800">{s.clientName}</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {s.date.split("-").reverse().join("/")} · {s.startTime} · {s.duration}min
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs font-semibold text-gray-600">
-                R$ {(s.price ?? clinicCfg.sessionPrice).toLocaleString("pt-BR")}
-              </span>
-              <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", STATUS_CLS[s.status])}>
-                {STATUS_LABEL[s.status]}
-              </span>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Rodapé com totais */}
-      <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-between text-xs text-gray-500">
-        <span>{sessions.length} sessões</span>
-        <span className="font-semibold text-gray-700">
-          Total: R$ {sessions.reduce((a, s) => a + (s.price ?? clinicCfg.sessionPrice), 0).toLocaleString("pt-BR")}
-        </span>
+    <DrillDrawer title="Sessões no semestre" subtitle="Agenda não sincronizada com banco" onClose={onClose}>
+      <div className="flex flex-col items-center justify-center h-64 gap-3 text-center px-8">
+        <CalendarDays className="w-10 h-10 text-gray-200" strokeWidth={1.5} />
+        <p className="text-sm font-semibold text-gray-500">Agenda ainda não persistida</p>
+        <p className="text-xs text-gray-400 leading-relaxed">
+          As sessões agendadas ficam apenas em memória local. Em breve haverá sincronização com o banco de dados.
+        </p>
       </div>
     </DrillDrawer>
   );
 }
 
 /* ═══ Drill: Clientes ══════════════════════════════════════════════ */
-function DrillClients({ onClose }: { onClose: () => void }) {
-  const activeClients = mockClients.filter(c => c.status === "ACTIVE");
+function DrillClients({ onClose, clients, evolutions, supervisions }: {
+  onClose: () => void;
+  clients: Client[];
+  evolutions: EvolutionWithClient[];
+  supervisions: Supervision[];
+}) {
+  const activeClients = clients.filter(c => c.status === "ACTIVE");
   return (
     <DrillDrawer title="Clientes ativos" subtitle={`${activeClients.length} clientes em acompanhamento`} onClose={onClose}>
       <div className="divide-y divide-gray-50">
         {activeClients.map(c => {
-          const evols = mockEvolutions.filter(e => e.clientId === c.id).length;
-          const sups  = mockSupervisions.filter(s => s.clientName === c.name).length;
+          const evols = evolutions.filter(e => e.client_id === c.id).length;
+          const sups  = supervisions.filter(s => s.client_id === c.id).length;
           return (
             <Link key={c.id} href={`/dashboard/clients/${c.id}`} onClick={onClose}
               className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
               <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ backgroundColor: c.color }}>{c.initials}</div>
+                style={{ backgroundColor: c.color ?? "#924B92" }}>{c.initials ?? c.name[0]}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-800">{c.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{c.approachLabel} · {c.sessionFrequency} · {c.sessionDuration}min</p>
+                <p className="text-xs text-gray-400 mt-0.5">{c.approach_label} · {c.session_frequency} · {c.session_duration}min</p>
                 <div className="flex items-center gap-3 mt-1.5">
-                  <span className="text-[10px] text-gray-400">{c.totalSessions} sessões</span>
+                  <span className="text-[10px] text-gray-400">{c.total_sessions} sessões</span>
                   <span className="text-[10px] text-gray-300">·</span>
                   <span className="text-[10px] text-green-600">{evols} evoluções</span>
                   {sups > 0 && <>
@@ -336,9 +394,9 @@ function DrillClients({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                {c.nextSession && (
+                {c.next_session && (
                   <span className="text-[10px] text-gray-400">
-                    próx. {new Date(c.nextSession).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                    próx. {new Date(c.next_session).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                   </span>
                 )}
                 <ChevronRight className="w-4 h-4 text-gray-300" />
@@ -346,6 +404,9 @@ function DrillClients({ onClose }: { onClose: () => void }) {
             </Link>
           );
         })}
+        {activeClients.length === 0 && (
+          <div className="px-6 py-16 text-center text-sm text-gray-400">Nenhum cliente ativo</div>
+        )}
       </div>
       <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
         <Link href="/dashboard/clients" onClick={onClose}
@@ -358,24 +419,25 @@ function DrillClients({ onClose }: { onClose: () => void }) {
 }
 
 /* ═══ Drill: Horas Clínicas ════════════════════════════════════════ */
-function DrillHours({ onClose }: { onClose: () => void }) {
-  const clinicCfg    = getClinicSettings();
-  const totalSessions = MONTHS.reduce((a, m) => a + m.sessions, 0);
+function DrillHours({ onClose, clients, months }: {
+  onClose: () => void;
+  clients: Client[];
+  months: MonthData[];
+}) {
+  const clinicCfg     = getClinicSettings();
+  const totalSessions = months.reduce((a, m) => a + m.sessions, 0);
   const totalHours    = Math.round(totalSessions * clinicCfg.sessionDuration / 60);
   const totalMin      = totalSessions * clinicCfg.sessionDuration;
 
-  /* Horas por cliente (simulado com base em mockClients e totalSessions) */
-  const activeClients = mockClients.filter(c => c.status === "ACTIVE");
-  const perClient = activeClients.map(c => ({
-    ...c,
-    sessions: Math.round(totalSessions / activeClients.length * (0.8 + Math.random() * 0.4)),
-    hours: 0,
-  })).map(c => ({ ...c, hours: Math.round(c.sessions * clinicCfg.sessionDuration / 60) }));
+  const activeClients = clients.filter(c => c.status === "ACTIVE");
+  const perClient = activeClients.map(c => {
+    const sess = c.total_sessions ?? 0;
+    return { ...c, sessions: sess, hours: Math.round(sess * (c.session_duration ?? clinicCfg.sessionDuration) / 60) };
+  }).sort((a, b) => b.hours - a.hours);
   const maxH = Math.max(...perClient.map(c => c.hours), 1);
 
   return (
-    <DrillDrawer title="Horas clínicas" subtitle={`${totalHours}h em ${totalSessions} sessões` } onClose={onClose}>
-      {/* Resumo */}
+    <DrillDrawer title="Horas clínicas" subtitle={`${totalHours}h em ${totalSessions} sessões`} onClose={onClose}>
       <div className="px-6 py-5 grid grid-cols-3 gap-4 border-b border-gray-50">
         {[
           { label: "Total de horas", value: `${totalHours}h`, sub: `${totalMin} minutos` },
@@ -390,21 +452,20 @@ function DrillHours({ onClose }: { onClose: () => void }) {
         ))}
       </div>
 
-      {/* Por mês */}
       <div className="px-6 pt-5 pb-2">
         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Por mês</p>
         <div className="space-y-2">
-          {MONTHS.map((m, i) => {
+          {months.map((m, i) => {
             const h   = Math.round(m.sessions * clinicCfg.sessionDuration / 60);
-            const pct = Math.round(h / totalHours * 100);
-            const isLast = i === MONTHS.length - 1;
+            const pct = totalHours > 0 ? Math.round(h / totalHours * 100) : 0;
+            const isLast = i === months.length - 1;
             return (
               <div key={m.label} className={cn("rounded-xl p-3", isLast ? "bg-brand-50 border border-brand-100" : "bg-gray-50")}>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className={cn("text-xs font-semibold", isLast ? "text-brand-700" : "text-gray-700")}>
                     {m.full} {isLast && <span className="text-brand-400 font-normal">(atual)</span>}
                   </span>
-                  <span className="text-xs font-bold text-gray-700">{h}h · {m.sessions} sessões</span>
+                  <span className="text-xs font-bold text-gray-700">{h}h · {m.sessions} evoluções</span>
                 </div>
                 <div className="h-2 bg-white rounded-full overflow-hidden border border-gray-100">
                   <div className="h-full rounded-full transition-all"
@@ -416,24 +477,26 @@ function DrillHours({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Por cliente */}
       <div className="px-6 pt-5 pb-6">
         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Por paciente</p>
         <div className="space-y-3">
-          {perClient.sort((a, b) => b.hours - a.hours).map(c => (
+          {perClient.map(c => (
             <div key={c.id}>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
-                  style={{ backgroundColor: c.color }}>{c.initials}</div>
+                  style={{ backgroundColor: c.color ?? "#924B92" }}>{c.initials ?? c.name[0]}</div>
                 <span className="text-xs font-medium text-gray-700 flex-1">{c.name}</span>
                 <span className="text-xs font-bold text-gray-600">{c.hours}h ({c.sessions} sessões)</span>
               </div>
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full"
-                  style={{ width: `${Math.round(c.hours / maxH * 100)}%`, backgroundColor: c.color }} />
+                  style={{ width: `${Math.round(c.hours / maxH * 100)}%`, backgroundColor: c.color ?? "#924B92" }} />
               </div>
             </div>
           ))}
+          {perClient.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-4">Nenhum cliente ativo</p>
+          )}
         </div>
       </div>
     </DrillDrawer>
@@ -441,50 +504,63 @@ function DrillHours({ onClose }: { onClose: () => void }) {
 }
 
 /* ═══ Drill: Evoluções ═════════════════════════════════════════════ */
-function DrillEvolutions({ onClose }: { onClose: () => void }) {
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
+function DrillEvolutions({ onClose, evolutions }: {
+  onClose: () => void;
+  evolutions: EvolutionWithClient[];
+}) {
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   const clientsWithEvolutions = useMemo(() => {
-    const map: Record<string, { clientId: string; clientName: string; initials: string; color: string; evolutions: typeof mockEvolutions }> = {};
-    mockEvolutions.forEach(e => {
-      if (!map[e.clientId]) map[e.clientId] = { clientId: e.clientId, clientName: e.clientName, initials: e.initials, color: e.color, evolutions: [] };
-      map[e.clientId].evolutions.push(e);
+    const map: Record<string, {
+      clientId: string; clientName: string; initials: string; color: string;
+      evolutions: EvolutionWithClient[];
+    }> = {};
+    evolutions.forEach(e => {
+      if (!map[e.client_id]) map[e.client_id] = {
+        clientId: e.client_id,
+        clientName: e.clients?.name ?? "Cliente",
+        initials: e.clients?.initials ?? e.clients?.name?.[0] ?? "?",
+        color: e.clients?.color ?? "#924B92",
+        evolutions: [],
+      };
+      map[e.client_id].evolutions.push(e);
     });
     return Object.values(map).sort((a, b) => b.evolutions.length - a.evolutions.length);
-  }, []);
+  }, [evolutions]);
 
-  const selected = selectedClient ? clientsWithEvolutions.find(c => c.clientId === selectedClient) : null;
+  const selected = selectedClientId ? clientsWithEvolutions.find(c => c.clientId === selectedClientId) : null;
 
   return (
     <DrillDrawer
       title={selected ? `Evoluções — ${selected.clientName}` : "Evoluções registradas"}
-      subtitle={selected ? `${selected.evolutions.length} registros` : `${mockEvolutions.length} evoluções em ${clientsWithEvolutions.length} pacientes`}
+      subtitle={selected
+        ? `${selected.evolutions.length} registros`
+        : `${evolutions.length} evoluções em ${clientsWithEvolutions.length} pacientes`}
       onClose={onClose}
     >
-      {/* Breadcrumb */}
       {selected && (
         <div className="px-6 pt-4 pb-0">
-          <button onClick={() => setSelectedClient(null)}
+          <button onClick={() => setSelectedClientId(null)}
             className="flex items-center gap-1.5 text-xs text-brand-500 font-medium hover:text-brand-700">
             ← Todos os pacientes
           </button>
         </div>
       )}
 
-      {/* Lista de pacientes */}
       {!selected && (
         <div className="divide-y divide-gray-50">
           {clientsWithEvolutions.map(c => {
-            const lastEv = c.evolutions.sort((a, b) => b.sessionDate.getTime() - a.sessionDate.getTime())[0];
+            const sorted = [...c.evolutions].sort((a, b) => b.session_date.localeCompare(a.session_date));
+            const lastEv = sorted[0];
             return (
-              <button key={c.clientId} onClick={() => setSelectedClient(c.clientId)}
+              <button key={c.clientId} onClick={() => setSelectedClientId(c.clientId)}
                 className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-left">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                   style={{ backgroundColor: c.color }}>{c.initials}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-800">{c.clientName}</p>
                   <p className="text-xs text-gray-400 mt-0.5 truncate">
-                    Última: {lastEv.hypothesis || lastEv.content.slice(0, 40)}…
+                    Última: {lastEv?.hypothesis || lastEv?.content?.slice(0, 40) || "—"}…
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -496,35 +572,36 @@ function DrillEvolutions({ onClose }: { onClose: () => void }) {
               </button>
             );
           })}
+          {clientsWithEvolutions.length === 0 && (
+            <div className="px-6 py-16 text-center text-sm text-gray-400">Nenhuma evolução registrada</div>
+          )}
         </div>
       )}
 
-      {/* Lista de evoluções do paciente */}
       {selected && (
         <div className="divide-y divide-gray-50 mt-3">
-          {selected.evolutions
-            .sort((a, b) => b.sessionDate.getTime() - a.sessionDate.getTime())
+          {[...selected.evolutions]
+            .sort((a, b) => b.session_date.localeCompare(a.session_date))
             .map(ev => (
               <Link key={ev.id} href={`/dashboard/evolutions/${ev.id}`} onClick={onClose}
                 className="flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div className="flex-shrink-0 mt-1">
-                  <div className={cn(
-                    "w-2.5 h-2.5 rounded-full mt-1.5",
-                  )} style={{ backgroundColor: MOOD_COLOR[ev.mood] }} />
+                  <div className="w-2.5 h-2.5 rounded-full mt-1.5"
+                    style={{ backgroundColor: MOOD_COLOR[ev.mood ?? 3] }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="text-xs text-gray-400">
-                      {ev.sessionDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                      {new Date(ev.session_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
                     </p>
                     <span className="text-xs text-gray-300">·</span>
-                    <span className="text-xs">{MOOD_EMOJI[ev.mood]} {MOOD_LABEL[ev.mood]}</span>
+                    <span className="text-xs">{MOOD_EMOJI[ev.mood ?? 3]} {MOOD_LABEL[ev.mood ?? 3]}</span>
                   </div>
                   {ev.hypothesis && (
                     <p className="text-sm font-semibold text-brand-700">{ev.hypothesis}</p>
                   )}
                   <p className="text-xs text-gray-500 line-clamp-2 mt-0.5 leading-relaxed">{ev.content}</p>
-                  {ev.aiHypothesis && (
+                  {ev.ai_hypothesis && (
                     <span className="inline-flex items-center gap-1 text-[10px] text-purple-500 mt-1">
                       <Sparkles className="w-2.5 h-2.5" /> Hipótese IA
                     </span>
@@ -541,31 +618,75 @@ function DrillEvolutions({ onClose }: { onClose: () => void }) {
 
 /* ─── Página principal ───────────────────────────────────────────── */
 export default function ReportsPage() {
+  const { user } = useAuthStore();
   const [tab, setTab]           = useState<Tab>("geral");
   const [drillDown, setDrillDown] = useState<DrillType | null>(null);
+
+  const [clients,     setClients]     = useState<Client[]>([]);
+  const [evolutions,  setEvolutions]  = useState<EvolutionWithClient[]>([]);
+  const [supervisions, setSupervisions] = useState<Supervision[]>([]);
+  const [loading,     setLoading]     = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    Promise.all([
+      getClients(user.id),
+      getEvolutions(user.id),
+      getSupervisions(user.id),
+    ]).then(([c, e, s]) => {
+      setClients(c);
+      setEvolutions(e);
+      setSupervisions(s);
+    }).finally(() => setLoading(false));
+  }, [user?.id]);
 
   function toggleDrill(type: DrillType) {
     setDrillDown(prev => prev === type ? null : type);
   }
 
-  const clinicCfg       = useMemo(() => getClinicSettings(), []);
+  const clinicCfg       = getClinicSettings();
   const sessionPrice    = clinicCfg.sessionPrice;
   const sessionDuration = clinicCfg.sessionDuration;
 
-  const activeClients    = mockClients.filter(c => c.status === "ACTIVE").length;
+  /* ── Meses (últimos 6) calculados a partir de evoluções reais ─── */
+  const MONTHS: MonthData[] = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const monthEvols = evolutions.filter(e => e.session_date.startsWith(ym));
+      const monthClients = clients.filter(c => c.start_date?.startsWith(ym));
+      return {
+        label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+        full:  d.toLocaleDateString("pt-BR", { month: "long" }),
+        sessions:   monthEvols.length,
+        evolutions: monthEvols.length,
+        newClients: monthClients.length,
+        ym,
+      };
+    });
+  }, [evolutions, clients]);
+
+  const CURRENT_MONTH = MONTHS[MONTHS.length - 1];
+  const PREV_MONTH    = MONTHS[MONTHS.length - 2];
+
+  const activeClients    = clients.filter(c => c.status === "ACTIVE").length;
   const totalSessions    = MONTHS.reduce((a, m) => a + m.sessions, 0);
-  const avgMood          = +(mockEvolutions.reduce((a, e) => a + e.mood, 0) / mockEvolutions.length).toFixed(1);
+  const totalEvolutions  = evolutions.length;
+  const avgMood          = evolutions.length > 0
+    ? +(evolutions.reduce((a, e) => a + (e.mood ?? 3), 0) / evolutions.length).toFixed(1)
+    : 3;
   const totalHours       = Math.round(totalSessions * sessionDuration / 60);
   const estimatedRevenue = totalSessions * sessionPrice;
 
   const approachDist = useMemo(() => {
     const map: Record<string, { label: string; value: number; approach: string }> = {};
-    mockClients.filter(c => c.status === "ACTIVE").forEach(c => {
-      if (!map[c.approach]) map[c.approach] = { label: c.approachLabel, value: 0, approach: c.approach };
+    clients.filter(c => c.status === "ACTIVE").forEach(c => {
+      if (!map[c.approach]) map[c.approach] = { label: c.approach_label ?? APPROACH_LABEL[c.approach] ?? c.approach, value: 0, approach: c.approach };
       map[c.approach].value++;
     });
     return Object.values(map).sort((a, b) => b.value - a.value);
-  }, []);
+  }, [clients]);
 
   const donutSegments = approachDist.map(a => ({
     label: a.label, value: a.value, color: APPROACH_COLORS[a.approach] || "#924B92",
@@ -573,32 +694,31 @@ export default function ReportsPage() {
 
   const moodDist = useMemo(() => {
     const cnt = [0, 0, 0, 0, 0, 0];
-    mockEvolutions.forEach(e => { if (e.mood >= 1 && e.mood <= 5) cnt[e.mood]++; });
+    evolutions.forEach(e => { const m = e.mood ?? 3; if (m >= 1 && m <= 5) cnt[m]++; });
     return [1, 2, 3, 4, 5].map(i => ({ mood: i, count: cnt[i] }));
-  }, []);
+  }, [evolutions]);
 
-  const sessionStatusDist = useMemo(() => {
-    const cnt: Record<string, number> = { confirmed: 0, pending: 0, done: 0, cancelled: 0 };
-    mockSchedule.forEach(s => { cnt[s.status] = (cnt[s.status] || 0) + 1; });
-    return [
-      { label: "Realizadas",  value: cnt.done,      color: "#22C55E" },
-      { label: "Confirmadas", value: cnt.confirmed,  color: "#3B82F6" },
-      { label: "Pendentes",   value: cnt.pending,    color: "#F59E0B" },
-      { label: "Canceladas",  value: cnt.cancelled,  color: "#EF4444" },
-    ];
-  }, []);
+  const sessionStatusDist = [
+    { label: "Realizadas",  value: evolutions.length, color: "#22C55E" },
+    { label: "Confirmadas", value: 0, color: "#3B82F6" },
+    { label: "Pendentes",   value: 0, color: "#F59E0B" },
+    { label: "Canceladas",  value: 0, color: "#EF4444" },
+  ];
 
   const supByApproach = useMemo(() => {
     const map: Record<string, number> = {};
-    mockSupervisions.forEach(s => { map[s.approach] = (map[s.approach] || 0) + 1; });
-    return Object.entries(map).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
-  }, []);
+    supervisions.forEach(s => {
+      if (s.approach) map[s.approach] = (map[s.approach] || 0) + 1;
+    });
+    return Object.entries(map)
+      .map(([key, count]) => ({ label: APPROACH_LABEL[key] ?? key, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [supervisions]);
 
-  const maxSup = Math.max(...supByApproach.map(s => s.count), 1);
-  const sessionTrend   = CURRENT_MONTH.sessions  >= PREV_MONTH.sessions  ? "up" : "down" as const;
+  const maxSup         = Math.max(...supByApproach.map(s => s.count), 1);
+  const sessionTrend   = CURRENT_MONTH.sessions >= PREV_MONTH.sessions ? "up" : "down" as const;
   const sessionDelta   = Math.abs(CURRENT_MONTH.sessions - PREV_MONTH.sessions);
   const evolutionTrend = CURRENT_MONTH.evolutions >= PREV_MONTH.evolutions ? "up" : "down" as const;
-  const totalEvolutions = MONTHS.reduce((a, m) => a + m.evolutions, 0);
 
   const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: "geral",    label: "Visão Geral",  icon: BarChart2 },
@@ -606,6 +726,12 @@ export default function ReportsPage() {
     { id: "clientes", label: "Clientes",     icon: Users },
     { id: "clinico",  label: "Clínico",      icon: Brain },
   ];
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="w-7 h-7 text-brand-400 animate-spin" />
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -638,14 +764,13 @@ export default function ReportsPage() {
       {/* ══ TAB: VISÃO GERAL ══ */}
       {tab === "geral" && (
         <div className="space-y-6">
-          {/* KPIs clicáveis */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard icon={CalendarDays} label="Sessões no semestre" value={totalSessions}
               sub={`${CURRENT_MONTH.sessions} este mês`} color="bg-blue-50 text-blue-500"
               trend={sessionTrend} trendLabel={`${sessionDelta} vs mês anterior`}
               onClick={() => toggleDrill("sessions")} active={drillDown === "sessions"} />
             <KpiCard icon={Users} label="Clientes ativos" value={activeClients}
-              sub={`${mockClients.length} cadastrados`} color="bg-brand-50 text-brand-500"
+              sub={`${clients.length} cadastrados`} color="bg-brand-50 text-brand-500"
               trend="flat" trendLabel="estável"
               onClick={() => toggleDrill("clients")} active={drillDown === "clients"} />
             <KpiCard icon={Clock} label="Horas clínicas" value={`${totalHours}h`}
@@ -657,48 +782,50 @@ export default function ReportsPage() {
               onClick={() => toggleDrill("evolutions")} active={drillDown === "evolutions"} />
           </div>
 
-          {/* Hint clique */}
           {!drillDown && (
             <p className="text-xs text-gray-400 text-center -mt-2">
-              💡 Clique em qualquer card para ver o detalhamento
+              Clique em qualquer card para ver o detalhamento
             </p>
           )}
 
-          {/* Gráficos */}
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-800">Sessões por mês</h3>
+                <h3 className="text-sm font-semibold text-gray-800">Evoluções por mês</h3>
                 <span className="text-xs text-gray-400">últimos 6 meses</span>
               </div>
               <BarChart data={MONTHS} valueKey="sessions" color="#924B92" />
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="text-sm font-semibold text-gray-800 mb-4">Clientes por abordagem</h3>
-              <div className="flex items-center gap-6">
-                <DonutChart segments={donutSegments} size={140} />
-                <div className="flex-1 space-y-2">
-                  {donutSegments.map(s => (
-                    <div key={s.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
-                        <span className="text-xs text-gray-600 font-medium">{s.label}</span>
+              {donutSegments.length > 0 ? (
+                <div className="flex items-center gap-6">
+                  <DonutChart segments={donutSegments} size={140} />
+                  <div className="flex-1 space-y-2">
+                    {donutSegments.map(s => (
+                      <div key={s.label} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+                          <span className="text-xs text-gray-600 font-medium">{s.label}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-gray-800">{s.value}</span>
+                          <span className="text-xs text-gray-400">
+                            {Math.round(s.value / donutSegments.reduce((a, x) => a + x.value, 0) * 100)}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-800">{s.value}</span>
-                        <span className="text-xs text-gray-400">
-                          {Math.round(s.value / donutSegments.reduce((a, x) => a + x.value, 0) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-400 text-center py-8">Nenhum cliente ativo</p>
+              )}
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-4">Status das sessões agendadas</h3>
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Status das sessões registradas</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {sessionStatusDist.map(s => {
                 const total = sessionStatusDist.reduce((a, x) => a + x.value, 0) || 1;
@@ -720,36 +847,41 @@ export default function ReportsPage() {
       {tab === "producao" && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={CalendarDays} label="Sessões este mês" value={CURRENT_MONTH.sessions}
-              sub="meta estimada: 20" color="bg-blue-50 text-blue-500"
+            <KpiCard icon={CalendarDays} label="Evoluções este mês" value={CURRENT_MONTH.sessions}
+              sub="via registros clínicos" color="bg-blue-50 text-blue-500"
               trend={sessionTrend} trendLabel={`${sessionDelta} vs mês passado`} />
             <KpiCard icon={Clock} label="Horas trabalhadas" value={`${Math.round(CURRENT_MONTH.sessions * sessionDuration / 60)}h`}
-              sub={`${sessionDuration}min por sessão`} color="bg-purple-50 text-purple-500" trend="up" trendLabel="+3h" />
+              sub={`${sessionDuration}min por sessão`} color="bg-purple-50 text-purple-500" trend="up" trendLabel="" />
             <KpiCard icon={TrendingUp} label="Receita estimada" value={`R$ ${(CURRENT_MONTH.sessions * sessionPrice).toLocaleString("pt-BR")}`}
               sub={`R$ ${sessionPrice}/sessão`} color="bg-green-50 text-green-500"
               trend={sessionTrend} trendLabel={sessionTrend === "up" ? "acima do mês ant." : "abaixo do mês ant."} />
             <KpiCard icon={TrendingUp} label="Receita semestral" value={`R$ ${estimatedRevenue.toLocaleString("pt-BR")}`}
-              sub="projeção estimada" color="bg-brand-50 text-brand-500" trend="up" trendLabel="+18% vs sem. ant." />
+              sub="projeção estimada" color="bg-brand-50 text-brand-500" trend="up" trendLabel="" />
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h3 className="text-sm font-semibold text-gray-800 mb-1">Sessões realizadas</h3>
+              <h3 className="text-sm font-semibold text-gray-800 mb-1">Evoluções registradas</h3>
               <p className="text-xs text-gray-400 mb-4">Evolução mensal dos últimos 6 meses</p>
               <BarChart data={MONTHS} valueKey="sessions" color="#3B82F6" />
               <div className="flex justify-between mt-3 pt-3 border-t border-gray-50 text-center">
                 <div><p className="text-xs text-gray-400">Total</p><p className="text-base font-bold text-gray-800">{totalSessions}</p></div>
                 <div><p className="text-xs text-gray-400">Média/mês</p><p className="text-base font-bold text-gray-800">{(totalSessions / 6).toFixed(0)}</p></div>
-                <div><p className="text-xs text-gray-400">Melhor mês</p><p className="text-base font-bold text-brand-600">{MONTHS.reduce((b, m) => m.sessions > b.sessions ? m : b).full}</p></div>
+                <div>
+                  <p className="text-xs text-gray-400">Melhor mês</p>
+                  <p className="text-base font-bold text-brand-600">
+                    {MONTHS.reduce((b, m) => m.sessions > b.sessions ? m : b, MONTHS[0]).full}
+                  </p>
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h3 className="text-sm font-semibold text-gray-800 mb-1">Evoluções registradas</h3>
-              <p className="text-xs text-gray-400 mb-4">Produtividade de documentação clínica</p>
-              <BarChart data={MONTHS} valueKey="evolutions" color="#22C55E" />
+              <h3 className="text-sm font-semibold text-gray-800 mb-1">Novos clientes por mês</h3>
+              <p className="text-xs text-gray-400 mb-4">Captação no semestre</p>
+              <BarChart data={MONTHS} valueKey="newClients" color="#22C55E" />
               <div className="flex justify-between mt-3 pt-3 border-t border-gray-50 text-center">
-                <div><p className="text-xs text-gray-400">Total</p><p className="text-base font-bold text-gray-800">{totalEvolutions}</p></div>
-                <div><p className="text-xs text-gray-400">Taxa</p><p className="text-base font-bold text-gray-800">{Math.round(totalEvolutions / totalSessions * 100)}%</p></div>
-                <div><p className="text-xs text-gray-400">Este mês</p><p className="text-base font-bold text-green-600">{CURRENT_MONTH.evolutions}</p></div>
+                <div><p className="text-xs text-gray-400">Total</p><p className="text-base font-bold text-gray-800">{MONTHS.reduce((a, m) => a + m.newClients, 0)}</p></div>
+                <div><p className="text-xs text-gray-400">Ativos</p><p className="text-base font-bold text-gray-800">{activeClients}</p></div>
+                <div><p className="text-xs text-gray-400">Total cadastros</p><p className="text-base font-bold text-green-600">{clients.length}</p></div>
               </div>
             </div>
           </div>
@@ -759,7 +891,7 @@ export default function ReportsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    {["Mês","Sessões","Evoluções","Taxa reg.","Horas","Receita est."].map(h => (
+                    {["Mês","Evoluções","Horas","Receita est."].map(h => (
                       <th key={h} className={cn("px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide", h === "Mês" ? "text-left" : "text-right")}>{h}</th>
                     ))}
                   </tr>
@@ -767,7 +899,6 @@ export default function ReportsPage() {
                 <tbody className="divide-y divide-gray-50">
                   {MONTHS.map((m, i) => {
                     const isLast = i === MONTHS.length - 1;
-                    const taxa   = Math.round(m.evolutions / m.sessions * 100);
                     return (
                       <tr key={m.label} className={cn("hover:bg-gray-50 transition-colors", isLast && "bg-brand-50/30")}>
                         <td className="px-5 py-3.5">
@@ -776,12 +907,6 @@ export default function ReportsPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5 text-right font-semibold text-gray-800">{m.sessions}</td>
-                        <td className="px-5 py-3.5 text-right text-gray-600">{m.evolutions}</td>
-                        <td className="px-5 py-3.5 text-right">
-                          <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full",
-                            taxa >= 80 ? "bg-green-50 text-green-700" : taxa >= 60 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-600"
-                          )}>{taxa}%</span>
-                        </td>
                         <td className="px-5 py-3.5 text-right text-gray-600">{Math.round(m.sessions * sessionDuration / 60)}h</td>
                         <td className="px-5 py-3.5 text-right font-medium text-gray-700">R$ {(m.sessions * sessionPrice).toLocaleString("pt-BR")}</td>
                       </tr>
@@ -792,8 +917,6 @@ export default function ReportsPage() {
                   <tr className="bg-gray-50 border-t border-gray-200">
                     <td className="px-5 py-3 text-xs font-bold text-gray-600 uppercase">Total</td>
                     <td className="px-5 py-3 text-right font-bold text-gray-800">{totalSessions}</td>
-                    <td className="px-5 py-3 text-right font-bold text-gray-800">{totalEvolutions}</td>
-                    <td className="px-5 py-3 text-right"><span className="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">{Math.round(totalEvolutions / totalSessions * 100)}%</span></td>
                     <td className="px-5 py-3 text-right font-bold text-gray-800">{totalHours}h</td>
                     <td className="px-5 py-3 text-right font-bold text-brand-700">R$ {estimatedRevenue.toLocaleString("pt-BR")}</td>
                   </tr>
@@ -808,36 +931,40 @@ export default function ReportsPage() {
       {tab === "clientes" && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Users} label="Clientes ativos" value={activeClients} color="bg-brand-50 text-brand-500" trend="up" trendLabel="+1 este mês" />
-            <KpiCard icon={Users} label="Em lista de espera" value={mockClients.filter(c => c.status === "WAITLIST").length} sub="aguardando vaga" color="bg-amber-50 text-amber-500" trend="flat" trendLabel="sem mudança" />
-            <KpiCard icon={Clock} label="Tempo médio em acomp." value="7 meses" sub="entre clientes ativos" color="bg-purple-50 text-purple-500" />
-            <KpiCard icon={CalendarDays} label="Sessões / cliente" value={(totalSessions / Math.max(activeClients, 1)).toFixed(0)} sub="média no semestre" color="bg-blue-50 text-blue-500" />
+            <KpiCard icon={Users} label="Clientes ativos" value={activeClients} color="bg-brand-50 text-brand-500" trend="up" trendLabel="" />
+            <KpiCard icon={Users} label="Em lista de espera" value={clients.filter(c => c.status === "WAITLIST").length} sub="aguardando vaga" color="bg-amber-50 text-amber-500" trend="flat" trendLabel="sem mudança" />
+            <KpiCard icon={Clock} label="Tempo médio em acomp." value="—" sub="entre clientes ativos" color="bg-purple-50 text-purple-500" />
+            <KpiCard icon={CalendarDays} label="Evoluções / cliente" value={(totalEvolutions / Math.max(activeClients, 1)).toFixed(0)} sub="média no semestre" color="bg-blue-50 text-blue-500" />
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="text-sm font-semibold text-gray-800 mb-4">Distribuição por abordagem</h3>
-              <div className="flex items-center gap-6">
-                <DonutChart segments={donutSegments} size={160} />
-                <div className="flex-1 space-y-3">
-                  {donutSegments.map(s => {
-                    const pct = Math.round(s.value / donutSegments.reduce((a, x) => a + x.value, 0) * 100);
-                    return (
-                      <div key={s.label}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                            <span className="text-xs font-medium text-gray-700">{s.label}</span>
+              {donutSegments.length > 0 ? (
+                <div className="flex items-center gap-6">
+                  <DonutChart segments={donutSegments} size={160} />
+                  <div className="flex-1 space-y-3">
+                    {donutSegments.map(s => {
+                      const pct = Math.round(s.value / donutSegments.reduce((a, x) => a + x.value, 0) * 100);
+                      return (
+                        <div key={s.label}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                              <span className="text-xs font-medium text-gray-700">{s.label}</span>
+                            </div>
+                            <span className="text-xs font-bold text-gray-700">{s.value} ({pct}%)</span>
                           </div>
-                          <span className="text-xs font-bold text-gray-700">{s.value} ({pct}%)</span>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+                          </div>
                         </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: s.color }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-400 text-center py-8">Nenhum cliente ativo</p>
+              )}
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
@@ -845,16 +972,20 @@ export default function ReportsPage() {
                 <Link href="/dashboard/clients" className="text-xs text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1">Ver todos <ArrowUpRight className="w-3 h-3" /></Link>
               </div>
               <div className="divide-y divide-gray-50">
-                {mockClients.filter(c => c.status === "ACTIVE").map(c => (
+                {clients.filter(c => c.status === "ACTIVE").map(c => (
                   <Link key={c.id} href={`/dashboard/clients/${c.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ backgroundColor: c.color }}>{c.initials}</div>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: c.color ?? "#924B92" }}>{c.initials ?? c.name[0]}</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
-                      <p className="text-xs text-gray-400">{c.approachLabel} · {c.totalSessions} sessões</p>
+                      <p className="text-xs text-gray-400">{c.approach_label} · {c.total_sessions} sessões</p>
                     </div>
-                    <span className="text-xs text-gray-400 flex-shrink-0">{c.sessionFrequency}</span>
+                    <span className="text-xs text-gray-400 flex-shrink-0">{c.session_frequency}</span>
                   </Link>
                 ))}
+                {clients.filter(c => c.status === "ACTIVE").length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-8">Nenhum cliente ativo</p>
+                )}
               </div>
             </div>
           </div>
@@ -870,10 +1001,14 @@ export default function ReportsPage() {
       {tab === "clinico" && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={FileText} label="Tom médio das sessões" value={`${avgMood}/5`} sub={`${MOOD_LABEL[Math.round(avgMood)]} em média`} color="bg-green-50 text-green-500" trend="up" trendLabel="+0.3 vs ant." />
-            <KpiCard icon={Sparkles} label="Supervisões IA" value={mockSupervisions.length} sub={`${mockSupervisions.reduce((a, s) => a + s.messagesCount, 0)} mensagens`} color="bg-brand-50 text-brand-500" trend="up" trendLabel="+1 este mês" />
-            <KpiCard icon={Brain} label="Abordagens consultadas" value={supByApproach.length} sub="em supervisões" color="bg-purple-50 text-purple-500" />
-            <KpiCard icon={TrendingUp} label="Taxa de evolução" value={`${Math.round(mockEvolutions.length / totalSessions * 100)}%`} sub="sessões com registro" color="bg-blue-50 text-blue-500" trend="up" trendLabel="+5% vs ant." />
+            <KpiCard icon={FileText} label="Tom médio das sessões" value={`${avgMood}/5`}
+              sub={`${MOOD_LABEL[Math.round(avgMood)]} em média`} color="bg-green-50 text-green-500" trend="up" trendLabel="" />
+            <KpiCard icon={Sparkles} label="Supervisões IA" value={supervisions.length}
+              sub={`${supervisions.length} sessões`} color="bg-brand-50 text-brand-500" trend="up" trendLabel="" />
+            <KpiCard icon={Brain} label="Abordagens consultadas" value={supByApproach.length}
+              sub="em supervisões" color="bg-purple-50 text-purple-500" />
+            <KpiCard icon={TrendingUp} label="Taxa de evolução" value={`${totalSessions > 0 ? Math.round(totalEvolutions / totalSessions * 100) : 0}%`}
+              sub="sessões com registro" color="bg-blue-50 text-blue-500" trend="up" trendLabel="" />
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -894,33 +1029,42 @@ export default function ReportsPage() {
                     </div>
                   );
                 })}
+                {moodDist.every(m => m.count === 0) && (
+                  <p className="text-sm text-gray-400 text-center py-4">Nenhuma evolução com tom registrado</p>
+                )}
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-                <span className="text-2xl">{MOOD_EMOJI[Math.round(avgMood)]}</span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Tom médio: {avgMood}/5</p>
-                  <p className="text-xs text-gray-500">Suas sessões têm sido {MOOD_LABEL[Math.round(avgMood)].toLowerCase()}</p>
+              {moodDist.some(m => m.count > 0) && (
+                <div className="mt-4 pt-4 border-t border-gray-50 flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                  <span className="text-2xl">{MOOD_EMOJI[Math.round(avgMood)]}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Tom médio: {avgMood}/5</p>
+                    <p className="text-xs text-gray-500">Suas sessões têm sido {MOOD_LABEL[Math.round(avgMood)].toLowerCase()}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="text-sm font-semibold text-gray-800 mb-4">Supervisões por abordagem</h3>
-              <div className="space-y-3">
-                {supByApproach.map(s => {
-                  const pct = Math.round(s.count / maxSup * 100);
-                  return (
-                    <div key={s.label}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-700">{s.label}</span>
-                        <span className="text-xs font-bold text-gray-600">{s.count}</span>
+              {supByApproach.length > 0 ? (
+                <div className="space-y-3">
+                  {supByApproach.map(s => {
+                    const pct = Math.round(s.count / maxSup * 100);
+                    return (
+                      <div key={s.label}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-gray-700">{s.label}</span>
+                          <span className="text-xs font-bold text-gray-600">{s.count}</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-brand-400" style={{ width: `${pct}%` }} />
+                        </div>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-brand-400" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 text-center py-8">Nenhuma supervisão registrada</p>
+              )}
               <div className="mt-4 pt-4 border-t border-gray-50">
                 <Link href="/dashboard/supervision" className="flex items-center justify-between text-sm text-brand-500 font-medium hover:text-brand-700">
                   Ver todas as supervisões <ArrowUpRight className="w-4 h-4" />
@@ -928,38 +1072,53 @@ export default function ReportsPage() {
               </div>
             </div>
           </div>
+          {user && <PatientProspect clients={clients} therapistId={user.id} />}
+
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
                 <h3 className="text-sm font-semibold text-gray-800">Evoluções com hipótese IA</h3>
               </div>
-              <span className="text-xs bg-brand-50 text-brand-600 px-2.5 py-1 rounded-full font-medium border border-brand-100">
-                {mockEvolutions.filter(e => e.aiHypothesis).length} de {mockEvolutions.length} ({Math.round(mockEvolutions.filter(e => e.aiHypothesis).length / mockEvolutions.length * 100)}%)
-              </span>
+              {evolutions.length > 0 && (
+                <span className="text-xs bg-brand-50 text-brand-600 px-2.5 py-1 rounded-full font-medium border border-brand-100">
+                  {evolutions.filter(e => e.ai_hypothesis).length} de {evolutions.length} ({Math.round(evolutions.filter(e => e.ai_hypothesis).length / evolutions.length * 100)}%)
+                </span>
+              )}
             </div>
             <div className="divide-y divide-gray-50">
-              {mockEvolutions.filter(e => e.aiHypothesis).map(e => (
-                <Link key={e.id} href={`/dashboard/evolutions/${e.id}`} className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5" style={{ backgroundColor: e.color }}>{e.initials}</div>
+              {evolutions.filter(e => e.ai_hypothesis).map(e => (
+                <Link key={e.id} href={`/dashboard/evolutions/${e.id}`}
+                  className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5"
+                    style={{ backgroundColor: e.clients?.color ?? "#924B92" }}>
+                    {e.clients?.initials ?? e.clients?.name?.[0] ?? "?"}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800">{e.clientName}</p>
-                    <p className="text-xs text-brand-600 font-medium mt-0.5 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {e.hypothesis}</p>
-                    <p className="text-xs text-gray-400 truncate mt-1">{e.aiHypothesis?.slice(0, 100)}…</p>
+                    <p className="text-sm font-semibold text-gray-800">{e.clients?.name ?? "Cliente"}</p>
+                    <p className="text-xs text-brand-600 font-medium mt-0.5 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> {e.hypothesis}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-1">{e.ai_hypothesis?.slice(0, 100)}…</p>
                   </div>
                   <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0 mt-1" />
                 </Link>
               ))}
+              {evolutions.filter(e => e.ai_hypothesis).length === 0 && (
+                <div className="px-5 py-10 text-center text-sm text-gray-400">
+                  Nenhuma evolução com hipótese IA ainda
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* ══ Drawers de drill-down ══ */}
-      {drillDown === "sessions"   && <DrillSessions   onClose={() => setDrillDown(null)} />}
-      {drillDown === "clients"    && <DrillClients    onClose={() => setDrillDown(null)} />}
-      {drillDown === "hours"      && <DrillHours      onClose={() => setDrillDown(null)} />}
-      {drillDown === "evolutions" && <DrillEvolutions onClose={() => setDrillDown(null)} />}
+      {drillDown === "sessions"   && <DrillSessions onClose={() => setDrillDown(null)} />}
+      {drillDown === "clients"    && <DrillClients  onClose={() => setDrillDown(null)} clients={clients} evolutions={evolutions} supervisions={supervisions} />}
+      {drillDown === "hours"      && <DrillHours    onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} />}
+      {drillDown === "evolutions" && <DrillEvolutions onClose={() => setDrillDown(null)} evolutions={evolutions} />}
     </div>
   );
 }

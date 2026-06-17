@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Save, Loader2, CheckCircle2,
   Phone, Mail, Heart, FileText,
-  ChevronDown, AlertTriangle, Mic,
+  ChevronDown, AlertTriangle, Mic, ShieldAlert, Info, User,
 } from "lucide-react";
-import { mockClients } from "@/lib/mock-data";
+import { getClient, updateClient } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
+import type { Client } from "@/lib/database.types";
 
 const APPROACHES = [
   { value: "PSYCHOANALYSIS",        label: "Psicanálise" },
@@ -23,9 +24,9 @@ const APPROACHES = [
   { value: "ACCEPTANCE_COMMITMENT", label: "ACT" },
 ];
 
-const FREQUENCIES  = ["Semanal", "Quinzenal", "Mensal", "Sob demanda"];
-const DURATIONS    = ["45", "50", "60", "90"];
-const STATUS_OPTS  = [
+const FREQUENCIES = ["Semanal", "Quinzenal", "Mensal", "Sob demanda"];
+const DURATIONS   = ["45", "50", "60", "90"];
+const STATUS_OPTS = [
   { value: "ACTIVE",   label: "Ativo" },
   { value: "WAITLIST", label: "Lista de espera" },
   { value: "INACTIVE", label: "Inativo" },
@@ -33,59 +34,106 @@ const STATUS_OPTS  = [
 
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
 
+function initForm(client: Client) {
+  const approachLabel = APPROACHES.find(a => a.value === client.approach)?.label ?? client.approach_label ?? "";
+  return {
+    name:             client.name,
+    email:            client.email ?? "",
+    phone:            client.phone ?? "",
+    birthDate:        client.birth_date ? client.birth_date.split("T")[0] : "",
+    occupation:       client.occupation ?? "",
+    approach:         approachLabel,
+    frequency:        client.session_frequency ?? "Semanal",
+    duration:         String(client.session_duration ?? 50),
+    status:           client.status,
+    mainDemand:       client.main_demand ?? "",
+    notes:            client.notes ?? "",
+    emergencyContact: client.emergency_contact ?? "",
+    vulnerability:    [] as string[],
+    pseudonymized:    false,
+    lgpdConsent:      true,
+  };
+}
+
 export default function EditClientPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const client = mockClients.find((c) => c.id === id);
+  const [client,  setClient]  = useState<Client | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
 
-  if (!client) {
-    return (
-      <div className="max-w-2xl mx-auto text-center py-16">
-        <p className="text-gray-400 mb-4">Cliente não encontrado.</p>
-        <Link href="/dashboard/clients" className="text-brand-500 hover:underline text-sm font-medium">
-          ← Voltar para clientes
-        </Link>
-      </div>
-    );
-  }
-
-  const approachLabel = APPROACHES.find(a => a.value === client.approach)?.label ?? client.approachLabel;
-
-  const [form, setForm] = useState({
-    name:             client.name,
-    email:            client.email ?? "",
-    phone:            client.phone ?? "",
-    birthDate:        client.birthDate ? client.birthDate.toISOString().split("T")[0] : "",
-    occupation:       client.occupation ?? "",
-    approach:         approachLabel,
-    frequency:        client.sessionFrequency ?? "Semanal",
-    duration:         String(client.sessionDuration ?? 50),
-    status:           client.status,
-    mainDemand:       client.mainDemand ?? "",
-    notes:            client.notes ?? "",
-    emergencyContact: client.emergencyContact ?? "",
-  });
-
+  const [form, setForm]   = useState(initForm({} as Client));
   const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [saved,   setSaved]  = useState(false);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    getClient(id)
+      .then(c => { setClient(c); setForm(initForm(c)); })
+      .catch(e => setLoadErr(e.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   function set(field: string, value: string) {
     setForm(p => ({ ...p, [field]: value }));
   }
+  function toggleVulnerability(v: string) {
+    setForm(p => ({
+      ...p,
+      vulnerability: p.vulnerability.includes(v)
+        ? p.vulnerability.filter(x => x !== v)
+        : [...p.vulnerability, v],
+    }));
+  }
 
   async function handleSave() {
-    setSaving(true);
-    await new Promise(r => setTimeout(r, 900));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => router.push(`/dashboard/clients/${id}`), 1200);
+    if (!form.name.trim()) return;
+    setSaving(true); setSaveErr(null);
+    const selectedApproach = APPROACHES.find(a => a.label === form.approach);
+    const statusValue = STATUS_OPTS.find(s => s.label === form.status)?.value ?? form.status;
+    try {
+      await updateClient(id, {
+        name:              form.name.trim(),
+        email:             form.email || null,
+        phone:             form.phone || null,
+        birth_date:        form.birthDate || null,
+        occupation:        form.occupation || null,
+        approach:          selectedApproach?.value ?? null,
+        approach_label:    selectedApproach?.label ?? null,
+        status:            statusValue,
+        session_frequency: form.frequency,
+        session_duration:  parseInt(form.duration),
+        main_demand:       form.mainDemand.trim() || null,
+        notes:             form.notes.trim() || null,
+        emergency_contact: form.emergencyContact.trim() || null,
+      });
+      setSaved(true);
+      setTimeout(() => router.push(`/dashboard/clients/${id}`), 1200);
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : "Erro ao salvar");
+      setSaving(false);
+    }
   }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="w-7 h-7 text-brand-400 animate-spin" />
+    </div>
+  );
+
+  if (loadErr || !client) return (
+    <div className="max-w-2xl mx-auto text-center py-16">
+      <p className="text-gray-400 mb-4">{loadErr ?? "Cliente não encontrado."}</p>
+      <Link href="/dashboard/clients" className="text-brand-500 hover:underline text-sm font-medium">
+        ← Voltar para clientes
+      </Link>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
 
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Link href={`/dashboard/clients/${id}`}
           className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600">
@@ -101,19 +149,17 @@ export default function EditClientPage() {
         </div>
       </div>
 
-      {/* ── Dados pessoais ── */}
-      <Section icon={AlertTriangle} title="Dados pessoais">
+      <Section icon={User} title="Dados pessoais">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <VoiceInput label="Nome completo" required
-              value={form.name} onChange={v => set("name", v)} />
+            <VoiceInput label="Nome completo" required value={form.name} onChange={v => set("name", v)} />
           </div>
           <Field label="Data de nascimento">
-            <input type="date" value={form.birthDate}
-              onChange={e => set("birthDate", e.target.value)} className={inputCls} />
+            <input type="date" value={form.birthDate} onChange={e => set("birthDate", e.target.value)} className={inputCls} />
           </Field>
           <Field label="Status">
-            <SelectField value={form.status} onChange={v => set("status", v)}
+            <SelectField value={STATUS_OPTS.find(s => s.value === form.status)?.label ?? form.status}
+              onChange={v => set("status", STATUS_OPTS.find(s => s.label === v)?.value ?? v)}
               options={STATUS_OPTS.map(s => s.label)} />
           </Field>
           <Field label="E-mail">
@@ -130,31 +176,25 @@ export default function EditClientPage() {
                 placeholder="(11) 99999-9999" className={inputCls + " pl-9"} />
             </div>
           </Field>
-          <VoiceInput label="Profissão / Ocupação"
-            value={form.occupation} onChange={v => set("occupation", v)}
+          <VoiceInput label="Profissão / Ocupação" value={form.occupation} onChange={v => set("occupation", v)}
             placeholder="Ex: Designer, Engenheiro..." />
         </div>
       </Section>
 
-      {/* ── Configuração clínica ── */}
       <Section icon={Heart} title="Configuração clínica">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Abordagem terapêutica" required>
-            <SelectField value={form.approach} onChange={v => set("approach", v)}
-              options={APPROACHES.map(a => a.label)} />
+            <SelectField value={form.approach} onChange={v => set("approach", v)} options={APPROACHES.map(a => a.label)} />
           </Field>
           <Field label="Frequência">
-            <SelectField value={form.frequency} onChange={v => set("frequency", v)}
-              options={FREQUENCIES} />
+            <SelectField value={form.frequency} onChange={v => set("frequency", v)} options={FREQUENCIES} />
           </Field>
           <Field label="Duração (min)">
-            <SelectField value={form.duration} onChange={v => set("duration", v)}
-              options={DURATIONS} />
+            <SelectField value={form.duration} onChange={v => set("duration", v)} options={DURATIONS} />
           </Field>
         </div>
       </Section>
 
-      {/* ── Prontuário ── */}
       <Section icon={FileText} title="Prontuário">
         <VoiceTextarea label="Demanda principal" required rows={3}
           value={form.mainDemand} onChange={v => set("mainDemand", v)}
@@ -164,14 +204,60 @@ export default function EditClientPage() {
           placeholder="Impressões, hipóteses iniciais, aspectos relevantes..." />
       </Section>
 
-      {/* ── Emergência ── */}
       <Section icon={AlertTriangle} title="Contato de emergência">
-        <VoiceInput label="Nome e telefone"
-          value={form.emergencyContact} onChange={v => set("emergencyContact", v)}
+        <VoiceInput label="Nome e telefone" value={form.emergencyContact} onChange={v => set("emergencyContact", v)}
           placeholder="Ex: João Silva (irmão) — (11) 99999-9999" />
       </Section>
 
-      {/* Ações */}
+      <Section icon={ShieldAlert} title="Situação de vulnerabilidade">
+        <p className="text-xs text-gray-500 leading-relaxed mb-3">
+          Conforme a <strong>Res. CFP nº 21/2025</strong>. Marque se aplicável:
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {["Criança ou adolescente","Idoso(a)","Crise psíquica aguda","Situação de violência",
+            "Condição socioeconômica vulnerável","Privação de liberdade","Deficiência / necessidade especial","Outro"].map(v => (
+            <button key={v} type="button" onClick={() => toggleVulnerability(v)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium text-left transition-colors",
+                form.vulnerability.includes(v)
+                  ? "border-amber-400 bg-amber-50 text-amber-800"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-amber-200 hover:bg-amber-50/50"
+              )}>
+              <span className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center",
+                form.vulnerability.includes(v) ? "border-amber-500 bg-amber-500" : "border-gray-300")}>
+                {form.vulnerability.includes(v) && (
+                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                    <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </span>
+              {v}
+            </button>
+          ))}
+        </div>
+        {form.vulnerability.length > 0 && (
+          <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
+            <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+            <span>Caso marcado como vulnerabilidade — o IDEAh reforçará atenção ética nos raciocínios clínicos.</span>
+          </div>
+        )}
+      </Section>
+
+      <Section icon={Info} title="Sigilo, consentimento e LGPD">
+        <div className="space-y-3">
+          <Checkbox checked={form.pseudonymized} onChange={v => setForm(p => ({ ...p, pseudonymized: v }))}>
+            <strong>Pseudonimização ativa</strong> — o nome real não será exibido nas interações com a IA.
+          </Checkbox>
+          <Checkbox checked={form.lgpdConsent} onChange={v => setForm(p => ({ ...p, lgpdConsent: v }))}>
+            TCLE obtido — consentimento LGPD confirmado <span className="text-gray-400 text-xs">(Res. CFP nº 21/2025)</span>
+          </Checkbox>
+        </div>
+      </Section>
+
+      {saveErr && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">{saveErr}</div>
+      )}
+
       <div className="flex items-center gap-3 pb-6">
         <Link href={`/dashboard/clients/${id}`}
           className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -228,5 +314,20 @@ function SelectField({ value, onChange, options }: { value: string; onChange: (v
       </select>
       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
     </div>
+  );
+}
+
+function Checkbox({ checked, onChange, children }: { checked: boolean; onChange: (v: boolean) => void; children: React.ReactNode }) {
+  return (
+    <label className="flex items-start gap-3 cursor-pointer group">
+      <div onClick={() => onChange(!checked)}
+        className={cn(
+          "w-5 h-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors",
+          checked ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
+        )}>
+        {checked && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      </div>
+      <span className="text-sm text-gray-700 leading-relaxed">{children}</span>
+    </label>
   );
 }

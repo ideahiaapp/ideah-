@@ -1,15 +1,35 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { User } from "@ideah/types";
-import { api } from "../lib/api";
+import { supabase } from "@/lib/supabase";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+
+export const ADMIN_EMAILS = [
+  "carlos.magno@gmail.com",
+  "betinha.potter@gmail.com",
+  "elimarcia.philos@gmail.com",
+];
+
+/* ─── Mapeia usuário Supabase → tipo interno ─────────── */
+function toUser(u: SupabaseUser): User {
+  const email = u.email ?? "";
+  return {
+    id: u.id,
+    name: u.user_metadata?.name ?? email.split("@")[0] ?? "Terapeuta",
+    email,
+    role: ADMIN_EMAILS.includes(email.toLowerCase().trim()) ? "admin" : "therapist",
+    avatarUrl: u.user_metadata?.avatar_url ?? undefined,
+    createdAt: new Date(u.created_at),
+  };
+}
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
 }
 
@@ -17,36 +37,59 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       isLoading: false,
 
+      /* ── Email + senha ─────────────────────────────── */
       login: async (email, password) => {
         set({ isLoading: true });
-        const { data } = await api.post("/auth/login", { email, password });
-        localStorage.setItem("@ideah:token", data.token);
-        set({ user: data.user, token: data.token, isLoading: false });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) { set({ isLoading: false }); throw error; }
+        set({ user: toUser(data.user), isLoading: false });
       },
 
+      /* ── Google OAuth ──────────────────────────────── */
+      loginWithGoogle: async () => {
+        set({ isLoading: true });
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/dashboard`,
+            queryParams: { access_type: "offline", prompt: "consent" },
+          },
+        });
+        // OAuth redireciona — loading fica ativo durante o redirect
+        if (error) { set({ isLoading: false }); throw error; }
+      },
+
+      /* ── Cadastro ──────────────────────────────────── */
       register: async (name, email, password) => {
         set({ isLoading: true });
-        const { data } = await api.post("/auth/register", { name, email, password });
-        localStorage.setItem("@ideah:token", data.token);
-        set({ user: data.user, token: data.token, isLoading: false });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { name } },
+        });
+        if (error) { set({ isLoading: false }); throw error; }
+        if (data.user) set({ user: toUser(data.user), isLoading: false });
+        else set({ isLoading: false }); // aguardando confirmação de e-mail
       },
 
-      logout: () => {
-        localStorage.removeItem("@ideah:token");
-        set({ user: null, token: null });
+      /* ── Logout ────────────────────────────────────── */
+      logout: async () => {
+        await supabase.auth.signOut();
+        set({ user: null });
       },
 
+      /* ── Recupera sessão ativa (ex: refresh de página) */
       fetchMe: async () => {
-        const { data } = await api.get("/auth/me");
-        set({ user: data });
+        const { data } = await supabase.auth.getUser();
+        if (data.user) set({ user: toUser(data.user) });
+        else set({ user: null });
       },
     }),
     {
       name: "@ideah:auth",
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({ user: state.user }),
     }
   )
 );

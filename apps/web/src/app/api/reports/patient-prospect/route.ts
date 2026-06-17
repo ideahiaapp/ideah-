@@ -1,0 +1,112 @@
+import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
+
+function getAnthropicClient(req: NextRequest) {
+  const apiKey =
+    req.headers.get("x-anthropic-key") ||
+    process.env.ANTHROPIC_API_KEY ||
+    "";
+  if (!apiKey) throw new Error("API Key não configurada. Acesse Configurações → API Key.");
+  return new Anthropic({ apiKey });
+}
+
+const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function POST(req: NextRequest) {
+  try {
+    const { clientId, therapistId } = await req.json();
+    if (!clientId || !therapistId) {
+      return NextResponse.json({ error: "clientId e therapistId são obrigatórios." }, { status: 400 });
+    }
+
+    // Busca cliente
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("name, approach_label, start_date, total_sessions, main_demand")
+      .eq("id", clientId)
+      .eq("therapist_id", therapistId)
+      .single();
+
+    if (!client) return NextResponse.json({ error: "Cliente não encontrado." }, { status: 404 });
+
+    // Busca todas as evoluções do cliente, ordenadas por data
+    const { data: evolutions } = await supabaseAdmin
+      .from("evolutions")
+      .select("session_date, content, hypothesis, next_session_plan, mood, ai_hypothesis, session_number")
+      .eq("client_id", clientId)
+      .eq("therapist_id", therapistId)
+      .order("session_date", { ascending: true });
+
+    if (!evolutions || evolutions.length === 0) {
+      return NextResponse.json({ error: "Nenhuma evolução registrada para este paciente." }, { status: 422 });
+    }
+
+    // Monta contexto das evoluções
+    const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Excelente"];
+    const evoLines = evolutions.map((e, i) => {
+      const num = e.session_number ?? i + 1;
+      const mood = e.mood ? `Tom: ${MOOD_LABEL[e.mood]} (${e.mood}/5)` : "";
+      const hyp  = e.hypothesis ? `Hipótese: ${e.hypothesis}` : "";
+      const plan = e.next_session_plan ? `Plano: ${e.next_session_plan}` : "";
+      return [
+        `--- Sessão ${num} (${e.session_date}) ${mood}`,
+        `Relato: ${e.content}`,
+        hyp, plan,
+      ].filter(Boolean).join("\n");
+    }).join("\n\n");
+
+    const firstDate = evolutions[0].session_date;
+    const lastDate  = evolutions[evolutions.length - 1].session_date;
+
+    const systemPrompt = `Você é um supervisor clínico experiente auxiliando um psicoterapeuta a avaliar o progresso de seus pacientes.
+Analise as evoluções de sessão fornecidas e gere um prospecto clínico objetivo e humanizado.
+Responda APENAS com um JSON válido, sem markdown, no seguinte formato:
+{
+  "verdict": "evoluiu" | "estável" | "regrediu",
+  "score": <número de 1 a 10 representando o progresso geral>,
+  "summary": "<parágrafo conciso de 3-5 frases descrevendo o arco terapêutico do paciente>",
+  "mood_trend": "crescente" | "estável" | "decrescente",
+  "key_themes": ["<tema 1>", "<tema 2>", "<tema 3>"],
+  "strengths": "<pontos de evolução positiva observados>",
+  "challenges": "<pontos de atenção ou resistência observados>",
+  "recommendation": "<sugestão clínica para as próximas sessões>"
+}`;
+
+    const userPrompt = `Paciente: ${client.name}
+Abordagem: ${client.approach_label ?? "não especificada"}
+Demanda principal: ${client.main_demand ?? "não registrada"}
+Período: ${firstDate} a ${lastDate}
+Total de sessões analisadas: ${evolutions.length}
+
+EVOLUÇÕES:
+${evoLines}`;
+
+    const anthropic = getAnthropicClient(req);
+
+    const message = await anthropic.messages.create({
+      model:      "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system:     systemPrompt,
+      messages:   [{ role: "user", content: userPrompt }],
+    });
+
+    const raw = (message.content[0] as { type: string; text: string }).text;
+    const result = JSON.parse(raw);
+
+    return NextResponse.json({
+      ...result,
+      clientName:    client.name,
+      sessionCount:  evolutions.length,
+      period:        `${firstDate} a ${lastDate}`,
+    });
+  } catch (error) {
+    console.error("[patient-prospect]", error);
+    const message = error instanceof Error ? error.message : "Erro interno";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
