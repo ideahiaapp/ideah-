@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
-  LogOut, TrendingUp, Users, Activity,
+  LogOut, TrendingUp, Users, Activity, DollarSign,
   Search, FileDown, ShieldCheck,
   CheckCircle2, AlertTriangle, XCircle, Clock,
   Monitor, Smartphone,
