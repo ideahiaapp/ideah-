@@ -17,6 +17,10 @@
     "prettier": "^3.3.0",
     "typescript": "^5.4.0"
   },
+  "overrides": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
   "engines": {
     "node": ">=20"
   },
