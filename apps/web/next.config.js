@@ -2,7 +2,7 @@
 const nextConfig = {
   transpilePackages: ["@ideah/types", "@ideah/utils"],
   experimental: {
-    serverComponentsExternalPackages: ["pdf-parse", "canvas", "tesseract.js", "pdfjs-dist"],
+    serverComponentsExternalPackages: ["pdf-parse"],
   },
   images: {
     remotePatterns: [
