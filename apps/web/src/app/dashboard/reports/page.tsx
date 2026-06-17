@@ -680,9 +680,10 @@ export default function ReportsPage() {
 
   const approachDist = useMemo(() => {
     const map: Record<string, { label: string; value: number; approach: string }> = {};
-    clients.filter(c => c.status === "ACTIVE").forEach(c => {
-      if (!map[c.approach]) map[c.approach] = { label: c.approach_label ?? APPROACH_LABEL[c.approach] ?? c.approach, value: 0, approach: c.approach };
-      map[c.approach].value++;
+    clients.filter(c => c.status === "ACTIVE" && c.approach).forEach(c => {
+      const approach = c.approach!;
+      if (!map[approach]) map[approach] = { label: c.approach_label ?? APPROACH_LABEL[approach] ?? approach, value: 0, approach };
+      map[approach].value++;
     });
     return Object.values(map).sort((a, b) => b.value - a.value);
   }, [clients]);
