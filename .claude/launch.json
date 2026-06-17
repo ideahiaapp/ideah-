@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "preview-mobile",
+      "name": "web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "preview", "-p", "4444", "--no-clipboard"],
-      "port": 4444
+      "runtimeArgs": ["next", "dev"],
+      "port": 3000
     }
   ]
 }
