@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chunkText, embedTexts, saveDocument } from "@/lib/rag";
-import { ocrPdf } from "@/lib/ocr";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Apenas PDF e TXT são suportados." }, { status: 400 });
     }
 
-    const MAX_SIZE = 200 * 1024 * 1024; // 200MB
+    const MAX_SIZE = 200 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       return NextResponse.json({ error: "Arquivo muito grande. Máximo: 200MB." }, { status: 400 });
     }
@@ -41,11 +40,11 @@ export async function POST(req: NextRequest) {
       const result = await pdfParse(buffer);
       text = result.text?.trim() ?? "";
 
-      // PDF escaneado — sem camada de texto, usa OCR como fallback
       if (!text) {
-        console.log("[RAG] PDF sem texto detectável, iniciando OCR...");
-        text = await ocrPdf(buffer);
-        console.log(`[RAG] OCR concluído: ${text.length} caracteres extraídos`);
+        return NextResponse.json(
+          { error: "Este PDF parece ser um scan. Por enquanto só são suportados PDFs com texto selecionável. Suporte a PDFs escaneados em breve." },
+          { status: 422 }
+        );
       }
     } else {
       text = await file.text();
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     if (!text.trim()) {
       return NextResponse.json(
-        { error: "Não foi possível extrair texto do arquivo. Tente um PDF com texto selecionável ou verifique a qualidade do scan." },
+        { error: "Não foi possível extrair texto do arquivo." },
         { status: 422 }
       );
     }
