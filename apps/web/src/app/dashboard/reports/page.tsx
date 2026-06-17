@@ -5,16 +5,15 @@ import Link from "next/link";
 import {
   BarChart2, Users, FileText, Brain, TrendingUp, TrendingDown,
   CalendarDays, Clock, Sparkles, ArrowUpRight, Minus, X,
-  ChevronRight, Search, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
+  ChevronRight, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
 } from "lucide-react";
 import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
 import { aiHeaders } from "@/lib/api-key";
 import { getClinicSettings } from "@/lib/clinic-settings";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
-import type { Client } from "@/lib/db/clients";
+import type { Client, Supervision } from "@/lib/database.types";
 import type { EvolutionWithClient } from "@/lib/db/evolutions";
-import type { Supervision } from "@/lib/db/supervisions";
 
 /* ─── Paleta ─────────────────────────────────────────────────────── */
 const APPROACH_COLORS: Record<string, string> = {

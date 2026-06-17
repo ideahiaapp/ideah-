@@ -480,7 +480,7 @@ function SessionModal({
                   <Clock className="w-3.5 h-3.5 text-gray-400" />
                   {form.startTime} – {minutesToTime(timeToMinutes(form.startTime) + form.duration)}
                   {client && (
-                    <span className="ml-auto font-medium" style={{ color: client.color }}>
+                    <span className="ml-auto font-medium" style={{ color: client.color ?? undefined }}>
                       {client.name.split(" ")[0]}
                     </span>
                   )}
