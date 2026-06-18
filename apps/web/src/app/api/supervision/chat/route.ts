@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { searchChunks } from "@/lib/rag";
 
+export const maxDuration = 30;
+
 function getClient(req: NextRequest) {
   // Prioridade: chave do usuário (header) → variável de ambiente (fallback dev)
   const apiKey =

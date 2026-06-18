@@ -3,6 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 
+export const maxDuration = 30;
+
 function getAnthropicClient(req: NextRequest) {
   const apiKey =
     req.headers.get("x-anthropic-key") ||

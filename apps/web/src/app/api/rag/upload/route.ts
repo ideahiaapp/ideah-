@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { chunkText, embedTexts, saveDocument } from "@/lib/rag";
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const voyageKey = process.env.VOYAGE_API_KEY;
