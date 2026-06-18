@@ -35,6 +35,7 @@ export default function RegisterPage() {
   const [confirm, setConfirm]   = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error, setError]       = useState("");
+  const [emailSent, setEmailSent] = useState(false);
 
   const passwordStrength = (() => {
     if (password.length === 0) return 0;
@@ -62,7 +63,8 @@ export default function RegisterPage() {
     }
     try {
       await signUp(name, email, password);
-      router.push("/dashboard");
+      // Se chegou aqui sem erro, pode ter confirmação pendente ou login direto
+      setEmailSent(true);
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : String(err);
       // Traduz mensagens comuns do Supabase
@@ -77,6 +79,38 @@ export default function RegisterPage() {
       else
         setError(raw || "Erro ao criar conta. Tente novamente.");
     }
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-auth-gradient flex items-center justify-center px-6">
+        <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center space-y-4">
+          <div className="w-14 h-14 bg-brand-50 rounded-full flex items-center justify-center mx-auto">
+            <Mail className="w-7 h-7 text-brand-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Verifique seu e-mail</h2>
+          <p className="text-gray-500 text-sm leading-relaxed">
+            Enviamos um link de confirmação para <strong>{email}</strong>.<br />
+            Clique no link para ativar sua conta e acessar o IDEAh.
+          </p>
+          <p className="text-xs text-gray-400">
+            Não recebeu? Verifique a caixa de spam ou{" "}
+            <button
+              onClick={() => setEmailSent(false)}
+              className="text-brand-500 hover:underline"
+            >
+              tente novamente
+            </button>.
+          </p>
+          <Link
+            href="/auth/login"
+            className="block w-full text-center bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-xl py-3 transition-colors text-sm mt-2"
+          >
+            Ir para o login
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

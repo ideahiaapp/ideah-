@@ -71,16 +71,21 @@ export const useAuthStore = create<AuthState>()(
         });
         if (error) { set({ isLoading: false }); throw error; }
 
-        // Registra o terapeuta como autorizado no IDEAh
+        // Registra o terapeuta como autorizado no IDEAh (mesmo antes de confirmar email)
         if (data.user) {
           await fetch("/api/auth/register-profile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: data.user.id, email }),
           });
-          set({ user: toUser(data.user), isLoading: false });
+          // Se já está confirmado (ex: confirmação desativada), loga direto
+          if (data.user.confirmed_at) {
+            set({ user: toUser(data.user), isLoading: false });
+          } else {
+            set({ isLoading: false }); // aguarda confirmação de e-mail
+          }
         } else {
-          set({ isLoading: false }); // aguardando confirmação de e-mail
+          set({ isLoading: false });
         }
       },
 
