@@ -70,8 +70,18 @@ export const useAuthStore = create<AuthState>()(
           options: { data: { name } },
         });
         if (error) { set({ isLoading: false }); throw error; }
-        if (data.user) set({ user: toUser(data.user), isLoading: false });
-        else set({ isLoading: false }); // aguardando confirmação de e-mail
+
+        // Registra o terapeuta como autorizado no IDEAh
+        if (data.user) {
+          await fetch("/api/auth/register-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: data.user.id, email }),
+          });
+          set({ user: toUser(data.user), isLoading: false });
+        } else {
+          set({ isLoading: false }); // aguardando confirmação de e-mail
+        }
       },
 
       /* ── Logout ────────────────────────────────────── */

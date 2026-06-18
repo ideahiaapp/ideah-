@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/auth.store";
@@ -21,12 +21,19 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, loginWithGoogle, isLoading } = useAuthStore();
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error, setError]       = useState("");
+
+  useEffect(() => {
+    if (searchParams.get("error") === "not_registered") {
+      setError("Acesso não autorizado. Seu e-mail não está cadastrado no IDEAh. Entre em contato com a equipe.");
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

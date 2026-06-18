@@ -12,10 +12,23 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         const u = session.user;
         const email = u.email ?? "";
+
+        // Verifica se o terapeuta está cadastrado no IDEAh
+        const res = await fetch(`/api/auth/verify?email=${encodeURIComponent(email)}`);
+        const { allowed } = await res.json() as { allowed: boolean };
+
+        if (!allowed) {
+          await supabase.auth.signOut();
+          useAuthStore.setState({ user: null, isLoading: false });
+          setInitialized(true);
+          router.replace("/auth/login?error=not_registered");
+          return;
+        }
+
         useAuthStore.setState({
           user: {
             id: u.id,
