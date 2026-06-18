@@ -64,8 +64,18 @@ export default function RegisterPage() {
       await signUp(name, email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg ?? "Erro ao criar conta. Tente novamente.");
+      const raw = err instanceof Error ? err.message : String(err);
+      // Traduz mensagens comuns do Supabase
+      if (raw.includes("User already registered"))
+        setError("Este e-mail já está cadastrado. Tente fazer login.");
+      else if (raw.includes("Password should be"))
+        setError("A senha não atende aos requisitos mínimos de segurança.");
+      else if (raw.includes("Unable to validate email address"))
+        setError("E-mail inválido. Verifique o endereço digitado.");
+      else if (raw.includes("Email rate limit exceeded") || raw.includes("rate limit"))
+        setError("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+      else
+        setError(raw || "Erro ao criar conta. Tente novamente.");
     }
   }
 
