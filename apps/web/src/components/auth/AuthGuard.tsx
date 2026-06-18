@@ -17,9 +17,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         const u = session.user;
         const email = u.email ?? "";
 
-        // Verifica se o terapeuta está cadastrado no IDEAh
-        const res = await fetch(`/api/auth/verify?email=${encodeURIComponent(email)}`);
-        const { allowed } = await res.json() as { allowed: boolean };
+        // Verifica se o terapeuta está cadastrado e não bloqueado no IDEAh
+        let allowed = false;
+        try {
+          const res = await fetch(`/api/auth/verify?email=${encodeURIComponent(email)}`);
+          if (res.ok) ({ allowed } = await res.json() as { allowed: boolean });
+        } catch { /* rede falhou — bloqueia por segurança */ }
 
         if (!allowed) {
           await supabase.auth.signOut();

@@ -20,9 +20,9 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabaseAdmin
     .from("therapist_profiles")
-    .select("user_id")
+    .select("user_id, blocked")
     .eq("email", email)
     .maybeSingle();
 
-  return NextResponse.json({ allowed: !!data });
+  return NextResponse.json({ allowed: !!data && !data.blocked });
 }

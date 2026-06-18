@@ -8,12 +8,13 @@ import {
   Eye, EyeOff, Camera, ExternalLink, AlertTriangle, Sparkles,
   ChevronDown, ShieldCheck, Zap, Crown, Check, Copy, DollarSign,
   Scale, ShieldAlert, FileText, Info, BookOpen, Upload, Trash2,
+  Users, ShieldOff,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 
-type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica";
+type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas";
 
 /* ─── Helpers ─────────────────────────────────────── */
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
@@ -1106,6 +1107,113 @@ function TabBase() {
   );
 }
 
+/* ─── Aba Terapeutas (admin) ─────────────────────── */
+type TherapistRow = {
+  userId: string; email: string; name: string; blocked: boolean; createdAt: string;
+};
+
+function TabTerapeutas() {
+  const { user } = useAuthStore();
+  const [list, setList]       = useState<TherapistRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState<string | null>(null);
+  const [error, setError]     = useState("");
+
+  async function load() {
+    setLoading(true);
+    const res = await fetch("/api/admin/therapists", {
+      headers: { "x-admin-email": user?.email ?? "" },
+    });
+    if (res.ok) setList(await res.json());
+    else setError("Erro ao carregar terapeutas.");
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function toggle(userId: string, blocked: boolean) {
+    setToggling(userId);
+    const res = await fetch("/api/admin/therapists", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-email": user?.email ?? "" },
+      body: JSON.stringify({ userId, blocked }),
+    });
+    if (res.ok) setList(prev => prev.map(t => t.userId === userId ? { ...t, blocked } : t));
+    else setError("Erro ao atualizar acesso.");
+    setToggling(null);
+  }
+
+  if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-400" /></div>;
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+      <div>
+        <h2 className="font-semibold text-gray-900">Terapeutas com acesso</h2>
+        <p className="text-sm text-gray-500 mt-0.5">Gerencie quem pode acessar a plataforma IDEAh.</p>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">{error}</div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100 text-left text-xs text-gray-400 font-semibold uppercase tracking-wide">
+              <th className="pb-2 pr-4">Nome</th>
+              <th className="pb-2 pr-4">E-mail</th>
+              <th className="pb-2 pr-4">Cadastro</th>
+              <th className="pb-2 pr-4">Status</th>
+              <th className="pb-2">Ação</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {list.map(t => (
+              <tr key={t.userId} className="hover:bg-gray-50/50">
+                <td className="py-3 pr-4 font-medium text-gray-800">{t.name}</td>
+                <td className="py-3 pr-4 text-gray-500">{t.email}</td>
+                <td className="py-3 pr-4 text-gray-400">
+                  {new Date(t.createdAt).toLocaleDateString("pt-BR")}
+                </td>
+                <td className="py-3 pr-4">
+                  <span className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
+                    t.blocked
+                      ? "bg-red-50 text-red-600 border border-red-200"
+                      : "bg-green-50 text-green-600 border border-green-200"
+                  )}>
+                    {t.blocked ? <ShieldOff className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
+                    {t.blocked ? "Bloqueado" : "Ativo"}
+                  </span>
+                </td>
+                <td className="py-3">
+                  <button
+                    onClick={() => toggle(t.userId, !t.blocked)}
+                    disabled={toggling === t.userId || t.email === user?.email}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
+                      t.blocked
+                        ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                        : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                    )}
+                  >
+                    {toggling === t.userId
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : t.blocked ? "Liberar acesso" : "Bloquear"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {list.length === 0 && (
+          <p className="text-center text-gray-400 text-sm py-8">Nenhum terapeuta cadastrado ainda.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Página principal ───────────────────────────── */
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -1124,12 +1232,13 @@ export default function SettingsPage() {
   }
 
   const tabs = [
-    { id: "perfil"    as Tab, label: "Perfil",     icon: User,     adminOnly: false },
-    { id: "seguranca" as Tab, label: "Segurança",  icon: Lock,     adminOnly: false },
-    { id: "plano"     as Tab, label: "Plano",      icon: CreditCard, adminOnly: false },
-    { id: "api"       as Tab, label: "API Key",    icon: Key,      adminOnly: false },
-    { id: "base"      as Tab, label: "Base RAG",   icon: BookOpen, adminOnly: true  },
-    { id: "etica"     as Tab, label: "Ética CFP",  icon: Scale,    adminOnly: false },
+    { id: "perfil"      as Tab, label: "Perfil",       icon: User,       adminOnly: false },
+    { id: "seguranca"   as Tab, label: "Segurança",    icon: Lock,       adminOnly: false },
+    { id: "plano"       as Tab, label: "Plano",        icon: CreditCard, adminOnly: false },
+    { id: "api"         as Tab, label: "API Key",      icon: Key,        adminOnly: false },
+    { id: "base"        as Tab, label: "Base RAG",     icon: BookOpen,   adminOnly: true  },
+    { id: "etica"       as Tab, label: "Ética CFP",    icon: Scale,      adminOnly: false },
+    { id: "terapeutas"  as Tab, label: "Terapeutas",   icon: Users,      adminOnly: true  },
   ];
 
   return (
@@ -1161,12 +1270,13 @@ export default function SettingsPage() {
       </div>
 
       {/* Conteúdo */}
-      {tab === "perfil"    && <TabPerfil />}
-      {tab === "seguranca" && <TabSeguranca />}
-      {tab === "plano"     && <TabPlano />}
-      {tab === "api"       && <TabAPI />}
-      {tab === "base"      && <TabBase />}
-      {tab === "etica"     && <TabEtica />}
+      {tab === "perfil"     && <TabPerfil />}
+      {tab === "seguranca"  && <TabSeguranca />}
+      {tab === "plano"      && <TabPlano />}
+      {tab === "api"        && <TabAPI />}
+      {tab === "base"       && <TabBase />}
+      {tab === "etica"      && <TabEtica />}
+      {tab === "terapeutas" && <TabTerapeutas />}
     </div>
   );
 }

@@ -1,0 +1,2 @@
+ALTER TABLE public.therapist_profiles
+  ADD COLUMN IF NOT EXISTS blocked BOOLEAN NOT NULL DEFAULT FALSE;
