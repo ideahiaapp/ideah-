@@ -1,29 +1,39 @@
 {
   "expo": {
-    "name": "Ideah",
+    "name": "IDEAh",
     "slug": "ideah",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/ideah-logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/ideah-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#4F46E5"
+      "backgroundColor": "#924B92"
     },
     "scheme": "ideah",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "br.com.ideah.app"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#4F46E5"
+        "foregroundImage": "./assets/ideah-logo.png",
+        "backgroundColor": "#924B92"
       },
       "package": "br.com.ideah.app"
     },
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image-picker",
+      [
+        "expo-build-properties",
+        {
+          "ios": { "deploymentTarget": "15.1" }
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     }

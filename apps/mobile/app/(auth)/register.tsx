@@ -57,8 +57,11 @@ export default function RegisterScreen() {
       await signUp(name, email, password);
       router.replace("/(tabs)");
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      Alert.alert("Erro", msg ?? "Não foi possível criar sua conta.");
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("User already registered"))
+        Alert.alert("Erro", "Este e-mail já está cadastrado. Tente fazer login.");
+      else
+        Alert.alert("Erro", msg || "Não foi possível criar sua conta.");
     }
   }
 

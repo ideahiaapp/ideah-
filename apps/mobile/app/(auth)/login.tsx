@@ -9,10 +9,9 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useState } from "react";
-import { useRouter, Link } from "expo-router";
+import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/store/auth.store";
 import { Colors } from "@/constants/colors";
@@ -25,16 +24,21 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
 
+  const [error, setError] = useState("");
+
   async function handleLogin() {
-    if (!email || !password) {
-      Alert.alert("Atenção", "Preencha e-mail e senha.");
-      return;
-    }
+    if (!email || !password) { setError("Preencha e-mail e senha."); return; }
+    setError("");
     try {
-      await login(email, password);
-      router.replace("/(tabs)");
-    } catch {
-      Alert.alert("Erro", "E-mail ou senha inválidos.");
+      await login(email.trim().toLowerCase(), password);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("Email not confirmed"))
+        setError("E-mail não confirmado. Verifique sua caixa de entrada.");
+      else if (msg.includes("Invalid login credentials"))
+        setError("E-mail ou senha inválidos.");
+      else
+        setError(msg || "Erro ao fazer login.");
     }
   }
 
@@ -58,11 +62,15 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Cabeçalho */}
           <Text style={styles.title}>Bem-vindo de volta</Text>
           <Text style={styles.subtitle}>Entre na sua conta para continuar</Text>
 
-          {/* Formulário */}
+          {error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.form}>
             {/* Email */}
             <View style={styles.field}>
@@ -270,4 +278,13 @@ const styles = StyleSheet.create({
     color: Colors.gray[400],
     marginTop: 32,
   },
+  errorBox: {
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  errorText: { color: "#DC2626", fontSize: 13 },
 });
