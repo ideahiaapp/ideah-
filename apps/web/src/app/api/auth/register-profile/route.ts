@@ -11,9 +11,13 @@ export async function POST(req: NextRequest) {
     const { userId, email } = await req.json();
     if (!userId || !email) return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
 
+    // Registra como terapeuta autorizado
     await supabaseAdmin
       .from("therapist_profiles")
       .upsert({ user_id: userId, email: email.toLowerCase().trim() });
+
+    // Confirma o email automaticamente — evita exigir clique no link de confirmação
+    await supabaseAdmin.auth.admin.updateUserById(userId, { email_confirm: true });
 
     return NextResponse.json({ ok: true });
   } catch {

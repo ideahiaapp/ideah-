@@ -63,8 +63,7 @@ export default function RegisterPage() {
     }
     try {
       await signUp(name, email, password);
-      // Se chegou aqui sem erro, pode ter confirmação pendente ou login direto
-      setEmailSent(true);
+      router.push("/dashboard");
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : String(err);
       // Traduz mensagens comuns do Supabase

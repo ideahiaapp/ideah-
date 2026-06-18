@@ -78,12 +78,8 @@ export const useAuthStore = create<AuthState>()(
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: data.user.id, email }),
           });
-          // Se já está confirmado (ex: confirmação desativada), loga direto
-          if (data.user.confirmed_at) {
-            set({ user: toUser(data.user), isLoading: false });
-          } else {
-            set({ isLoading: false }); // aguarda confirmação de e-mail
-          }
+          // register-profile confirma o email via admin API — loga direto
+          set({ user: toUser(data.user), isLoading: false });
         } else {
           set({ isLoading: false });
         }
