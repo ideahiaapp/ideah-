@@ -1,12 +1,13 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "src/app/api/rag/upload/route.ts": {
+    "app/api/rag/upload/route.ts": {
       "maxDuration": 60
     },
-    "src/app/api/reports/patient-prospect/route.ts": {
+    "app/api/reports/patient-prospect/route.ts": {
       "maxDuration": 30
     },
-    "src/app/api/supervision/chat/route.ts": {
+    "app/api/supervision/chat/route.ts": {
       "maxDuration": 30
     }
   }
