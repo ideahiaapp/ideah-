@@ -26,16 +26,10 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-image-picker",
-      [
-        "expo-build-properties",
-        {
-          "ios": { "deploymentTarget": "15.1" }
-        }
-      ]
+      "expo-image-picker"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
   }
 }

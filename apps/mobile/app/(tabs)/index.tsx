@@ -90,7 +90,7 @@ export default function HomeScreen() {
             <View style={s.quickRow}>
               {[
                 { label: "Nova Sessão", icon: "add-circle" as const, tab: "/(tabs)/schedule" },
-                { label: "Supervisão", icon: "chatbubbles" as const, tab: "/(tabs)/reports" },
+                { label: "Supervisão", icon: "chatbubbles" as const, tab: "/supervision" },
                 { label: "Relatório", icon: "bar-chart" as const, tab: "/(tabs)/reports" },
               ].map(item => (
                 <TouchableOpacity key={item.label} style={s.quickCard} onPress={() => router.push(item.tab as never)} activeOpacity={0.7}>

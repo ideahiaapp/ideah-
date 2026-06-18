@@ -11,20 +11,70 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useState } from "react";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as WebBrowser from "expo-web-browser";
 import { useAuthStore } from "@/store/auth.store";
+import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, isLoading } = useAuthStore();
 
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [showPass, setShowPass] = useState(false);
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [showPass, setShowPass]   = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError]         = useState("");
 
-  const [error, setError] = useState("");
+  async function handleGoogleLogin() {
+    setGoogleLoading(true);
+    setError("");
+    try {
+      const redirectTo = Platform.OS === "web"
+        ? `${window.location.origin}/auth/callback`
+        : "ideah://auth/callback";
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (oauthError) throw oauthError;
+      if (!data.url) throw new Error("Sem URL de autenticação");
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type === "success") {
+        const url = result.url;
+        const params = new URLSearchParams(url.split("#")[1] ?? url.split("?")[1] ?? "");
+        const accessToken  = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+        if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.email) {
+            const res = await fetch(
+              `${process.env.EXPO_PUBLIC_WEB_URL}/api/auth/verify?email=${encodeURIComponent(user.email)}`
+            );
+            const { allowed } = await res.json();
+            if (!allowed) {
+              await supabase.auth.signOut();
+              setError("Acesso não autorizado. Cadastre-se primeiro.");
+            }
+          }
+        }
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao entrar com Google.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   async function handleLogin() {
     if (!email || !password) { setError("Preencha e-mail e senha."); return; }
@@ -127,6 +177,29 @@ export default function LoginScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.btnText}>Entrar</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Google */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ou</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.btnGoogle, googleLoading && styles.btnDisabled]}
+              onPress={handleGoogleLogin}
+              disabled={googleLoading}
+              activeOpacity={0.8}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color={Colors.ink} />
+              ) : (
+                <>
+                  <Text style={styles.googleIcon}>G</Text>
+                  <Text style={styles.btnGoogleText}>Entrar com Google</Text>
+                </>
               )}
             </TouchableOpacity>
 
@@ -277,6 +350,27 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.gray[400],
     marginTop: 32,
+  },
+  btnGoogle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+    borderRadius: 12,
+    paddingVertical: 13,
+    backgroundColor: Colors.white,
+  },
+  googleIcon: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#4285F4",
+  },
+  btnGoogleText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.ink,
   },
   errorBox: {
     backgroundColor: "#FEF2F2",
