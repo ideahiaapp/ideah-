@@ -44,8 +44,14 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/dashboard");
-    } catch {
-      setError("E-mail ou senha inválidos. Verifique seus dados.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("Email not confirmed"))
+        setError("E-mail ainda não confirmado. Verifique sua caixa de entrada e clique no link que enviamos.");
+      else if (msg.includes("Invalid login credentials") || msg.includes("invalid_credentials"))
+        setError("E-mail ou senha inválidos. Verifique seus dados.");
+      else
+        setError(msg || "Erro ao fazer login. Tente novamente.");
     }
   }
 
