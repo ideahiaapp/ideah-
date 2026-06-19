@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function serviceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const ADMIN_EMAILS = [
   "carlos.magno@gmail.com",
@@ -23,6 +25,7 @@ async function assertAdmin(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     await assertAdmin(req);
+    const supabaseAdmin = serviceClient();
 
     const { data: profiles, error } = await supabaseAdmin
       .from("therapist_profiles")
@@ -54,6 +57,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     await assertAdmin(req);
+    const supabaseAdmin = serviceClient();
     const { userId, blocked } = await req.json();
     if (!userId || typeof blocked !== "boolean") {
       return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });

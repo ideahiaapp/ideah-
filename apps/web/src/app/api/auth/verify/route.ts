@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function serviceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const ADMIN_EMAILS = [
   "carlos.magno@gmail.com",
@@ -18,6 +20,7 @@ export async function GET(req: NextRequest) {
 
   if (ADMIN_EMAILS.includes(email)) return NextResponse.json({ allowed: true });
 
+  const supabaseAdmin = serviceClient();
   const { data } = await supabaseAdmin
     .from("therapist_profiles")
     .select("user_id, blocked")

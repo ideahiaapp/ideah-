@@ -14,13 +14,16 @@ function getAnthropicClient(req: NextRequest) {
   return new Anthropic({ apiKey });
 }
 
-const supabaseAdmin = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function serviceClient() {
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const supabaseAdmin = serviceClient();
     const { clientId, therapistId } = await req.json();
     if (!clientId || !therapistId) {
       return NextResponse.json({ error: "clientId e therapistId são obrigatórios." }, { status: 400 });
