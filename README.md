@@ -234,8 +234,8 @@ Alinhado às orientações do Conselho Federal de Psicologia sobre o uso de IA n
 | | Papel |
 |---|---|
 | **Eli Márcia** | Concepção clínica, curadoria teórica, voz das abordagens |
-| **Jaya Roberta** | Tecnologia, arquitetura, compliance e ponte clínico-técnica |
-| **Carlos Magno** | Produto, governança e entrega da plataforma |
+| **Jaya Roberta** | Tecnologia, governança, compliance e ponte clínico-técnica |
+| **Carlos Magno** | Produto, arquitetura e entrega da plataforma |
 
 ---
 
