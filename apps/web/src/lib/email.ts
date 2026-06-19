@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 const FROM = "IDEAh <onboarding@resend.dev>";
 
@@ -13,6 +15,7 @@ export async function sendAnamneseNotification(params: {
   anamneseId: string;
 }) {
   if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
 
   await resend.emails.send({
     from: FROM,
@@ -55,6 +58,7 @@ export async function sendAnamneseInvite(params: {
   anamneseUrl: string;
 }) {
   if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
 
   await resend.emails.send({
     from: FROM,
@@ -90,6 +94,7 @@ export async function sendAnamneseConfirmation(params: {
   therapistName: string;
 }) {
   if (!process.env.RESEND_API_KEY) return;
+  const resend = getResend();
 
   await resend.emails.send({
     from: FROM,
