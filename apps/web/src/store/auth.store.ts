@@ -8,6 +8,7 @@ export const ADMIN_EMAILS = [
   "carlos.magno@gmail.com",
   "betinha.potter@gmail.com",
   "elimarcia.philos@gmail.com",
+  "ideahiaapp@gmail.com",
 ];
 
 /* ─── Mapeia usuário Supabase → tipo interno ─────────── */

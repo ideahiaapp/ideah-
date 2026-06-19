@@ -12,6 +12,7 @@ const ADMIN_EMAILS = [
   "carlos.magno@gmail.com",
   "betinha.potter@gmail.com",
   "elimarcia.philos@gmail.com",
+  "ideahiaapp@gmail.com",
 ];
 
 async function assertAdmin(req: NextRequest) {
