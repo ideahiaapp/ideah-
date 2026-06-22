@@ -101,10 +101,10 @@ export async function saveDocument(params: {
   chunks: string[];
   embeddings: number[][];
   approach: string;
+  isGlobal?: boolean;
 }): Promise<string> {
   const supabase = serviceClient();
 
-  // Insere documento
   const { data: doc, error: docErr } = await supabase
     .from("rag_documents")
     .insert({
@@ -113,13 +113,13 @@ export async function saveDocument(params: {
       size_bytes: params.sizeBytes,
       chunk_count: params.chunks.length,
       approach: params.approach,
+      is_global: params.isGlobal ?? false,
     })
     .select("id")
     .single();
 
   if (docErr || !doc) throw new Error(`Criar documento: ${docErr?.message}`);
 
-  // Insere chunks em lotes de 50
   const BATCH = 50;
   for (let i = 0; i < params.chunks.length; i += BATCH) {
     const rows = params.chunks.slice(i, i + BATCH).map((content, j) => ({
@@ -128,6 +128,7 @@ export async function saveDocument(params: {
       content,
       embedding: params.embeddings[i + j],
       chunk_index: i + j,
+      is_global: params.isGlobal ?? false,
     }));
 
     const { error: chunkErr } = await supabase.from("rag_chunks").insert(rows);
@@ -137,13 +138,13 @@ export async function saveDocument(params: {
   return doc.id;
 }
 
-/* ── Listar documentos do terapeuta ───────────────────── */
+/* ── Listar documentos (global ou por terapeuta) ──────── */
 
 export async function listDocuments(therapistId: string) {
   const supabase = serviceClient();
   const { data, error } = await supabase
     .from("rag_documents")
-    .select("id, name, size_bytes, chunk_count, approach, created_at")
+    .select("id, name, size_bytes, chunk_count, approach, is_global, created_at")
     .eq("therapist_id", therapistId)
     .order("approach")
     .order("created_at", { ascending: false });
@@ -152,7 +153,20 @@ export async function listDocuments(therapistId: string) {
   return data ?? [];
 }
 
-/* ── Deletar documento (cascata apaga chunks) ─────────── */
+export async function listGlobalDocuments() {
+  const supabase = serviceClient();
+  const { data, error } = await supabase
+    .from("rag_documents")
+    .select("id, name, size_bytes, chunk_count, approach, created_at")
+    .eq("is_global", true)
+    .order("approach")
+    .order("name");
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/* ── Deletar documento ────────────────────────────────── */
 
 export async function deleteDocument(documentId: string, therapistId: string) {
   const supabase = serviceClient();
@@ -161,6 +175,17 @@ export async function deleteDocument(documentId: string, therapistId: string) {
     .delete()
     .eq("id", documentId)
     .eq("therapist_id", therapistId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteGlobalDocument(documentId: string) {
+  const supabase = serviceClient();
+  const { error } = await supabase
+    .from("rag_documents")
+    .delete()
+    .eq("id", documentId)
+    .eq("is_global", true);
 
   if (error) throw new Error(error.message);
 }
