@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 const VOYAGE_API = "https://api.voyageai.com/v1/embeddings";
-const CHUNK_SIZE = 900;
-const CHUNK_OVERLAP = 100;
+const CHUNK_SIZE = 1800;
+const CHUNK_OVERLAP = 150;
 
 /* ── Chunking ──────────────────────────────────────────── */
 
@@ -34,8 +34,6 @@ export async function embedTexts(
   const allEmbeddings: number[][] = [];
 
   for (let i = 0; i < texts.length; i += BATCH) {
-    if (i > 0) await new Promise(r => setTimeout(r, 22000)); // 3 RPM = 1 req/20s
-
     const batch = texts.slice(i, i + BATCH);
     const res = await fetch(VOYAGE_API, {
       method: "POST",
