@@ -3,7 +3,8 @@ ALTER TABLE public.rag_documents ADD COLUMN IF NOT EXISTS is_global BOOLEAN NOT 
 ALTER TABLE public.rag_chunks    ADD COLUMN IF NOT EXISTS is_global BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- 2. Remove a função antiga e recria com suporte a base global
-DROP FUNCTION IF EXISTS search_rag_chunks;
+DROP FUNCTION IF EXISTS search_rag_chunks(vector, uuid, int, float, text);
+DROP FUNCTION IF EXISTS search_rag_chunks(vector(1024), uuid, int, float, text);
 
 CREATE OR REPLACE FUNCTION search_rag_chunks(
   query_embedding  vector(1024),

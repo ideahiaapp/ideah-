@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.6.0",
     "@ideah/types": "*",
     "@ideah/utils": "*",
@@ -27,6 +28,7 @@
     "react-hook-form": "^7.52.0",
     "resend": "^6.12.4",
     "tailwind-merge": "^2.3.0",
+    "tesseract.js": "^7.0.0",
     "zod": "^3.23.0",
     "zustand": "^4.5.0"
   },
