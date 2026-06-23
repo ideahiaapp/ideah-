@@ -99,7 +99,7 @@ function TabPerfil() {
   }
 
   const initials = user?.name
-    ? user.name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join("")
+    ? user.name.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0].toUpperCase()).join("")
     : "?";
 
   return (
