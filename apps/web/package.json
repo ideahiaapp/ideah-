@@ -13,8 +13,7 @@
     "@anthropic-ai/sdk": "^0.102.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.6.0",
-    "@ideah/types": "*",
-    "@ideah/utils": "*",
+
     "@supabase/supabase-js": "^2.108.1",
     "@tanstack/react-query": "^5.45.0",
     "axios": "^1.7.0",
