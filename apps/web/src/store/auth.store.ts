@@ -1,7 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { User } from "@ideah/types";
 import { supabase } from "@/lib/supabase";
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "therapist";
+  avatarUrl?: string;
+  createdAt: Date;
+};
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export const ADMIN_EMAILS = [
