@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest } from "next/server";
 
-export type AIProvider = "anthropic" | "gemini";
+export type AIProvider = "anthropic" | "gemini" | "ollama";
 
 export interface AIMessage {
   role: "user" | "assistant";
@@ -22,10 +22,13 @@ export function getAIOptions(req: NextRequest): AIClientOptions {
   const apiKey =
     req.headers.get("x-ai-key") ||
     req.headers.get("x-anthropic-key") ||
-    (provider === "anthropic" ? process.env.ANTHROPIC_API_KEY : process.env.GEMINI_API_KEY) ||
+    (provider === "anthropic" ? process.env.ANTHROPIC_API_KEY
+      : provider === "gemini" ? process.env.GEMINI_API_KEY
+      : "") ||
     "";
 
-  if (!apiKey) {
+  // Ollama não precisa de API key (roda local)
+  if (!apiKey && provider !== "ollama") {
     throw new Error(
       "API Key não configurada. Acesse Configurações → API Key para informar sua chave."
     );
@@ -44,6 +47,27 @@ export async function chat(options: {
   model?: string;
 }): Promise<string> {
   const { provider, apiKey, system, messages, maxTokens = 1024 } = options;
+
+  if (provider === "ollama") {
+    const ollamaUrl = apiKey || "http://localhost:11434";
+    const model = options.model ?? "llama3";
+    const body = {
+      model,
+      messages: [
+        { role: "system", content: system },
+        ...messages,
+      ],
+      stream: false,
+    };
+    const res = await fetch(`${ollamaUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Ollama error: ${res.status} ${await res.text()}`);
+    const data = await res.json();
+    return data.message?.content ?? "";
+  }
 
   if (provider === "gemini") {
     const genAI = new GoogleGenerativeAI(apiKey);

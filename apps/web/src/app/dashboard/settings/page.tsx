@@ -569,7 +569,9 @@ function TabAPI() {
     setTestResult(null);
   }
 
-  const isValidFormat = provider === "anthropic"
+  const isValidFormat = provider === "ollama"
+    ? inputKey.startsWith("http")
+    : provider === "anthropic"
     ? inputKey.startsWith("sk-ant-")
     : inputKey.startsWith("AIza") || inputKey.length > 20;
 
@@ -624,8 +626,8 @@ function TabAPI() {
       {/* Seletor de provider */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
         <p className="text-sm font-semibold text-gray-700">Provedor de IA</p>
-        <div className="grid grid-cols-2 gap-3">
-          {(["anthropic", "gemini"] as AIProvider[]).map(p => (
+        <div className="grid grid-cols-3 gap-3">
+          {(["anthropic", "gemini", "ollama"] as AIProvider[]).map(p => (
             <button
               key={p}
               onClick={() => handleProviderChange(p)}
@@ -645,7 +647,7 @@ function TabAPI() {
                   {PROVIDER_LABELS[p]}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {p === "anthropic" ? "Claude Opus / Sonnet" : "Gemini 2.0 Flash"}
+                  {p === "anthropic" ? "Claude Opus / Sonnet" : p === "gemini" ? "Gemini 2.0 Flash" : "Llama / Mistral / etc"}
                 </p>
               </div>
             </button>
@@ -732,7 +734,7 @@ function TabAPI() {
       {/* Campo para inserir/atualizar */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
         <p className="text-sm font-semibold text-gray-700">
-          {hasKey ? "Substituir chave" : "Inserir API Key"}
+          {provider === "ollama" ? "URL do servidor Ollama" : hasKey ? "Substituir chave" : "Inserir API Key"}
         </p>
 
         <Field
@@ -769,6 +771,8 @@ function TabAPI() {
           <p className="font-semibold mb-0.5">⚠️ Sobre custos de uso</p>
           {provider === "gemini"
             ? <>O Gemini 2.0 Flash tem <strong>tier gratuito generoso</strong> (1500 req/dia). Acompanhe em <a href="https://aistudio.google.com" target="_blank" className="underline">aistudio.google.com</a>.</>
+            : provider === "ollama"
+            ? <>Ollama roda <strong>100% local</strong> — sem custos, sem dados enviados à nuvem. Informe a URL do servidor (padrão: <code>http://localhost:11434</code>). Instale em <a href="https://ollama.com" target="_blank" className="underline">ollama.com</a>.</>
             : <>Cada conversa consome tokens da Anthropic. Modelo: <strong>claude-opus-4-5</strong>. Acompanhe em <a href="https://console.anthropic.com/usage" target="_blank" className="underline">console.anthropic.com/usage</a>.</>
           }
         </div>

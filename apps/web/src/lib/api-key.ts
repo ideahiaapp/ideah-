@@ -1,6 +1,6 @@
 import { encrypt, decrypt, isEncrypted } from "./crypto";
 
-export type AIProvider = "anthropic" | "gemini";
+export type AIProvider = "anthropic" | "gemini" | "ollama";
 
 const STORAGE_KEY     = "ideah_anthropic_api_key"; // mantém compatibilidade
 const PROVIDER_KEY    = "ideah_ai_provider";
@@ -79,14 +79,17 @@ export function maskApiKey(plainKey: string): string {
 export const PROVIDER_LABELS: Record<AIProvider, string> = {
   anthropic: "Anthropic (Claude)",
   gemini:    "Google Gemini",
+  ollama:    "Ollama (local)",
 };
 
 export const PROVIDER_KEY_HINTS: Record<AIProvider, string> = {
   anthropic: "sk-ant-api03-...",
   gemini:    "AIza...",
+  ollama:    "http://localhost:11434",
 };
 
 export const PROVIDER_LINKS: Record<AIProvider, string> = {
   anthropic: "https://console.anthropic.com/",
   gemini:    "https://aistudio.google.com/app/apikey",
+  ollama:    "https://ollama.com/download",
 };
