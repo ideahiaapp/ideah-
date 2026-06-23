@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getApiKey, saveApiKey, removeApiKey, aiHeaders, maskApiKey } from "@/lib/api-key";
+import { getApiKey, saveApiKey, removeApiKey, aiHeaders, maskApiKey, getProvider, saveProvider, PROVIDER_LABELS, PROVIDER_KEY_HINTS, PROVIDER_LINKS, type AIProvider } from "@/lib/api-key";
 import { getClinicSettings, saveClinicSettings } from "@/lib/clinic-settings";
 import {
   User, Lock, CreditCard, Key, Save, Loader2, CheckCircle2,
@@ -544,8 +544,8 @@ function TabPlano() {
 /* ─── Aba API Key ─────────────────────────────────── */
 function TabAPI() {
   const [inputKey, setInputKey]     = useState("");
-  // storedKey: valor decifrado em memória apenas, nunca persistido em claro
   const [storedKey, setStoredKey]   = useState("");
+  const [provider, setProviderState] = useState<AIProvider>("anthropic");
   const [loading, setLoading]       = useState(true);
   const [showKey, setShowKey]       = useState(false);
   const [saving, setSaving]         = useState(false);
@@ -555,18 +555,29 @@ function TabAPI() {
   const [copied, setCopied]         = useState(false);
   const [removing, setRemoving]     = useState(false);
 
-  // Decifra e carrega a chave ao montar
   useEffect(() => {
     getApiKey().then((k) => { setStoredKey(k); setLoading(false); });
+    setProviderState(getProvider());
   }, []);
 
   const hasKey = storedKey.length > 0;
 
+  function handleProviderChange(p: AIProvider) {
+    setProviderState(p);
+    saveProvider(p);
+    setInputKey("");
+    setTestResult(null);
+  }
+
+  const isValidFormat = provider === "anthropic"
+    ? inputKey.startsWith("sk-ant-")
+    : inputKey.startsWith("AIza") || inputKey.length > 20;
+
   async function handleSave() {
-    if (!inputKey.startsWith("sk-ant-")) return;
+    if (!isValidFormat) return;
     setSaving(true);
-    await saveApiKey(inputKey);   // cifra e persiste
-    setStoredKey(inputKey);       // mantém decifrado só em memória
+    await saveApiKey(inputKey);
+    setStoredKey(inputKey);
     setInputKey("");
     setSaving(false);
     setSaved(true);
@@ -608,26 +619,42 @@ function TabAPI() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const isValidFormat = inputKey.startsWith("sk-ant-");
-
   return (
     <div className="space-y-6">
-      {/* Explicação */}
-      <div className="bg-gradient-to-br from-purple-50 to-brand-50 border border-purple-100 rounded-2xl p-5 flex items-start gap-4">
-        <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-5 h-5 text-purple-600" />
+      {/* Seletor de provider */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
+        <p className="text-sm font-semibold text-gray-700">Provedor de IA</p>
+        <div className="grid grid-cols-2 gap-3">
+          {(["anthropic", "gemini"] as AIProvider[]).map(p => (
+            <button
+              key={p}
+              onClick={() => handleProviderChange(p)}
+              className={`flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${
+                provider === p
+                  ? "border-brand-500 bg-brand-50"
+                  : "border-gray-100 hover:border-gray-200 bg-white"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                provider === p ? "bg-brand-100" : "bg-gray-100"
+              }`}>
+                <Sparkles className={`w-4 h-4 ${provider === p ? "text-brand-600" : "text-gray-400"}`} />
+              </div>
+              <div>
+                <p className={`text-xs font-semibold ${provider === p ? "text-brand-700" : "text-gray-600"}`}>
+                  {PROVIDER_LABELS[p]}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {p === "anthropic" ? "Claude Opus / Sonnet" : "Gemini 2.0 Flash"}
+                </p>
+              </div>
+            </button>
+          ))}
         </div>
-        <div>
-          <p className="text-sm font-bold text-purple-800">API Key da Anthropic (Claude)</p>
-          <p className="text-xs text-purple-600 mt-1 leading-relaxed">
-            A Supervisão com IA e as sugestões de hipóteses em Evoluções funcionam com o modelo Claude da Anthropic.
-            Informe sua chave aqui — ela será usada automaticamente em todas as funcionalidades de IA.
-          </p>
-          <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-purple-700 hover:text-purple-900">
-            Obter chave no console da Anthropic <ExternalLink className="w-3 h-3" />
-          </a>
-        </div>
+        <a href={PROVIDER_LINKS[provider]} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800">
+          Obter chave — {PROVIDER_LABELS[provider]} <ExternalLink className="w-3 h-3" />
+        </a>
       </div>
 
       {/* Status da chave atual */}
@@ -709,8 +736,8 @@ function TabAPI() {
         </p>
 
         <Field
-          label="API Key da Anthropic"
-          hint="Começa com sk-ant-... · Armazenada localmente no seu navegador."
+          label={`API Key — ${PROVIDER_LABELS[provider]}`}
+          hint={`Começa com ${PROVIDER_KEY_HINTS[provider]} · Armazenada localmente no seu navegador.`}
         >
           <div className="relative">
             <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -718,7 +745,7 @@ function TabAPI() {
               type={showKey ? "text" : "password"}
               value={inputKey}
               onChange={e => setInputKey(e.target.value)}
-              placeholder="sk-ant-api03-..."
+              placeholder={PROVIDER_KEY_HINTS[provider]}
               className={inputCls + " pl-9 pr-10 font-mono"}
             />
             <button type="button" onClick={() => setShowKey(s => !s)}
@@ -728,8 +755,7 @@ function TabAPI() {
           </div>
           {inputKey && !isValidFormat && (
             <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Formato inválido. A chave deve começar com <code className="bg-red-50 px-1 rounded">sk-ant-</code>
+              <AlertTriangle className="w-3.5 h-3.5" /> Formato inválido para {PROVIDER_LABELS[provider]}
             </p>
           )}
           {inputKey && isValidFormat && (
@@ -741,8 +767,10 @@ function TabAPI() {
 
         <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-xs text-amber-700">
           <p className="font-semibold mb-0.5">⚠️ Sobre custos de uso</p>
-          Cada conversa de supervisão consome tokens da API Anthropic. O modelo usado é o <strong>claude-opus-4-5</strong>.
-          Acompanhe seu uso em <a href="https://console.anthropic.com/usage" target="_blank" className="underline">console.anthropic.com/usage</a>.
+          {provider === "gemini"
+            ? <>O Gemini 2.0 Flash tem <strong>tier gratuito generoso</strong> (1500 req/dia). Acompanhe em <a href="https://aistudio.google.com" target="_blank" className="underline">aistudio.google.com</a>.</>
+            : <>Cada conversa consome tokens da Anthropic. Modelo: <strong>claude-opus-4-5</strong>. Acompanhe em <a href="https://console.anthropic.com/usage" target="_blank" className="underline">console.anthropic.com/usage</a>.</>
+          }
         </div>
 
         <div className="flex justify-end">

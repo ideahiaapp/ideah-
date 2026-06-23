@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
+import { getAIOptions, chat } from "@/lib/ai-client";
 
 export const maxDuration = 30;
-
-function getAnthropicClient(req: NextRequest) {
-  const apiKey =
-    req.headers.get("x-anthropic-key") ||
-    process.env.ANTHROPIC_API_KEY ||
-    "";
-  if (!apiKey) throw new Error("API Key não configurada. Acesse Configurações → API Key.");
-  return new Anthropic({ apiKey });
-}
 
 function serviceClient() {
   return createClient<Database>(
@@ -99,16 +90,14 @@ Total de sessões analisadas: ${evolutions.length}
 EVOLUÇÕES:
 ${evoLines}`;
 
-    const anthropic = getAnthropicClient(req);
-
-    const message = await anthropic.messages.create({
-      model:      "claude-sonnet-4-6",
-      max_tokens: 1024,
-      system:     systemPrompt,
-      messages:   [{ role: "user", content: userPrompt }],
+    const { provider, apiKey } = getAIOptions(req);
+    const raw = await chat({
+      provider,
+      apiKey,
+      system:    systemPrompt,
+      messages:  [{ role: "user", content: userPrompt }],
+      maxTokens: 1024,
     });
-
-    const raw = (message.content[0] as { type: string; text: string }).text;
     const result = JSON.parse(raw);
 
     return NextResponse.json({

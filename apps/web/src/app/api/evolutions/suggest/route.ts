@@ -1,24 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-
-function getClient(req: NextRequest) {
-  const apiKey =
-    req.headers.get("x-anthropic-key") ||
-    process.env.ANTHROPIC_API_KEY ||
-    "";
-
-  if (!apiKey) {
-    throw new Error(
-      "API Key não configurada. Acesse Configurações → API Key para informar sua chave da Anthropic."
-    );
-  }
-
-  return new Anthropic({ apiKey });
-}
+import { getAIOptions, chat } from "@/lib/ai-client";
 
 export async function POST(req: NextRequest) {
   try {
-    const client = getClient(req);
+    const { provider, apiKey } = getAIOptions(req);
     const { content, approach, clientName } = await req.json();
 
     if (!content || content.trim().length < 20) {
@@ -41,21 +26,14 @@ Responda em formato JSON com exatamente esta estrutura:
 IMPORTANTE: Nunca diagnostique. Ofereça apenas hipóteses clínicas para reflexão do terapeuta.
 Responda APENAS com o JSON, sem texto adicional.`;
 
-    const response = await client.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: 600,
+    const text = await chat({
+      provider,
+      apiKey,
       system: systemPrompt,
-      messages: [
-        {
-          role: "user",
-          content: `Relato da sessão:\n\n${content}`,
-        },
-      ],
+      messages: [{ role: "user", content: `Relato da sessão:\n\n${content}` }],
+      maxTokens: 600,
     });
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
-
-    // Extrair JSON da resposta
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("Resposta inválida da IA");
 

@@ -1,24 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { getAIOptions, chat } from "@/lib/ai-client";
 import { searchChunks } from "@/lib/rag";
 
 export const maxDuration = 30;
-
-function getClient(req: NextRequest) {
-  // Prioridade: chave do usuário (header) → variável de ambiente (fallback dev)
-  const apiKey =
-    req.headers.get("x-anthropic-key") ||
-    process.env.ANTHROPIC_API_KEY ||
-    "";
-
-  if (!apiKey) {
-    throw new Error(
-      "API Key não configurada. Acesse Configurações → API Key para informar sua chave da Anthropic."
-    );
-  }
-
-  return new Anthropic({ apiKey });
-}
 
 const APPROACH_PROMPTS: Record<string, string> = {
   SOMATIC: `Você é o IDEAh em modo Terapia Corporal, uma inteligência clínica dialógica especializada em apoiar terapeutas qualificados no raciocínio clínico dentro desta abordagem.
@@ -195,7 +179,7 @@ Em risco grave, violência, abuso, autolesão ou crise aguda, orientar avaliaç�
 
 export async function POST(req: NextRequest) {
   try {
-    const client = getClient(req);
+    const { provider, apiKey } = getAIOptions(req);
     const { messages, approach, clientName, therapistId, clientIntention, lastEvolution } = await req.json();
 
     if (!messages || !approach) {
@@ -238,24 +222,20 @@ Responda de forma estruturada quando apropriado, usando:
 - Seções como "Hipóteses clínicas:", "Recursos teóricos:", "Questões para reflexão:" quando pertinente
 - Mantenha respostas entre 150-400 palavras — consistentes mas não exaustivas`;
 
-    const anthropicMessages = messages.map((m: { role: string; content: string }) => ({
+    const aiMessages = messages.map((m: { role: string; content: string }) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
     }));
 
-    const response = await client.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: 1024,
+    const responseText = await chat({
+      provider,
+      apiKey,
       system: systemWithContext,
-      messages: anthropicMessages,
+      messages: aiMessages,
+      maxTokens: 1024,
     });
 
-    const content = response.content[0];
-    if (content.type !== "text") {
-      throw new Error("Resposta inesperada da API");
-    }
-
-    return NextResponse.json({ content: content.text });
+    return NextResponse.json({ content: responseText });
   } catch (error: unknown) {
     console.error("Supervision chat error:", error);
     const message = error instanceof Error ? error.message : "Erro interno";
