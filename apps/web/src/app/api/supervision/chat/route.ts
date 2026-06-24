@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAIOptions, chat } from "@/lib/ai-client";
 import { searchChunks } from "@/lib/rag";
 
-export const maxDuration = 30;
+export const maxDuration = 300;
 
 const APPROACH_PROMPTS: Record<string, string> = {
   SOMATIC: `Você é o IDEAh em modo Terapia Corporal, uma inteligência clínica dialógica especializada em apoiar terapeutas qualificados no raciocínio clínico dentro desta abordagem.
@@ -190,6 +190,7 @@ export async function POST(req: NextRequest) {
 
     // ── RAG: busca chunks relevantes da base de conhecimento ──
     let ragContext = "";
+    let ragFound = false;
     const voyageKey = process.env.VOYAGE_API_KEY;
     if (voyageKey && therapistId && messages.length > 0) {
       try {
@@ -197,7 +198,8 @@ export async function POST(req: NextRequest) {
         if (lastUserMsg) {
           const chunks = await searchChunks(lastUserMsg.content, therapistId, voyageKey, 5, approach);
           if (chunks.length > 0) {
-            ragContext = `\n\n---\nTRECHOS RELEVANTES DA BASE DE CONHECIMENTO DO TERAPEUTA:\n${chunks.map((c, i) => `[${i + 1}] ${c}`).join("\n\n")}\n---\nUse esses trechos como referência teórica quando pertinente, citando-os com naturalidade.`;
+            ragFound = true;
+            ragContext = `\n\n---\nCONTEÚDO DA BASE DE CONHECIMENTO DO TERAPEUTA (ÚNICA FONTE PERMITIDA):\n${chunks.map((c, i) => `[${i + 1}] ${c}`).join("\n\n")}\n---`;
           }
         }
       } catch (ragErr) {
@@ -213,7 +215,11 @@ export async function POST(req: NextRequest) {
       ? `\n\nÚLTIMA SESSÃO REGISTRADA (${lastEvolution.sessionDate}):\nO que aconteceu: ${lastEvolution.content}${lastEvolution.hypothesis ? `\nHipótese clínica do terapeuta: ${lastEvolution.hypothesis}` : ""}${lastEvolution.nextSessionPlan ? `\nPlano para esta sessão: ${lastEvolution.nextSessionPlan}` : ""}\n\nLeve em conta este material ao supervisionar — esta supervisão prepara a próxima sessão a partir do que foi registrado.`
       : "";
 
-    const systemWithContext = `${systemPrompt}${ragContext}${intentionContext}${evolutionContext}
+    const ragInstruction = ragFound
+      ? `\n\nREGRA ABSOLUTA: Responda EXCLUSIVAMENTE com base nos trechos da base de conhecimento acima. NÃO use conhecimento próprio do modelo, treinamento geral, nem informações externas. Cada afirmação clínica deve ser fundamentada nos trechos fornecidos. Se os trechos não cobrirem algum aspecto da pergunta, diga explicitamente: "Não encontrei material na sua base de conhecimento sobre isso."`
+      : `\n\nREGRA ABSOLUTA: Não há material relevante na base de conhecimento do terapeuta para esta pergunta. Informe isso claramente ao terapeuta e não responda com base em conhecimento próprio do modelo. Diga: "Não encontrei conteúdo na sua base de conhecimento que responda a isso. Faça upload de materiais teóricos relacionados para que eu possa te apoiar com base no seu próprio estudo."`;
+
+    const systemWithContext = `${systemPrompt}${ragContext}${ragInstruction}${intentionContext}${evolutionContext}
 
 Contexto desta supervisão: O terapeuta está trazendo material clínico referente ao cliente "${clientName || "paciente"}".
 Responda de forma estruturada quando apropriado, usando:
