@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Save, Loader2, CheckCircle2,
   User, Phone, Mail, Heart, FileText,
-  ChevronDown, AlertTriangle, Mic, ShieldAlert, Info, BookOpen,
+  ChevronDown, AlertTriangle, Mic, ShieldAlert, Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
@@ -24,15 +24,6 @@ const APPROACHES = [
   { value: "ACCEPTANCE_COMMITMENT", label: "ACT" },
 ];
 
-const PURCHASABLE_BASES = [
-  { key: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
-  { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },
-  { key: "JUNGIAN",              label: "Junguiana" },
-  { key: "SOMATIC",              label: "Somática / Corporal" },
-  { key: "GESTALT",              label: "Gestalt-terapia" },
-  { key: "PSYCHODRAMA",          label: "Psicodrama" },
-  { key: "SYSTEMIC",             label: "Constelação Familiar" },
-];
 
 const FREQUENCIES = ["Semanal","Quinzenal","Mensal","Sob demanda"];
 const DURATIONS   = ["45","50","60","90"];
@@ -47,7 +38,6 @@ export default function NewClientPage() {
     approach: "", frequency: "Semanal", duration: "50", referral: "",
     mainDemand: "", notes: "", emergencyContact: "",
     vulnerability: [] as string[],
-    purchasedApproaches: [] as string[],
     lgpdConsent: false, pseudonymized: false,
   });
 
@@ -67,14 +57,6 @@ export default function NewClientPage() {
     }));
   }
 
-  function toggleBase(key: string) {
-    setForm(p => ({
-      ...p,
-      purchasedApproaches: p.purchasedApproaches.includes(key)
-        ? p.purchasedApproaches.filter(k => k !== key)
-        : [...p.purchasedApproaches, key],
-    }));
-  }
   function set(field: string, value: string) {
     setForm(p => ({ ...p, [field]: value }));
   }
@@ -83,27 +65,25 @@ export default function NewClientPage() {
     if (!canSave || !user) return;
     setSaving(true); setError(null);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (createClient as any)({
-        therapist_id:         user.id,
-        name:                 form.name.trim(),
-        email:                form.email || null,
-        phone:                form.phone || null,
-        birth_date:           form.birthDate || null,
-        occupation:           form.occupation || null,
-        approach:             selectedApproach?.value ?? null,
-        approach_label:       selectedApproach?.label ?? null,
-        status:               "ACTIVE",
-        session_frequency:    form.frequency,
-        session_duration:     parseInt(form.duration),
-        referral:             form.referral || null,
-        main_demand:          form.mainDemand.trim() || null,
-        notes:                form.notes.trim() || null,
-        emergency_contact:    form.emergencyContact.trim() || null,
-        initials:             generateInitials(form.name),
-        color:                generateColor(form.name),
-        total_sessions:       0,
-        purchased_approaches: form.purchasedApproaches,
+      await createClient({
+        therapist_id:      user.id,
+        name:              form.name.trim(),
+        email:             form.email || null,
+        phone:             form.phone || null,
+        birth_date:        form.birthDate || null,
+        occupation:        form.occupation || null,
+        approach:          selectedApproach?.value ?? null,
+        approach_label:    selectedApproach?.label ?? null,
+        status:            "ACTIVE",
+        session_frequency: form.frequency,
+        session_duration:  parseInt(form.duration),
+        referral:          form.referral || null,
+        main_demand:       form.mainDemand.trim() || null,
+        notes:             form.notes.trim() || null,
+        emergency_contact: form.emergencyContact.trim() || null,
+        initials:          generateInitials(form.name),
+        color:             generateColor(form.name),
+        total_sessions:    0,
       });
       setSaved(true);
       setTimeout(() => router.push("/dashboard/clients"), 1000);
@@ -210,37 +190,6 @@ export default function NewClientPage() {
             <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
             <span>Este caso está marcado como vulnerabilidade. O IDEAh sinalizará isso durante o raciocínio clínico.</span>
           </div>
-        )}
-      </Section>
-
-      <Section icon={BookOpen} title="Bases de conhecimento adquiridas">
-        <p className="text-xs text-gray-500 leading-relaxed">
-          Selecione as abordagens teóricas que este terapeuta adquiriu. Apenas as bases selecionadas estarão disponíveis na supervisão.
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">
-          {PURCHASABLE_BASES.map(b => {
-            const on = form.purchasedApproaches.includes(b.key);
-            return (
-              <button key={b.key} type="button" onClick={() => toggleBase(b.key)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-medium text-left transition-colors",
-                  on ? "border-indigo-400 bg-indigo-50 text-indigo-800" : "border-gray-200 bg-white text-gray-600 hover:border-indigo-200 hover:bg-indigo-50/50"
-                )}>
-                <span className={cn(
-                  "w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center",
-                  on ? "border-indigo-500 bg-indigo-500" : "border-gray-300"
-                )}>
-                  {on && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                </span>
-                {b.label}
-              </button>
-            );
-          })}
-        </div>
-        {form.purchasedApproaches.length === 0 && (
-          <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
-            <AlertTriangle className="w-3.5 h-3.5" /> Nenhuma base selecionada — o terapeuta não terá acesso à supervisão por abordagem.
-          </p>
         )}
       </Section>
 
