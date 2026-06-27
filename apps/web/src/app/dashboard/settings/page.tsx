@@ -8,13 +8,13 @@ import {
   Eye, EyeOff, Camera, ExternalLink, AlertTriangle, Sparkles,
   ChevronDown, ShieldCheck, Zap, Crown, Check, Copy, DollarSign,
   Scale, ShieldAlert, FileText, Info, BookOpen, Upload, Trash2,
-  Users, ShieldOff,
+  Users, ShieldOff, MessageSquare,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 
-type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas";
+type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas" | "prompts";
 
 /* ─── Helpers ─────────────────────────────────────── */
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
@@ -1246,6 +1246,172 @@ function TabTerapeutas() {
   );
 }
 
+/* ─── Aba Prompts de Abordagem (admin only) ─────── */
+const APPROACH_KEYS = [
+  { key: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { key: "JUNGIAN",              label: "Junguiana" },
+  { key: "SOMATIC",              label: "Somática / Corporal" },
+  { key: "GESTALT",              label: "Gestalt-terapia" },
+  { key: "PSYCHODRAMA",          label: "Psicodrama" },
+  { key: "SYSTEMIC",             label: "Constelação Familiar" },
+];
+
+type PromptEntry = { approach: string; prompt: string; updated_at?: string };
+
+function TabPrompts() {
+  const { user } = useAuthStore();
+  const [prompts,   setPrompts]   = useState<Record<string, string>>({});
+  const [selected,  setSelected]  = useState(APPROACH_KEYS[0].key);
+  const [draft,     setDraft]     = useState("");
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [msg,       setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/approach-prompts")
+      .then(r => r.json())
+      .then(d => {
+        const map: Record<string, string> = {};
+        (d.prompts as PromptEntry[]).forEach(p => { map[p.approach] = p.prompt; });
+        setPrompts(map);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    setDraft(prompts[selected] ?? "");
+    setMsg(null);
+  }, [selected, prompts]);
+
+  async function handleSave() {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/approach-prompts", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-email": user?.email ?? "" },
+        body: JSON.stringify({ approach: selected, prompt: draft }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setPrompts(prev => ({ ...prev, [selected]: draft }));
+      setMsg({ type: "ok", text: "Prompt salvo com sucesso." });
+    } catch (err) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Erro ao salvar." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleReset() {
+    setDraft(prompts[selected] ?? "");
+    setMsg(null);
+  }
+
+  const isDirty = draft !== (prompts[selected] ?? "");
+  const currentLabel = APPROACH_KEYS.find(a => a.key === selected)?.label ?? selected;
+  const isCustomized = !!prompts[selected];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start gap-4 bg-purple-50 border border-purple-100 rounded-2xl p-5">
+        <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+          <MessageSquare className="w-5 h-5 text-purple-600" strokeWidth={1.8} />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-purple-800">Prompts de Abordagem</p>
+          <p className="text-xs text-purple-600 mt-1 leading-relaxed">
+            Personalize o prompt de sistema de cada abordagem teórica. O prompt salvo aqui substitui o padrão do sistema. Deixe em branco para usar o padrão.
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+        {/* Seletor de abordagem */}
+        <div className="flex flex-wrap gap-2">
+          {APPROACH_KEYS.map(a => (
+            <button
+              key={a.key}
+              onClick={() => setSelected(a.key)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors",
+                selected === a.key
+                  ? "bg-purple-600 text-white border-purple-600"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-purple-300 hover:text-purple-700"
+              )}
+            >
+              {a.label}
+              {prompts[a.key] && (
+                <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-green-400 inline-block align-middle" title="Personalizado" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
+            <Loader2 className="w-4 h-4 animate-spin" /> Carregando prompts…
+          </div>
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-gray-600">{currentLabel}</label>
+                {isCustomized
+                  ? <span className="text-xs text-green-600 font-medium">● Personalizado</span>
+                  : <span className="text-xs text-gray-400">Usando prompt padrão do sistema</span>
+                }
+              </div>
+              <textarea
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                rows={20}
+                placeholder="Cole aqui o prompt personalizado para esta abordagem. Deixe vazio para usar o prompt padrão do sistema."
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-400">{draft.length} caracteres</p>
+            </div>
+
+            {msg && (
+              <div className={cn(
+                "flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium",
+                msg.type === "ok" ? "bg-green-50 border border-green-100 text-green-700"
+                                 : "bg-red-50 border border-red-100 text-red-600"
+              )}>
+                {msg.type === "ok" ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+                {msg.text}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSave}
+                disabled={saving || !isDirty}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors",
+                  saving || !isDirty
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-purple-600 hover:bg-purple-700 text-white"
+                )}
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? "Salvando…" : "Salvar prompt"}
+              </button>
+              {isDirty && (
+                <button onClick={handleReset} className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 transition-colors">
+                  Descartar
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Página principal ───────────────────────────── */
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -1268,9 +1434,10 @@ export default function SettingsPage() {
     { id: "seguranca"   as Tab, label: "Segurança",    icon: Lock,       adminOnly: false },
     { id: "plano"       as Tab, label: "Plano",        icon: CreditCard, adminOnly: false },
     { id: "api"         as Tab, label: "API Key",      icon: Key,        adminOnly: false },
-    { id: "base"        as Tab, label: "Base RAG",     icon: BookOpen,   adminOnly: true  },
-    { id: "etica"       as Tab, label: "Ética CFP",    icon: Scale,      adminOnly: false },
-    { id: "terapeutas"  as Tab, label: "Terapeutas",   icon: Users,      adminOnly: true  },
+    { id: "base"        as Tab, label: "Base RAG",     icon: BookOpen,      adminOnly: true  },
+    { id: "prompts"     as Tab, label: "Prompts",      icon: MessageSquare, adminOnly: true  },
+    { id: "etica"       as Tab, label: "Ética CFP",    icon: Scale,         adminOnly: false },
+    { id: "terapeutas"  as Tab, label: "Terapeutas",   icon: Users,         adminOnly: true  },
   ];
 
   return (
@@ -1307,6 +1474,7 @@ export default function SettingsPage() {
       {tab === "plano"      && <TabPlano />}
       {tab === "api"        && <TabAPI />}
       {tab === "base"       && <TabBase />}
+      {tab === "prompts"    && <TabPrompts />}
       {tab === "etica"      && <TabEtica />}
       {tab === "terapeutas" && <TabTerapeutas />}
     </div>

@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIOptions, chat } from "@/lib/ai-client";
 import { searchChunks } from "@/lib/rag";
+import { createClient } from "@supabase/supabase-js";
+
+async function getApproachPrompt(approach: string): Promise<string | null> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data } = await supabase
+      .from("approach_prompts")
+      .select("prompt")
+      .eq("approach", approach)
+      .single();
+    return data?.prompt ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export const maxDuration = 300;
 
@@ -186,7 +204,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
     }
 
-    const systemPrompt = APPROACH_PROMPTS[approach] || APPROACH_PROMPTS.PSYCHOANALYSIS;
+    const dbPrompt = await getApproachPrompt(approach);
+    const systemPrompt = dbPrompt ?? APPROACH_PROMPTS[approach] ?? APPROACH_PROMPTS.PSYCHOANALYSIS;
 
     // ── RAG: busca chunks relevantes da base de conhecimento ──
     let ragContext = "";
