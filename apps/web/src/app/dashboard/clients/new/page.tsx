@@ -83,7 +83,8 @@ export default function NewClientPage() {
     if (!canSave || !user) return;
     setSaving(true); setError(null);
     try {
-      await createClient({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (createClient as any)({
         therapist_id:         user.id,
         name:                 form.name.trim(),
         email:                form.email || null,
@@ -103,7 +104,7 @@ export default function NewClientPage() {
         color:                generateColor(form.name),
         total_sessions:       0,
         purchased_approaches: form.purchasedApproaches,
-      } as object);
+      });
       setSaved(true);
       setTimeout(() => router.push("/dashboard/clients"), 1000);
     } catch (e) {
