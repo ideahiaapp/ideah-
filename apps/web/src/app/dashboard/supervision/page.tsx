@@ -355,6 +355,7 @@ export default function WorkspacePage() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(searchParams.get("client"));
   const [activeSessionId,  setActiveSessionId]  = useState<string | null>(null);
 
+  const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>(APPROACH_ORDER);
   const [approachKey,  setApproachKey]  = useState("PSYCHOANALYSIS");
   const [lensMenuOpen, setLensMenuOpen] = useState(false);
   const lensRef = useRef<HTMLDivElement>(null);
@@ -390,6 +391,21 @@ export default function WorkspacePage() {
       .map(s => ({ kind: "supervision" as const, data: s, date: s.updated_at })),
     ...evolutions.map(e => ({ kind: "evolution" as const, data: e, date: e.session_date })),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  /* ── Load acquired approaches ── */
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+      .then(r => r.json())
+      .then(d => {
+        const list: string[] = d.approaches ?? [];
+        if (list.length > 0) {
+          setAcquiredApproaches(list);
+          if (!list.includes(approachKey)) setApproachKey(list[0]);
+        }
+      })
+      .catch(() => {});
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Load clients ── */
   useEffect(() => {
@@ -788,7 +804,7 @@ export default function WorkspacePage() {
                       {lensMenuOpen && (
                         <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 min-w-[200px] z-30">
                           <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 px-3 py-1.5">Referencial teórico</p>
-                          {APPROACH_ORDER.map(key => {
+                          {APPROACH_ORDER.filter(key => acquiredApproaches.includes(key)).map(key => {
                             const ap = APPROACHES[key]; const Icon = ap.Icon;
                             return (
                               <button key={key} onClick={() => { setApproachKey(key); setLensMenuOpen(false); }}

@@ -1140,16 +1140,89 @@ function TabBase() {
 }
 
 /* ─── Aba Terapeutas (admin) ─────────────────────── */
+const ALL_APPROACHES = [
+  { key: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { key: "JUNGIAN",              label: "Junguiana" },
+  { key: "SOMATIC",              label: "Somática / Corporal" },
+  { key: "GESTALT",              label: "Gestalt-terapia" },
+  { key: "PSYCHODRAMA",          label: "Psicodrama" },
+  { key: "SYSTEMIC",             label: "Constelação Familiar" },
+];
+
 type TherapistRow = {
   userId: string; email: string; name: string; blocked: boolean; createdAt: string;
 };
 
+function ApproachManager({ therapist, adminEmail }: { therapist: TherapistRow; adminEmail: string }) {
+  const [acquired, setAcquired] = useState<string[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/therapist-approaches?therapistId=${therapist.userId}`)
+      .then(r => r.json())
+      .then(d => setAcquired(d.approaches ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [therapist.userId]);
+
+  function toggle(key: string) {
+    setAcquired(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+    setSaved(false);
+  }
+
+  async function save() {
+    setSaving(true);
+    await fetch("/api/therapist-approaches", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-email": adminEmail },
+      body: JSON.stringify({ therapistId: therapist.userId, approaches: acquired }),
+    });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  }
+
+  if (loading) return <div className="py-2 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>;
+
+  return (
+    <div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
+      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Bases adquiridas</p>
+      <div className="flex flex-wrap gap-1.5">
+        {ALL_APPROACHES.map(a => {
+          const on = acquired.includes(a.key);
+          return (
+            <button key={a.key} onClick={() => toggle(a.key)}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors",
+                on ? "bg-indigo-600 text-white border-indigo-600"
+                   : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+              )}>
+              {a.label}
+            </button>
+          );
+        })}
+      </div>
+      <button onClick={save} disabled={saving}
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60">
+        {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : <Save className="w-3 h-3" />}
+        {saving ? "Salvando…" : saved ? "Salvo!" : "Salvar bases"}
+      </button>
+    </div>
+  );
+}
+
 function TabTerapeutas() {
   const { user } = useAuthStore();
-  const [list, setList]       = useState<TherapistRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [list,     setList]     = useState<TherapistRow[]>([]);
+  const [loading,  setLoading]  = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
-  const [error, setError]     = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [error,    setError]    = useState("");
 
   async function load() {
     setLoading(true);
@@ -1178,69 +1251,62 @@ function TabTerapeutas() {
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-400" /></div>;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
-      <div>
-        <h2 className="font-semibold text-gray-900">Terapeutas com acesso</h2>
-        <p className="text-sm text-gray-500 mt-0.5">Gerencie quem pode acessar a plataforma IDEAh.</p>
-      </div>
+    <div className="space-y-3">
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="font-semibold text-gray-900">Terapeutas com acesso</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Gerencie acesso e bases adquiridas por cada terapeuta.</p>
+        </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">{error}</div>
-      )}
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 text-left text-xs text-gray-400 font-semibold uppercase tracking-wide">
-              <th className="pb-2 pr-4">Nome</th>
-              <th className="pb-2 pr-4">E-mail</th>
-              <th className="pb-2 pr-4">Cadastro</th>
-              <th className="pb-2 pr-4">Status</th>
-              <th className="pb-2">Ação</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {list.map(t => (
-              <tr key={t.userId} className="hover:bg-gray-50/50">
-                <td className="py-3 pr-4 font-medium text-gray-800">{t.name}</td>
-                <td className="py-3 pr-4 text-gray-500">{t.email}</td>
-                <td className="py-3 pr-4 text-gray-400">
-                  {new Date(t.createdAt).toLocaleDateString("pt-BR")}
-                </td>
-                <td className="py-3 pr-4">
-                  <span className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
-                    t.blocked
-                      ? "bg-red-50 text-red-600 border border-red-200"
-                      : "bg-green-50 text-green-600 border border-green-200"
-                  )}>
-                    {t.blocked ? <ShieldOff className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
-                    {t.blocked ? "Bloqueado" : "Ativo"}
-                  </span>
-                </td>
-                <td className="py-3">
-                  <button
-                    onClick={() => toggle(t.userId, !t.blocked)}
-                    disabled={toggling === t.userId || t.email === user?.email}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
-                      t.blocked
-                        ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
-                        : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-                    )}
-                  >
-                    {toggling === t.userId
-                      ? <Loader2 className="w-3 h-3 animate-spin" />
-                      : t.blocked ? "Liberar acesso" : "Bloquear"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {list.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-8">Nenhum terapeuta cadastrado ainda.</p>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">{error}</div>
         )}
+
+        <div className="space-y-2">
+          {list.length === 0 && (
+            <p className="text-center text-gray-400 text-sm py-8">Nenhum terapeuta cadastrado ainda.</p>
+          )}
+          {list.map(t => (
+            <div key={t.userId} className="border border-gray-100 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50/50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{t.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{t.email} · {new Date(t.createdAt).toLocaleDateString("pt-BR")}</p>
+                </div>
+                <span className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0",
+                  t.blocked ? "bg-red-50 text-red-600 border border-red-200" : "bg-green-50 text-green-600 border border-green-200"
+                )}>
+                  {t.blocked ? <ShieldOff className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
+                  {t.blocked ? "Bloqueado" : "Ativo"}
+                </span>
+                <button
+                  onClick={() => toggle(t.userId, !t.blocked)}
+                  disabled={toggling === t.userId || t.email === user?.email}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0",
+                    t.blocked ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                              : "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                  )}>
+                  {toggling === t.userId ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : t.blocked ? "Liberar" : "Bloquear"}
+                </button>
+                <button
+                  onClick={() => setExpanded(prev => prev === t.userId ? null : t.userId)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors flex-shrink-0">
+                  <BookOpen className="w-3 h-3" />
+                  Bases
+                  <ChevronDown className={cn("w-3 h-3 transition-transform", expanded === t.userId && "rotate-180")} />
+                </button>
+              </div>
+              {expanded === t.userId && (
+                <div className="px-4 pb-4 bg-white border-t border-gray-50">
+                  <ApproachManager therapist={t} adminEmail={user?.email ?? ""} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
