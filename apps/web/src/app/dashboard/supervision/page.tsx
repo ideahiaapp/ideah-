@@ -392,10 +392,10 @@ export default function WorkspacePage() {
     ...evolutions.map(e => ({ kind: "evolution" as const, data: e, date: e.session_date })),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  /* ── Load acquired approaches ── */
+  /* ── Load acquired approaches by email ── */
   useEffect(() => {
-    if (!user) return;
-    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+    if (!user?.email) return;
+    fetch(`/api/therapist-approaches?email=${encodeURIComponent(user.email)}`)
       .then(r => r.json())
       .then(d => {
         const list: string[] = d.approaches ?? [];
