@@ -946,8 +946,6 @@ function TabBase() {
   const [uploadMsg,   setUploadMsg]   = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [deleting,    setDeleting]    = useState<string | null>(null);
   const [approach,    setApproach]    = useState("PSYCHOANALYSIS");
-  const [isGlobal,    setIsGlobal]    = useState(false);
-  const isAdmin = user?.role === "admin";
 
   function loadDocs() {
     if (!user) return;
@@ -976,10 +974,6 @@ function TabBase() {
         fd.append("file", file);
         fd.append("therapistId", user.id);
         fd.append("approach", approach);
-        if (isAdmin && isGlobal) {
-          fd.append("isGlobal", "true");
-          fd.append("uploaderEmail", user.email);
-        }
         const res = await fetch("/api/rag/upload", { method: "POST", body: fd });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
@@ -1060,25 +1054,10 @@ function TabBase() {
           </div>
         </Field>
 
-        {isAdmin && (
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <div className="relative">
-              <input type="checkbox" className="sr-only" checked={isGlobal} onChange={e => setIsGlobal(e.target.checked)} />
-              <div className={cn("w-10 h-5 rounded-full transition-colors", isGlobal ? "bg-indigo-600" : "bg-gray-300")} />
-              <div className={cn("absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform", isGlobal && "translate-x-5")} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-700">Adicionar à base global</p>
-              <p className="text-xs text-gray-400">Todos os terapeutas terão acesso a estes documentos</p>
-            </div>
-          </label>
-        )}
-
         <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
           className={cn(
             "w-full flex flex-col items-center gap-3 py-8 rounded-xl border-2 border-dashed transition-colors",
             uploading ? "border-gray-200 bg-gray-50 cursor-not-allowed"
-                      : isGlobal ? "border-amber-300 hover:border-amber-500 hover:bg-amber-50 cursor-pointer"
                       : "border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer"
           )}>
           {uploading
