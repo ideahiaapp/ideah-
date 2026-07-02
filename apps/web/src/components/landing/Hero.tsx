@@ -7,7 +7,7 @@ export function HeroSection() {
       <div
         aria-hidden
         className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full opacity-20"
-        style={{ background: "radial-gradient(circle, #924B92 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, #C2542F 0%, transparent 70%)" }}
       />
 
       <div className="relative max-w-4xl mx-auto px-6 text-center">

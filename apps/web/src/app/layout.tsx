@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Ideah — Supervisão Clínica",
+  title: "Paideia — Supervisão Clínica",
   description: "Plataforma de supervisão clínica dialógica para terapeutas",
 };
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
 const ADMIN_EMAILS = ["carlos.magno@gmail.com", "betinha.potter@gmail.com", "elimarcia.philos@gmail.com"];
 
 function serviceClient() {
@@ -17,7 +19,9 @@ export async function GET() {
     .select("approach, prompt, updated_at");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ prompts: data ?? [] });
+  return NextResponse.json({ prompts: data ?? [] }, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }
 
 export async function PUT(req: NextRequest) {

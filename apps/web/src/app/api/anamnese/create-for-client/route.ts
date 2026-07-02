@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendAnamneseNotification, sendAnamneseConfirmation } from "@/lib/email";
 
 function serviceClient() {
   return createClient(
@@ -9,34 +8,41 @@ function serviceClient() {
   );
 }
 
+// POST /api/anamnese/create-for-client
+// Terapeuta preenche anamnese diretamente para um cliente já cadastrado, sem anamnese vinculada.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { therapistId, approach, template_answers, ...fields } = body;
+    const { therapistId, clientId, ...fields } = body;
 
-    if (!therapistId || !fields.name || !fields.email) {
+    if (!therapistId || !clientId) {
       return NextResponse.json({ error: "Dados obrigatórios ausentes." }, { status: 400 });
     }
 
     const supabase = serviceClient();
 
-    // Busca dados do terapeuta
-    const { data: therapist } = await supabase
-      .from("profiles")
-      .select("name, email")
-      .eq("id", therapistId)
+    const { data: client } = await supabase
+      .from("clients")
+      .select("id, therapist_id, name, email, phone, birth_date")
+      .eq("id", clientId)
       .single();
 
-    // Salva anamnese
-    const { data: anamnese, error } = await supabase
+    if (!client || client.therapist_id !== therapistId) {
+      return NextResponse.json({ error: "Cliente não encontrado." }, { status: 404 });
+    }
+    if (!client.name || !client.email) {
+      return NextResponse.json({ error: "Cliente precisa ter nome e e-mail cadastrados." }, { status: 400 });
+    }
+
+    const { data: anamnese, error: insErr } = await supabase
       .from("anamneses")
       .insert({
         therapist_id: therapistId,
-        email: fields.email,
-        name: fields.name,
-        phone: fields.phone || null,
+        email: client.email,
+        name: client.name,
+        phone: client.phone || null,
+        birth_date: client.birth_date || null,
         cpf: fields.cpf || null,
-        birth_date: fields.birth_date || null,
         emergency_contact: fields.emergency_contact || null,
         how_found: fields.how_found || null,
         accepts_email: fields.accepts_email ?? true,
@@ -52,35 +58,21 @@ export async function POST(req: NextRequest) {
         consent_touch: fields.consent_touch ?? false,
         consent_therapeutic: fields.consent_therapeutic ?? false,
         consent_payment: fields.consent_payment ?? false,
-        approach: approach || null,
-        template_answers: template_answers ?? null,
-        status: "PENDING",
+        status: "ACCEPTED",
       })
       .select("id")
       .single();
 
-    if (error || !anamnese) {
-      throw new Error(error?.message ?? "Erro ao salvar anamnese.");
+    if (insErr || !anamnese) {
+      return NextResponse.json({ error: insErr?.message ?? "Erro ao salvar anamnese." }, { status: 500 });
     }
 
-    // Envia emails em paralelo (não bloqueia resposta se falhar)
-    if (therapist) {
-      Promise.all([
-        sendAnamneseNotification({
-          therapistEmail: therapist.email!,
-          therapistName: therapist.name ?? "Terapeuta",
-          clientName: fields.name,
-          clientEmail: fields.email,
-          intention: fields.intention ?? "",
-          anamneseId: anamnese.id,
-        }),
-        sendAnamneseConfirmation({
-          clientEmail: fields.email,
-          clientName: fields.name,
-          therapistName: therapist.name ?? "Terapeuta",
-        }),
-      ]).catch(err => console.warn("Email error (non-critical):", err));
-    }
+    const { error: updErr } = await supabase
+      .from("clients")
+      .update({ anamnese_id: anamnese.id, updated_at: new Date().toISOString() })
+      .eq("id", clientId);
+
+    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
     return NextResponse.json({ ok: true, anamneseId: anamnese.id });
   } catch (error) {

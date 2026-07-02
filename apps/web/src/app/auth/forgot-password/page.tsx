@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-10">
-          <Image src="/ideah-logo.png" alt="IDEAH" width={180} height={68} priority />
+          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={180} height={72} priority />
         </div>
 
         <Link

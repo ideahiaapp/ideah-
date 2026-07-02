@@ -37,7 +37,7 @@ function dbToSchedule(s: SessionWithClient): ScheduleSession {
     clientId:   s.client_id,
     clientName: s.clients?.name ?? "Cliente",
     initials:   s.clients?.initials ?? s.clients?.name?.[0] ?? "?",
-    color:      s.clients?.color ?? "#924B92",
+    color:      s.clients?.color ?? "#C2542F",
     date:       s.date,
     startTime:  s.start_time.slice(0, 5),
     duration:   s.duration,
@@ -119,7 +119,7 @@ function buildGoogleCalendarUrl(params: {
     action:  "TEMPLATE",
     text:    `Sessão — ${params.clientName}`,
     dates:   `${start}/${end}`,
-    details: params.notes || "Sessão registrada via IDEAh",
+    details: params.notes || "Sessão registrada via Paideia",
   });
   return `https://calendar.google.com/calendar/render?${search.toString()}`;
 }
@@ -257,7 +257,7 @@ function SessionModal({
         {/* Header */}
         <div
           className="px-6 py-4 flex items-center justify-between"
-          style={{ backgroundColor: isView && session ? session.color + "18" : "#F9F0F9" }}
+          style={{ backgroundColor: isView && session ? session.color + "18" : "#FDF1ED" }}
         >
           <div className="flex items-center gap-3">
             {isView && session ? (

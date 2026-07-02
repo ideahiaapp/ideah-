@@ -4,7 +4,7 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
-const FROM = "IDEAh <onboarding@resend.dev>";
+const FROM = "Paideia <onboarding@resend.dev>";
 
 export async function sendAnamneseNotification(params: {
   therapistEmail: string;
@@ -23,7 +23,7 @@ export async function sendAnamneseNotification(params: {
     subject: `Nova anamnese recebida — ${params.clientName}`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px">
-        <h2 style="color:#924B92;margin-bottom:4px">IDEAh</h2>
+        <h2 style="color:#C2542F;margin-bottom:4px">Paideia</h2>
         <p style="color:#666;margin-top:0">Plataforma de supervisão clínica</p>
         <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
         <h3 style="color:#1a1a1a">Nova anamnese recebida</h3>
@@ -45,7 +45,7 @@ export async function sendAnamneseNotification(params: {
         </table>
         <p>Acesse o painel para visualizar a anamnese completa e aceitar ou recusar o cliente.</p>
         <p style="margin-top:32px;color:#999;font-size:12px">
-          IDEAh · Plataforma de supervisão clínica para terapeutas
+          Paideia · Plataforma de supervisão clínica para terapeutas
         </p>
       </div>
     `,
@@ -66,7 +66,7 @@ export async function sendAnamneseInvite(params: {
     subject: `${params.therapistName} convidou você para preencher sua anamnese`,
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px">
-        <h2 style="color:#924B92;margin-bottom:4px">IDEAh</h2>
+        <h2 style="color:#C2542F;margin-bottom:4px">Paideia</h2>
         <p style="color:#666;margin-top:0">Plataforma de supervisão clínica</p>
         <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
         <h3 style="color:#1a1a1a">Você foi convidado(a) para preencher uma anamnese</h3>
@@ -75,13 +75,13 @@ export async function sendAnamneseInvite(params: {
         <p>É rápido, seguro e não requer cadastro.</p>
         <div style="text-align:center;margin:32px 0">
           <a href="${params.anamneseUrl}"
-            style="background:#924B92;color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:600;font-size:15px;display:inline-block">
+            style="background:#C2542F;color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:600;font-size:15px;display:inline-block">
             Preencher anamnese
           </a>
         </div>
-        <p style="color:#999;font-size:12px">Ou acesse diretamente: <a href="${params.anamneseUrl}" style="color:#924B92">${params.anamneseUrl}</a></p>
+        <p style="color:#999;font-size:12px">Ou acesse diretamente: <a href="${params.anamneseUrl}" style="color:#C2542F">${params.anamneseUrl}</a></p>
         <p style="margin-top:32px;color:#999;font-size:12px">
-          IDEAh · Plataforma de supervisão clínica para terapeutas
+          Paideia · Plataforma de supervisão clínica para terapeutas
         </p>
       </div>
     `,
@@ -102,14 +102,14 @@ export async function sendAnamneseConfirmation(params: {
     subject: "Anamnese recebida com sucesso",
     html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px">
-        <h2 style="color:#924B92;margin-bottom:4px">IDEAh</h2>
+        <h2 style="color:#C2542F;margin-bottom:4px">Paideia</h2>
         <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
         <h3 style="color:#1a1a1a">Anamnese recebida!</h3>
         <p>Olá, <strong>${params.clientName}</strong>!</p>
         <p>Sua anamnese foi recebida com sucesso e será avaliada por <strong>${params.therapistName}</strong> em breve.</p>
         <p>Assim que for analisada, você receberá um retorno.</p>
         <p style="margin-top:32px;color:#999;font-size:12px">
-          IDEAh · Plataforma de supervisão clínica para terapeutas
+          Paideia · Plataforma de supervisão clínica para terapeutas
         </p>
       </div>
     `,

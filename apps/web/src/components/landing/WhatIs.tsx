@@ -55,7 +55,7 @@ export function WhatIsSection() {
 
         {/* Nota de rodapé */}
         <p className="text-center text-sm text-gray-400 mt-8 max-w-2xl mx-auto leading-relaxed">
-          O ideah não confirma vontades; ele ancora na teoria e pode contrapor pedidos que contrariem a abordagem,{" "}
+          O Paideia não confirma vontades; ele ancora na teoria e pode contrapor pedidos que contrariem a abordagem,{" "}
           <strong className="text-gray-500">convidando à reflexão ética.</strong>
         </p>
       </div>

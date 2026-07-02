@@ -24,11 +24,11 @@ export function LandingFooter() {
       <div className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-8">
         <div>
           <Image
-            src="/ideah-logo.png"
-            alt="IDEAH"
+            src="/paideia-wordmark-white.svg"
+            alt="Paideia"
             width={120}
-            height={45}
-            className="brightness-0 invert mb-4"
+            height={48}
+            className="mb-4"
           />
           <p className="text-white/50 text-xs leading-relaxed">
             Supervisão Clínica Dialógica.<br />
@@ -72,7 +72,7 @@ export function LandingFooter() {
 
       <div className="border-t border-white/10 py-6 text-center">
         <p className="text-white/30 text-xs">
-          © {new Date().getFullYear()} IDEAH — Inteligência Dialógica. Todos os direitos reservados.
+          © {new Date().getFullYear()} Paideia — Inteligência Dialógica. Todos os direitos reservados.
         </p>
       </div>
     </footer>

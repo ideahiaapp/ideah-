@@ -33,7 +33,7 @@ export function TheorySection() {
             Converse com quem te formou
           </h2>
           <p className="text-white/70 mt-4 max-w-2xl mx-auto text-base leading-relaxed">
-            Não é a IA "dizendo o que você quer ouvir". É a sua abordagem teórica respondendo em diálogo: perguntas, hipóteses abertas e referências. Quando não há respaldo textual, o ideah{" "}
+            Não é a IA "dizendo o que você quer ouvir". É a sua abordagem teórica respondendo em diálogo: perguntas, hipóteses abertas e referências. Quando não há respaldo textual, o Paideia{" "}
             <strong className="text-white">explicita a lacuna e propõe caminhos de estudo.</strong>
           </p>
         </div>

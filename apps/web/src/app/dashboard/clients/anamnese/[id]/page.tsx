@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient, generateInitials, generateColor } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
+import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
 
 /* ── Tipos ── */
 interface Anamnese {
@@ -24,18 +25,19 @@ interface Anamnese {
   intention: string | null; sexual_discomfort: string | null;
   consent_nudity: boolean; consent_touch: boolean;
   consent_therapeutic: boolean; consent_payment: boolean;
+  approach: string | null;
+  template_answers: Record<string, unknown> | null;
   status: string; created_at: string;
 }
 
-const APPROACHES = [
-  { value: "PSYCHOANALYSIS",        label: "Psicanálise" },
-  { value: "COGNITIVE_BEHAVIORAL",  label: "TCC" },
-  { value: "JUNGIAN",               label: "Junguiana" },
-  { value: "HUMANISTIC",            label: "Humanista" },
-  { value: "SYSTEMIC",              label: "Sistêmica" },
-  { value: "SOMATIC",               label: "Somática" },
-  { value: "GESTALT",               label: "Gestalt" },
-  { value: "ACCEPTANCE_COMMITMENT", label: "ACT" },
+const ALL_APPROACHES = [
+  { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { value: "JUNGIAN",              label: "Junguiana" },
+  { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "GESTALT",              label: "Gestalt-terapia" },
+  { value: "PSYCHODRAMA",          label: "Psicodrama" },
+  { value: "SYSTEMIC",             label: "Constelação Familiar" },
 ];
 const FREQUENCIES = ["Semanal", "Quinzenal", "Mensal", "Sob demanda"];
 const DURATIONS   = ["45", "50", "60", "90"];
@@ -113,14 +115,37 @@ export default function AnamneseReviewPage() {
   const [saved,  setSaved]  = useState(false);
   const [error,  setError]  = useState<string | null>(null);
 
+  const [templateHtml,       setTemplateHtml]       = useState<string | null>(null);
+  const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>([]);
+  const [loadingApproaches,  setLoadingApproaches]  = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+      .then(r => r.json())
+      .then(d => setAcquiredApproaches(d.approaches ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingApproaches(false));
+  }, [user]);
+
+  const APPROACHES = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
+
   useEffect(() => {
     fetch(`/api/anamnese/${id}`)
       .then(r => r.json())
       .then(d => {
         if (d.anamnese) {
           setAnamnese(d.anamnese);
-          if (d.anamnese.intention) {
-            setForm(prev => ({ ...prev, mainDemand: d.anamnese.intention }));
+          setForm(prev => ({
+            ...prev,
+            ...(d.anamnese.intention ? { mainDemand: d.anamnese.intention } : {}),
+            ...(d.anamnese.approach ? { approach: d.anamnese.approach } : {}),
+          }));
+          if (d.anamnese.approach && d.anamnese.template_answers) {
+            fetch(`/api/anamnese-templates/${d.anamnese.approach}`, { cache: "no-store" })
+              .then(r => r.json())
+              .then(t => setTemplateHtml(t.content ?? null))
+              .catch(() => {});
           }
         } else setNotFound(true);
       })
@@ -128,7 +153,7 @@ export default function AnamneseReviewPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const selectedApproach = APPROACHES.find(a => a.label === form.approach);
+  const selectedApproach = ALL_APPROACHES.find(a => a.value === form.approach);
   const canSave = form.approach;
 
   function set(field: string, value: string) {
@@ -155,6 +180,7 @@ export default function AnamneseReviewPage() {
         main_demand:       form.mainDemand.trim() || anamnese.intention || null,
         notes:             form.notes.trim() || null,
         emergency_contact: anamnese.emergency_contact || null,
+        anamnese_id:       anamnese.id,
         initials:          generateInitials(anamnese.name),
         color:             generateColor(anamnese.name),
         total_sessions:    0,
@@ -262,12 +288,39 @@ export default function AnamneseReviewPage() {
         </div>
       </Section>
 
+      {/* Respostas do template dinâmico */}
+      {templateHtml && anamnese?.template_answers && (
+        <Section icon={ClipboardList} title="Respostas da anamnese específica" accent="bg-purple-50/60">
+          <TemplateAnswersView
+            html={templateHtml}
+            answers={anamnese.template_answers as Record<string, unknown>}
+          />
+        </Section>
+      )}
+
       {/* Campos do terapeuta */}
       <Section icon={Heart} title="Configuração clínica">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Abordagem terapêutica *" className="md:col-span-1">
-            <SelectField value={form.approach} onChange={v => set("approach", v)}
-              placeholder="Selecionar..." options={APPROACHES.map(a => a.label)} />
+            {loadingApproaches ? (
+              <div className={inputCls + " flex items-center text-gray-400"}>Carregando...</div>
+            ) : APPROACHES.length === 0 ? (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                Nenhuma base teórica adquirida. Acesse Configurações → Minhas Bases.
+              </p>
+            ) : (
+              <div className="relative">
+                <select
+                  value={form.approach}
+                  onChange={e => set("approach", e.target.value)}
+                  className={inputCls + " appearance-none pr-9 " + (!form.approach ? "text-gray-400" : "text-gray-800")}
+                >
+                  <option value="">Selecionar...</option>
+                  {APPROACHES.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            )}
           </Field>
           <Field label="Frequência das sessões">
             <SelectField value={form.frequency} onChange={v => set("frequency", v)} options={FREQUENCIES} />

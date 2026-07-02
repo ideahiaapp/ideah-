@@ -125,7 +125,7 @@ export default function EvolutionsPage() {
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                        style={{ backgroundColor: ev.clients?.color ?? "#924B92" }}>
+                        style={{ backgroundColor: ev.clients?.color ?? "#C2542F" }}>
                         {ev.clients?.initials ?? ev.clients?.name?.[0] ?? "?"}
                       </div>
                       <div>

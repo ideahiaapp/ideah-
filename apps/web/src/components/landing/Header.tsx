@@ -20,7 +20,7 @@ export function LandingHeader() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex-shrink-0">
-          <Image src="/ideah-logo.png" alt="IDEAH" width={120} height={45} priority />
+          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={120} height={48} priority />
         </Link>
 
         {/* Nav desktop */}

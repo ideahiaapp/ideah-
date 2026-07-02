@@ -14,7 +14,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 
-type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas" | "prompts";
+type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas" | "prompts" | "minhasbases" | "anamnese";
 
 /* ─── Helpers ─────────────────────────────────────── */
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
@@ -890,18 +890,18 @@ function TabEtica() {
         {allConfirmed && (
           <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-xs text-green-800">
             <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" strokeWidth={1.8} />
-            <span>Todos os compromissos confirmados. Obrigado por usar o ideah com responsabilidade ética.</span>
+            <span>Todos os compromissos confirmados. Obrigado por usar o Paideia com responsabilidade ética.</span>
           </div>
         )}
       </div>
 
-      {/* Como o ideah protege os dados */}
+      {/* Como o Paideia protege os dados */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center">
             <ShieldAlert className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
           </div>
-          <p className="text-sm font-semibold text-gray-700">Como o ideah protege os dados clínicos</p>
+          <p className="text-sm font-semibold text-gray-700">Como o Paideia protege os dados clínicos</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[
@@ -1154,11 +1154,9 @@ type TherapistRow = {
   userId: string; email: string; name: string; blocked: boolean; createdAt: string;
 };
 
-function ApproachManager({ therapist, adminEmail }: { therapist: TherapistRow; adminEmail: string }) {
+function ApproachManager({ therapist }: { therapist: TherapistRow }) {
   const [acquired, setAcquired] = useState<string[]>([]);
   const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
-  const [saved,    setSaved]    = useState(false);
 
   useEffect(() => {
     fetch(`/api/therapist-approaches?therapistId=${therapist.userId}`)
@@ -1168,50 +1166,22 @@ function ApproachManager({ therapist, adminEmail }: { therapist: TherapistRow; a
       .finally(() => setLoading(false));
   }, [therapist.userId]);
 
-  function toggle(key: string) {
-    setAcquired(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
-    setSaved(false);
-  }
-
-  async function save() {
-    setSaving(true);
-    await fetch("/api/therapist-approaches", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "x-admin-email": adminEmail },
-      body: JSON.stringify({ therapistId: therapist.userId, approaches: acquired }),
-    });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  }
-
   if (loading) return <div className="py-2 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>;
 
   return (
     <div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
       <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Bases adquiridas</p>
-      <div className="flex flex-wrap gap-1.5">
-        {ALL_APPROACHES.map(a => {
-          const on = acquired.includes(a.key);
-          return (
-            <button key={a.key} onClick={() => toggle(a.key)}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors",
-                on ? "bg-indigo-600 text-white border-indigo-600"
-                   : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
-              )}>
+      {acquired.length === 0 ? (
+        <p className="text-xs text-gray-400 italic">Nenhuma base adquirida.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {ALL_APPROACHES.filter(a => acquired.includes(a.key)).map(a => (
+            <span key={a.key} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white">
               {a.label}
-            </button>
-          );
-        })}
-      </div>
-      <button onClick={save} disabled={saving}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60">
-        {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : <Save className="w-3 h-3" />}
-        {saving ? "Salvando…" : saved ? "Salvo!" : "Salvar bases"}
-      </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1301,7 +1271,7 @@ function TabTerapeutas() {
               </div>
               {expanded === t.userId && (
                 <div className="px-4 pb-4 bg-white border-t border-gray-50">
-                  <ApproachManager therapist={t} adminEmail={user?.email ?? ""} />
+                  <ApproachManager therapist={t} />
                 </div>
               )}
             </div>
@@ -1331,19 +1301,24 @@ function TabPrompts() {
   const [selected,  setSelected]  = useState(APPROACH_KEYS[0].key);
   const [draft,     setDraft]     = useState("");
   const [loading,   setLoading]   = useState(true);
+  const [loadErr,   setLoadErr]   = useState<string | null>(null);
   const [saving,    setSaving]    = useState(false);
   const [msg,       setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
-    fetch("/api/approach-prompts")
-      .then(r => r.json())
-      .then(d => {
+    fetch("/api/approach-prompts", { cache: "no-store" })
+      .then(async r => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? "Erro ao carregar prompts.");
         const map: Record<string, string> = {};
-        (d.prompts as PromptEntry[]).forEach(p => { map[p.approach] = p.prompt; });
+        (d.prompts as PromptEntry[]).forEach((p: PromptEntry) => { map[p.approach] = p.prompt; });
         setPrompts(map);
+        setLoading(false);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(e => {
+        setLoadErr(e instanceof Error ? e.message : "Erro ao carregar prompts.");
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -1420,6 +1395,10 @@ function TabPrompts() {
           <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
             <Loader2 className="w-4 h-4 animate-spin" /> Carregando prompts…
           </div>
+        ) : loadErr ? (
+          <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {loadErr}
+          </div>
         ) : (
           <>
             <div className="space-y-1.5">
@@ -1478,6 +1457,201 @@ function TabPrompts() {
   );
 }
 
+/* ─── Tab: Minhas Bases (self-service terapeuta) ─── */
+function TabMinhasBases() {
+  const { user } = useAuthStore();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [original, setOriginal] = useState<string[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
+  const [error,    setError]    = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+      .then(r => r.json())
+      .then(d => {
+        const list: string[] = d.approaches ?? [];
+        setSelected(list);
+        setOriginal(list);
+      })
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  function toggle(key: string) {
+    setSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    if (!user) return;
+    setSaving(true); setError("");
+    try {
+      const res = await fetch("/api/therapist-approaches-self", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, approaches: selected }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao salvar.");
+      setOriginal([...selected]);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao salvar. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const changed = JSON.stringify([...selected].sort()) !== JSON.stringify([...original].sort());
+
+  if (loading) return <div className="text-sm text-gray-400 py-8 text-center">Carregando...</div>;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
+          <BookOpen className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-700">Bases de conhecimento</p>
+          <p className="text-xs text-gray-400">Abordagens teóricas disponíveis na supervisão</p>
+        </div>
+      </div>
+      <div className="p-5 space-y-2">
+        {ALL_APPROACHES.map(b => {
+          const on = selected.includes(b.key);
+          return (
+            <button key={b.key} type="button" onClick={() => toggle(b.key)}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all",
+                on ? "border-brand-500 bg-brand-50" : "border-gray-200 bg-white hover:border-gray-300"
+              )}>
+              <div className={cn("w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                on ? "border-brand-500 bg-brand-500" : "border-gray-300")}>
+                {on && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+              <span className={cn("text-sm font-medium", on ? "text-brand-700" : "text-gray-700")}>{b.label}</span>
+              <span className={cn("ml-auto text-xs font-semibold", on ? "text-brand-500" : "text-gray-400")}>
+                R$ 49,90/mês
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {error && <p className="px-5 pb-3 text-sm text-red-500">{error}</p>}
+      <div className="px-5 pb-5 flex items-center justify-between">
+        <p className="text-xs text-gray-400">{selected.length} base{selected.length !== 1 ? "s" : ""} ativa{selected.length !== 1 ? "s" : ""} · R$ {(selected.length * 49.90).toFixed(2).replace(".", ",")}/mês</p>
+        <button onClick={handleSave} disabled={!changed || saving || saved}
+          className={cn(
+            "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+            saved ? "bg-green-500 text-white"
+              : changed && !saving ? "bg-brand-500 hover:bg-brand-600 text-white"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          )}>
+          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+            : saved   ? <><CheckCircle2 className="w-4 h-4" /> Salvo!</>
+            : <><Save className="w-4 h-4" /> Salvar alterações</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Tab: Anamnese ─────────────────────────────── */
+const ALL_APPROACHES_SETTINGS = [
+  { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { value: "JUNGIAN",              label: "Junguiana" },
+  { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "GESTALT",              label: "Gestalt-terapia" },
+  { value: "PSYCHODRAMA",          label: "Psicodrama" },
+  { value: "SYSTEMIC",             label: "Constelação Familiar" },
+];
+
+function TabAnamnese() {
+  const [templates, setTemplates] = useState<{ approach: string; updated_at: string }[]>([]);
+  const [loading,   setLoading]   = useState(true);
+
+  useEffect(() => {
+    fetch("/api/anamnese-templates", { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => setTemplates(d.templates ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const templateMap = new Set(templates.map(t => t.approach));
+  const templateUpdated = Object.fromEntries(templates.map(t => [t.approach, t.updated_at]));
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-base font-bold text-gray-800">Formulários de Anamnese</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Cada abordagem terapêutica pode ter um formulário de anamnese específico.
+          Os formulários cadastrados são apresentados ao paciente ao preencher a anamnese.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 text-brand-400 animate-spin" />
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50/60 border-b border-gray-100">
+                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Abordagem Terapêutica</th>
+                <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-32">Anamnese</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Última atualização</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {ALL_APPROACHES_SETTINGS.map(a => {
+                const has = templateMap.has(a.value);
+                const updatedAt = templateUpdated[a.value];
+                return (
+                  <tr key={a.value} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-5 py-4">
+                      <span className="font-medium text-gray-800">{a.label}</span>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      {has ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full">
+                          <CheckCircle2 className="w-3 h-3" /> Sim
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold bg-gray-50 text-gray-400 border border-gray-200 px-2.5 py-1 rounded-full">
+                          <AlertTriangle className="w-3 h-3" /> Não
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-gray-400 text-xs">
+                      {updatedAt
+                        ? new Date(updatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
+        Para cadastrar ou atualizar um formulário de anamnese, execute o arquivo{" "}
+        <code className="font-mono bg-amber-100 px-1 rounded">supabase/seed_anamnese_templates.sql</code>{" "}
+        no SQL Editor do Supabase.
+      </div>
+    </div>
+  );
+}
+
 /* ─── Página principal ───────────────────────────── */
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -1500,10 +1674,12 @@ export default function SettingsPage() {
     { id: "seguranca"   as Tab, label: "Segurança",    icon: Lock,       adminOnly: false },
     { id: "plano"       as Tab, label: "Plano",        icon: CreditCard, adminOnly: false },
     { id: "api"         as Tab, label: "API Key",      icon: Key,        adminOnly: false },
-    { id: "base"        as Tab, label: "Base RAG",     icon: BookOpen,      adminOnly: true  },
-    { id: "prompts"     as Tab, label: "Prompts",      icon: MessageSquare, adminOnly: true  },
-    { id: "etica"       as Tab, label: "Ética CFP",    icon: Scale,         adminOnly: false },
-    { id: "terapeutas"  as Tab, label: "Terapeutas",   icon: Users,         adminOnly: true  },
+    { id: "minhasbases" as Tab, label: "Minhas Bases",  icon: BookOpen,      adminOnly: false },
+    { id: "base"        as Tab, label: "Base RAG",      icon: BookOpen,      adminOnly: true  },
+    { id: "prompts"     as Tab, label: "Prompts",       icon: MessageSquare, adminOnly: true  },
+    { id: "anamnese"    as Tab, label: "Anamnese",      icon: FileText,      adminOnly: true  },
+    { id: "etica"       as Tab, label: "Ética CFP",     icon: Scale,         adminOnly: false },
+    { id: "terapeutas"  as Tab, label: "Terapeutas",    icon: Users,         adminOnly: true  },
   ];
 
   return (
@@ -1539,10 +1715,12 @@ export default function SettingsPage() {
       {tab === "seguranca"  && <TabSeguranca />}
       {tab === "plano"      && <TabPlano />}
       {tab === "api"        && <TabAPI />}
-      {tab === "base"       && <TabBase />}
-      {tab === "prompts"    && <TabPrompts />}
-      {tab === "etica"      && <TabEtica />}
-      {tab === "terapeutas" && <TabTerapeutas />}
+      {tab === "minhasbases" && <TabMinhasBases />}
+      {tab === "base"        && <TabBase />}
+      {tab === "prompts"     && <TabPrompts />}
+      {tab === "anamnese"    && <TabAnamnese />}
+      {tab === "etica"       && <TabEtica />}
+      {tab === "terapeutas"  && <TabTerapeutas />}
     </div>
   );
 }

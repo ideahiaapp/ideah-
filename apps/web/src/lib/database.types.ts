@@ -52,6 +52,7 @@ export interface Database {
           main_demand: string | null;
           notes: string | null;
           emergency_contact: string | null;
+          anamnese_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -78,6 +79,7 @@ export interface Database {
           main_demand?: string | null;
           notes?: string | null;
           emergency_contact?: string | null;
+          anamnese_id?: string | null;
         };
         Update: {
           name?: string;
@@ -100,6 +102,7 @@ export interface Database {
           main_demand?: string | null;
           notes?: string | null;
           emergency_contact?: string | null;
+          anamnese_id?: string | null;
           updated_at?: string;
         };
       };

@@ -144,7 +144,7 @@ export default function AdminPage() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
-    a.download = `ideah-vendas-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `paideia-vendas-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -155,7 +155,7 @@ export default function AdminPage() {
       {/* ── Header admin ── */}
       <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Image src="/ideah-logo.png" alt="IDEAH" width={90} height={30} className="brightness-0 invert opacity-80" />
+          <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={110} height={44} className="opacity-80" />
           <div className="w-px h-6 bg-gray-800" />
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-brand-400" />
@@ -397,7 +397,7 @@ export default function AdminPage() {
 
         {/* ── Rodapé ── */}
         <div className="text-center text-xs text-gray-700 py-4">
-          ideah Admin · Dados mock — conecte ao banco de dados para dados reais
+          Paideia Admin · Dados mock — conecte ao banco de dados para dados reais
         </div>
       </main>
     </div>

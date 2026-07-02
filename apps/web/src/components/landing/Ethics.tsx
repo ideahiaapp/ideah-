@@ -35,7 +35,7 @@ export function EthicsSection() {
           <span className="text-brand-500 text-sm font-semibold uppercase tracking-widest">Responsabilidade</span>
           <h2 className="text-3xl md:text-4xl font-bold text-ink mt-3">Ética e conformidade</h2>
           <p className="text-gray-500 mt-4 max-w-xl mx-auto text-base leading-relaxed">
-            Como o ideah respeita o Conselho Federal de Psicologia e o uso da I.A.
+            Como o Paideia respeita o Conselho Federal de Psicologia e o uso da I.A.
           </p>
           <a
             href="https://site.cfp.org.br"
@@ -63,7 +63,7 @@ export function EthicsSection() {
         {/* Disclaimer */}
         <div className="mt-10 bg-gray-50 border border-gray-200 rounded-2xl px-6 py-5 text-center">
           <p className="text-gray-500 text-sm leading-relaxed max-w-2xl mx-auto">
-            ideah é um espaço de supervisão dialógica, alinhado às orientações do CFP para o uso de tecnologias.
+            Paideia é um espaço de supervisão dialógica, alinhado às orientações do CFP para o uso de tecnologias.
             Não realiza diagnósticos nem substitui o julgamento profissional.
             O uso pressupõe consentimento informado e respeito à LGPD.
           </p>

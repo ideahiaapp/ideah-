@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Users, MessageSquare, FileText, CalendarDays, TrendingUp,
   Clock, ArrowRight, Plus, Sparkles, CheckCircle2,
-  Brain, Activity, Zap, Circle, Compass, Layers, Heart, UserCheck,
+  Brain, Activity, Zap, Circle, Compass, Layers, Heart, UserCheck, ClipboardList,
 } from "lucide-react";
 import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
@@ -24,7 +24,7 @@ const APPROACH_ICONS: Record<string, React.ElementType> = {
 };
 
 const APPROACH_COLORS: Record<string, string> = {
-  PSYCHOANALYSIS: "#924B92", COGNITIVE_BEHAVIORAL: "#3B82F6",
+  PSYCHOANALYSIS: "#C2542F", COGNITIVE_BEHAVIORAL: "#3B82F6",
   JUNGIAN: "#F59E0B", HUMANISTIC: "#22C55E",
   SYSTEMIC: "#EC4899", SOMATIC: "#F97316",
   GESTALT: "#14B8A6", ACCEPTANCE_COMMITMENT: "#6366F1",
@@ -66,13 +66,13 @@ function BarChart({ data }: { data: { label: string; count: number }[] }) {
         return (
           <g key={m.label}>
             <rect x={x} y={y} width={BAR_W} height={barH} rx={6}
-              fill={isLast ? "#924B92" : "#E9D5F0"} />
+              fill={isLast ? "#C2542F" : "#F5C0AC"} />
             {isLast && (
               <text x={x + BAR_W / 2} y={y - 6} textAnchor="middle"
-                fontSize={11} fontWeight="700" fill="#924B92">{m.count}</text>
+                fontSize={11} fontWeight="700" fill="#C2542F">{m.count}</text>
             )}
             <text x={x + BAR_W / 2} y={H + 18} textAnchor="middle"
-              fontSize={10} fill={isLast ? "#924B92" : "#9CA3AF"}
+              fontSize={10} fill={isLast ? "#C2542F" : "#9CA3AF"}
               fontWeight={isLast ? "700" : "400"}>{m.label}</text>
           </g>
         );
@@ -88,19 +88,25 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const firstName = user?.name?.split(" ")[0] ?? "terapeuta";
 
-  const [clients,     setClients]     = useState<Client[]>([]);
-  const [evolutions,  setEvolutions]  = useState<EvolutionWithClient[]>([]);
-  const [supervisions,setSupervisions]= useState<SupervisionWithClient[]>([]);
+  const [clients,          setClients]          = useState<Client[]>([]);
+  const [evolutions,       setEvolutions]       = useState<EvolutionWithClient[]>([]);
+  const [supervisions,     setSupervisions]     = useState<SupervisionWithClient[]>([]);
+  const [pendingAnamneseApproval, setPendingAnamneseApproval] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     getClients(user.id).then(setClients).catch(() => {});
     getEvolutions(user.id).then(setEvolutions).catch(() => {});
     getSupervisions(user.id).then(setSupervisions).catch(() => {});
+    fetch(`/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
+      .then(r => r.json())
+      .then(d => setPendingAnamneseApproval((d.anamneses ?? []).length))
+      .catch(() => {});
   }, [user]);
 
   /* ── computados ── */
   const activeClients = useMemo(() => clients.filter(c => c.status === "ACTIVE"), [clients]);
+  const pendingAnamnese = useMemo(() => activeClients.filter(c => !c.anamnese_id).length, [activeClients]);
 
   const avgMood = useMemo(() => {
     const moods = evolutions.map(e => e.mood).filter(Boolean) as number[];
@@ -125,7 +131,7 @@ export default function DashboardPage() {
       label: `Evolução de ${e.clients?.name ?? "cliente"}`,
       sub:   e.hypothesis ?? undefined,
       date:  new Date(e.session_date),
-      color: e.clients?.color ?? "#924B92",
+      color: e.clients?.color ?? "#C2542F",
       initials: e.clients?.initials ?? "?",
       href:  `/dashboard/evolutions/${e.id}`,
     }));
@@ -134,7 +140,7 @@ export default function DashboardPage() {
       label: s.title,
       sub:   s.clients?.name ?? undefined,
       date:  new Date(s.updated_at),
-      color: "#924B92",
+      color: "#C2542F",
       initials: "IA",
       href:  `/dashboard/supervision`,
     }));
@@ -181,10 +187,16 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard icon={Users} label="Clientes ativos" value={activeClients.length}
           sub={`de ${clients.length} cadastrados`}
           color="bg-brand-50 text-brand-500" href="/dashboard/clients" />
+        <StatCard icon={ClipboardList} label="Anamnese pendente" value={pendingAnamnese}
+          sub={pendingAnamnese === 0 ? "todos preenchidos" : "pacientes sem anamnese"}
+          color="bg-amber-50 text-amber-500" href="/dashboard/clients?tab=sem-anamnese" />
+        <StatCard icon={UserCheck} label="Aguardando aprovação" value={pendingAnamneseApproval}
+          sub={pendingAnamneseApproval === 0 ? "nenhuma pendente" : "anamneses para revisar"}
+          color="bg-orange-50 text-orange-500" href="/dashboard/clients?tab=aguardando" />
         <StatCard icon={CalendarDays} label="Supervisões" value={supervisions.length}
           sub="sessões dialógicas"
           color="bg-blue-50 text-blue-500" href="/dashboard/supervision" />
@@ -242,7 +254,7 @@ export default function DashboardPage() {
                 <Link key={c.id} href={`/dashboard/clients/${c.id}`}
                   className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ backgroundColor: c.color ?? "#924B92" }}>{c.initials ?? c.name[0]}</div>
+                    style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
                     <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
@@ -308,7 +320,7 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-400 text-center py-4">Nenhum cliente cadastrado</p>
             ) : approachDist.map(a => {
               const Icon  = APPROACH_ICONS[a.approach] ?? Brain;
-              const color = APPROACH_COLORS[a.approach] ?? "#924B92";
+              const color = APPROACH_COLORS[a.approach] ?? "#C2542F";
               const pct   = Math.round((a.count / maxApproach) * 100);
               return (
                 <div key={a.approach}>

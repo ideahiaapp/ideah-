@@ -31,7 +31,7 @@ export const mockClients = [
     sessionFrequency: "Semanal",
     sessionDuration: 50,
     initials: "AP",
-    color: "#924B92",
+    color: "#C2542F",
     occupation: "Designer Gráfica",
     referral: "Indicação de amiga",
     mainDemand: "Elaboração de luto — perda da mãe há 8 meses. Dificuldades de sono e anestesia afetiva.",
@@ -168,7 +168,7 @@ export const mockEvolutions = [
     clientId: "c1",
     clientName: "Ana Paula Silva",
     initials: "AP",
-    color: "#924B92",
+    color: "#C2542F",
     approachLabel: "Psicanálise",
     sessionDate: new Date("2026-06-07"),
     sessionNumber: 18,
@@ -240,15 +240,15 @@ function d(offsetDays: number, hhmm: string): { date: string; startTime: string 
 }
 
 export const mockSchedule: ScheduleSession[] = [
-  { id: "ss1",  clientId: "c1", clientName: "Ana Paula Silva",  initials: "AP", color: "#924B92", ...d(0,  "09:00"), duration: 50, status: "confirmed" },
+  { id: "ss1",  clientId: "c1", clientName: "Ana Paula Silva",  initials: "AP", color: "#C2542F", ...d(0,  "09:00"), duration: 50, status: "confirmed" },
   { id: "ss2",  clientId: "c2", clientName: "Roberto Almeida",  initials: "RA", color: "#3B82F6", ...d(0,  "11:00"), duration: 50, status: "confirmed" },
   { id: "ss3",  clientId: "c3", clientName: "Mariana Costa",    initials: "MC", color: "#F59E0B", ...d(1,  "10:00"), duration: 60, status: "confirmed" },
   { id: "ss4",  clientId: "c4", clientName: "Felipe Torres",    initials: "FT", color: "#10B981", ...d(1,  "14:00"), duration: 60, status: "pending"   },
-  { id: "ss5",  clientId: "c1", clientName: "Ana Paula Silva",  initials: "AP", color: "#924B92", ...d(2,  "09:00"), duration: 50, status: "confirmed" },
+  { id: "ss5",  clientId: "c1", clientName: "Ana Paula Silva",  initials: "AP", color: "#C2542F", ...d(2,  "09:00"), duration: 50, status: "confirmed" },
   { id: "ss6",  clientId: "c2", clientName: "Roberto Almeida",  initials: "RA", color: "#3B82F6", ...d(3,  "11:00"), duration: 50, status: "confirmed" },
   { id: "ss7",  clientId: "c3", clientName: "Mariana Costa",    initials: "MC", color: "#F59E0B", ...d(4,  "10:00"), duration: 60, status: "cancelled"  },
   { id: "ss8",  clientId: "c4", clientName: "Felipe Torres",    initials: "FT", color: "#10B981", ...d(-1, "14:00"), duration: 60, status: "done"       },
-  { id: "ss9",  clientId: "c1", clientName: "Ana Paula Silva",  initials: "AP", color: "#924B92", ...d(-2, "09:00"), duration: 50, status: "done"       },
+  { id: "ss9",  clientId: "c1", clientName: "Ana Paula Silva",  initials: "AP", color: "#C2542F", ...d(-2, "09:00"), duration: 50, status: "done"       },
   { id: "ss10", clientId: "c3", clientName: "Mariana Costa",    initials: "MC", color: "#F59E0B", ...d(5,  "16:00"), duration: 60, status: "pending"    },
 ];
 

@@ -7,21 +7,49 @@ import {
   ArrowLeft, Save, Loader2, CheckCircle2,
   Phone, Mail, Heart, FileText,
   ChevronDown, AlertTriangle, Mic, ShieldAlert, Info, User,
+  ClipboardList,
 } from "lucide-react";
 import { getClient, updateClient } from "@/lib/db";
-import { cn } from "@/lib/utils";
+import { cn, maskCpf, maskPhone } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 import type { Client } from "@/lib/database.types";
 
-const APPROACHES = [
-  { value: "PSYCHOANALYSIS",        label: "Psicanálise" },
-  { value: "COGNITIVE_BEHAVIORAL",  label: "TCC" },
-  { value: "JUNGIAN",               label: "Junguiana" },
-  { value: "HUMANISTIC",            label: "Humanista" },
-  { value: "SYSTEMIC",              label: "Sistêmica" },
-  { value: "SOMATIC",               label: "Somática" },
-  { value: "GESTALT",               label: "Gestalt" },
-  { value: "ACCEPTANCE_COMMITMENT", label: "ACT" },
+const CONDITIONS = [
+  "Gravidez", "Diabetes", "Problemas cardíacos", "Cirurgia recente",
+  "Limitação física", "Convulsão ou epilepsia",
+  "IST (Infecções Sexualmente Transmissíveis)", "Depressão",
+  "Ansiedade", "Síndrome do pânico", "Nenhuma das anteriores",
+];
+
+const HOW_FOUND_OPTIONS = [
+  "Indicação de amigo(a)", "Redes sociais", "Google", "Evento ou palestra",
+  "Outro profissional de saúde", "Outro",
+];
+
+type AnamneseForm = {
+  cpf: string; emergency_contact: string; how_found: string;
+  conditions: string[]; latex_allergy: boolean; oil_allergy: string; medication: string;
+  emotional_state: string; body_pain: string; intention: string; sexual_discomfort: string;
+};
+
+function emptyAnamneseForm(): AnamneseForm {
+  return {
+    cpf: "",
+    emergency_contact: "", how_found: "",
+    conditions: [], latex_allergy: false, oil_allergy: "", medication: "",
+    emotional_state: "", body_pain: "", intention: "", sexual_discomfort: "",
+  };
+}
+
+const ALL_APPROACHES = [
+  { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { value: "JUNGIAN",              label: "Junguiana" },
+  { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "GESTALT",              label: "Gestalt-terapia" },
+  { value: "PSYCHODRAMA",          label: "Psicodrama" },
+  { value: "SYSTEMIC",             label: "Constelação Familiar" },
 ];
 
 const FREQUENCIES = ["Semanal", "Quinzenal", "Mensal", "Sob demanda"];
@@ -35,7 +63,7 @@ const STATUS_OPTS = [
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
 
 function initForm(client: Client) {
-  const approachLabel = APPROACHES.find(a => a.value === client.approach)?.label ?? client.approach_label ?? "";
+  const approachLabel = ALL_APPROACHES.find(a => a.value === client.approach)?.label ?? client.approach_label ?? "";
   return {
     name:             client.name,
     email:            client.email ?? "",
@@ -58,6 +86,7 @@ function initForm(client: Client) {
 export default function EditClientPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuthStore();
 
   const [client,  setClient]  = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,12 +97,62 @@ export default function EditClientPage() {
   const [saved,   setSaved]  = useState(false);
   const [saveErr, setSaveErr] = useState<string | null>(null);
 
+  const [anamneseForm, setAnamneseForm] = useState<AnamneseForm>(emptyAnamneseForm());
+  const [anamneseLoading, setAnamneseLoading] = useState(false);
+
+  const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>([]);
+  const [loadingApproaches,  setLoadingApproaches]  = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+      .then(r => r.json())
+      .then(d => setAcquiredApproaches(d.approaches ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingApproaches(false));
+  }, [user]);
+
+  const acquiredOptions = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
+  const currentNotAcquired = client && form.approach && !acquiredOptions.some(a => a.label === form.approach)
+    ? ALL_APPROACHES.find(a => a.label === form.approach)
+    : null;
+  const APPROACHES = currentNotAcquired ? [...acquiredOptions, currentNotAcquired] : acquiredOptions;
+
   useEffect(() => {
     getClient(id)
       .then(c => { setClient(c); setForm(initForm(c)); })
       .catch(e => setLoadErr(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!client) return;
+    if (client.anamnese_id) {
+      setAnamneseLoading(true);
+      fetch(`/api/anamnese/${client.anamnese_id}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.anamnese) {
+            const a = d.anamnese;
+            setAnamneseForm({
+              cpf: a.cpf ?? "",
+              emergency_contact: a.emergency_contact ?? "",
+              how_found: a.how_found ?? "", conditions: a.conditions ?? [],
+              latex_allergy: a.latex_allergy ?? false, oil_allergy: a.oil_allergy ?? "",
+              medication: a.medication ?? "", emotional_state: a.emotional_state ?? "",
+              body_pain: a.body_pain ?? "", intention: a.intention ?? "",
+              sexual_discomfort: a.sexual_discomfort ?? "",
+            });
+          }
+        })
+        .finally(() => setAnamneseLoading(false));
+    } else {
+      setAnamneseForm(prev => ({
+        ...prev,
+        emergency_contact: client.emergency_contact ?? "",
+      }));
+    }
+  }, [client]);
 
   function set(field: string, value: string) {
     setForm(p => ({ ...p, [field]: value }));
@@ -85,6 +164,40 @@ export default function EditClientPage() {
         ? p.vulnerability.filter(x => x !== v)
         : [...p.vulnerability, v],
     }));
+  }
+
+  function setAF(key: keyof AnamneseForm, value: string | boolean | string[]) {
+    setAnamneseForm(prev => ({ ...prev, [key]: value }));
+  }
+  function toggleAFCondition(c: string) {
+    setAnamneseForm(prev => ({
+      ...prev,
+      conditions: prev.conditions.includes(c)
+        ? prev.conditions.filter(x => x !== c)
+        : [...prev.conditions, c],
+    }));
+  }
+
+  async function saveAnamnese() {
+    if (!client || !user) return;
+    if (client.anamnese_id) {
+      await fetch(`/api/anamnese/${client.anamnese_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(anamneseForm),
+      });
+    } else {
+      const res = await fetch("/api/anamnese/create-for-client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ therapistId: user.id, clientId: client.id, ...anamneseForm }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const updated = await getClient(id);
+        setClient(updated);
+      }
+    }
   }
 
   async function handleSave() {
@@ -108,6 +221,12 @@ export default function EditClientPage() {
         notes:             form.notes.trim() || null,
         emergency_contact: form.emergencyContact.trim() || null,
       });
+      const hasAnamneseInput = client?.anamnese_id || Object.entries(anamneseForm).some(([k, v]) =>
+        k === "conditions" ? (v as string[]).length > 0 : typeof v === "string" ? v.trim() : v
+      );
+      if (hasAnamneseInput) {
+        await saveAnamnese();
+      }
       setSaved(true);
       setTimeout(() => router.push(`/dashboard/clients/${id}`), 1200);
     } catch (e) {
@@ -172,7 +291,7 @@ export default function EditClientPage() {
           <Field label="Telefone / WhatsApp">
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input value={form.phone} onChange={e => set("phone", e.target.value)}
+              <input value={form.phone} onChange={e => set("phone", maskPhone(e.target.value))}
                 placeholder="(11) 99999-9999" className={inputCls + " pl-9"} />
             </div>
           </Field>
@@ -184,7 +303,11 @@ export default function EditClientPage() {
       <Section icon={Heart} title="Configuração clínica">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Abordagem terapêutica" required>
-            <SelectField value={form.approach} onChange={v => set("approach", v)} options={APPROACHES.map(a => a.label)} />
+            {loadingApproaches ? (
+              <div className={inputCls + " flex items-center text-gray-400"}>Carregando...</div>
+            ) : (
+              <SelectField value={form.approach} onChange={v => set("approach", v)} options={APPROACHES.map(a => a.label)} />
+            )}
           </Field>
           <Field label="Frequência">
             <SelectField value={form.frequency} onChange={v => set("frequency", v)} options={FREQUENCIES} />
@@ -207,6 +330,83 @@ export default function EditClientPage() {
       <Section icon={AlertTriangle} title="Contato de emergência">
         <VoiceInput label="Nome e telefone" value={form.emergencyContact} onChange={v => set("emergencyContact", v)}
           placeholder="Ex: João Silva (irmão) — (11) 99999-9999" />
+      </Section>
+
+      <Section icon={ClipboardList} title="Anamnese">
+        {anamneseLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-5 h-5 text-brand-400 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <p className="text-xs text-gray-400 -mt-1">
+              Nome, e-mail, telefone e data de nascimento usados na anamnese são os mesmos do cadastro do cliente, na seção "Dados pessoais" acima.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="CPF">
+                <input value={anamneseForm.cpf} onChange={e => setAF("cpf", maskCpf(e.target.value))} className={inputCls} placeholder="000.000.000-00" />
+              </Field>
+              <Field label="Contato de emergência">
+                <input value={anamneseForm.emergency_contact} onChange={e => setAF("emergency_contact", e.target.value)} className={inputCls} />
+              </Field>
+              <Field label="Como chegou até você">
+                <SelectField value={anamneseForm.how_found} onChange={v => setAF("how_found", v)} options={HOW_FOUND_OPTIONS} />
+              </Field>
+            </div>
+
+            <Field label="Condições de saúde">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                {CONDITIONS.map(c => (
+                  <label key={c} className="flex items-center gap-2.5 cursor-pointer group">
+                    <div onClick={() => toggleAFCondition(c)}
+                      className={cn(
+                        "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                        anamneseForm.conditions.includes(c) ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
+                      )}>
+                      {anamneseForm.conditions.includes(c) && (
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-700">{c}</span>
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Tem alergia a látex?">
+              <div className="flex gap-4">
+                {[true, false].map(v => (
+                  <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" checked={anamneseForm.latex_allergy === v}
+                      onChange={() => setAF("latex_allergy", v)} className="accent-brand-600" />
+                    <span className="text-sm">{v ? "Sim" : "Não"}</span>
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Alergia a óleo de massagem">
+              <input value={anamneseForm.oil_allergy} onChange={e => setAF("oil_allergy", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Medicamentos em uso">
+              <textarea rows={2} value={anamneseForm.medication} onChange={e => setAF("medication", e.target.value)} className={inputCls + " resize-none"} />
+            </Field>
+            <Field label="Estado emocional atual">
+              <textarea rows={3} value={anamneseForm.emotional_state} onChange={e => setAF("emotional_state", e.target.value)} className={inputCls + " resize-none"} />
+            </Field>
+            <Field label="Dor no corpo">
+              <textarea rows={2} value={anamneseForm.body_pain} onChange={e => setAF("body_pain", e.target.value)} className={inputCls + " resize-none"} />
+            </Field>
+            <Field label="Intenção com a sessão / processo">
+              <textarea rows={3} value={anamneseForm.intention} onChange={e => setAF("intention", e.target.value)} className={inputCls + " resize-none"} />
+            </Field>
+            <Field label="Incômodo na vida sexual">
+              <textarea rows={2} value={anamneseForm.sexual_discomfort} onChange={e => setAF("sexual_discomfort", e.target.value)} className={inputCls + " resize-none"} />
+            </Field>
+          </div>
+        )}
       </Section>
 
       <Section icon={ShieldAlert} title="Situação de vulnerabilidade">
@@ -238,7 +438,7 @@ export default function EditClientPage() {
         {form.vulnerability.length > 0 && (
           <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
             <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
-            <span>Caso marcado como vulnerabilidade — o IDEAh reforçará atenção ética nos raciocínios clínicos.</span>
+            <span>Caso marcado como vulnerabilidade — o Paideia reforçará atenção ética nos raciocínios clínicos.</span>
           </div>
         )}
       </Section>

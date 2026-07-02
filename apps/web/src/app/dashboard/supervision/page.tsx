@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
 import type { Client, Supervision, SupervisionMessage, Evolution } from "@/lib/database.types";
 
 /* ─── Tipos ─────────────────────────────────────────── */
@@ -26,6 +27,31 @@ interface Message {
 }
 
 type Mode = "supervision" | "evolution";
+
+interface ClientAnamnese {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  birth_date: string | null;
+  cpf: string | null;
+  emergency_contact: string | null;
+  how_found: string | null;
+  accepts_email: boolean;
+  conditions: string[];
+  latex_allergy: boolean;
+  oil_allergy: string | null;
+  medication: string | null;
+  emotional_state: string | null;
+  body_pain: string | null;
+  intention: string | null;
+  sexual_discomfort: string | null;
+  consent_nudity: boolean;
+  consent_touch: boolean;
+  consent_therapeutic: boolean;
+  consent_payment: boolean;
+  approach: string | null;
+  template_answers: Record<string, unknown> | null;
+}
 
 /* ─── Abordagens ─────────────────────────────────────── */
 const APPROACHES: Record<string, { label: string; badgeCls: string; iconBg: string; Icon: React.ElementType }> = {
@@ -130,6 +156,150 @@ function MessageBubble({ message }: { message: Message }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+const APPROACH_LABELS: Record<string, string> = {
+  PSYCHOANALYSIS: "Psicanálise Freudiana", COGNITIVE_BEHAVIORAL: "TCC",
+  JUNGIAN: "Junguiana", SOMATIC: "Somática / Corporal",
+  GESTALT: "Gestalt-terapia", PSYCHODRAMA: "Psicodrama", SYSTEMIC: "Constelação Familiar",
+};
+
+/* ─── Resumo completo da anamnese ─────────────────────── */
+function AnamneseSummaryCard({ anamnese, templateHtml }: { anamnese: ClientAnamnese; templateHtml: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const personalRows: { label: string; value: string }[] = [
+    anamnese.email           ? { label: "E-mail",               value: anamnese.email }           : null,
+    anamnese.phone           ? { label: "Telefone",             value: anamnese.phone }           : null,
+    anamnese.birth_date      ? { label: "Nascimento",           value: new Date(anamnese.birth_date).toLocaleDateString("pt-BR") } : null,
+    anamnese.cpf             ? { label: "CPF",                  value: anamnese.cpf }             : null,
+    anamnese.emergency_contact ? { label: "Emergência",         value: anamnese.emergency_contact } : null,
+    anamnese.how_found       ? { label: "Como chegou",          value: anamnese.how_found }       : null,
+  ].filter((r): r is { label: string; value: string } => r !== null);
+
+  const clinicalRows: { label: string; value: string }[] = [
+    anamnese.medication      ? { label: "Medicamentos",          value: anamnese.medication }      : null,
+    anamnese.oil_allergy     ? { label: "Alergia a óleo",        value: anamnese.oil_allergy }     : null,
+    anamnese.latex_allergy   ? { label: "Alergia a látex",       value: "Sim" }                    : null,
+    anamnese.emotional_state ? { label: "Estado emocional",      value: anamnese.emotional_state } : null,
+    anamnese.body_pain       ? { label: "Dor no corpo",          value: anamnese.body_pain }       : null,
+    anamnese.sexual_discomfort ? { label: "Vida sexual",         value: anamnese.sexual_discomfort } : null,
+  ].filter((r): r is { label: string; value: string } => r !== null);
+
+  const hasTemplateData = !!(templateHtml && anamnese.template_answers);
+  const hasAnyClinical  = clinicalRows.length > 0 || anamnese.conditions.length > 0;
+
+  return (
+    <div className="mt-4 w-full max-w-2xl text-left border border-brand-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center justify-between px-5 py-3.5 bg-brand-50 hover:bg-brand-100 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-brand-700 uppercase tracking-wide">Anamnese completa</span>
+          {anamnese.approach && (
+            <span className="text-[10px] bg-white border border-brand-200 text-brand-600 px-2 py-0.5 rounded-full font-medium">
+              {APPROACH_LABELS[anamnese.approach] ?? anamnese.approach}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] text-brand-400">{expanded ? "▲ fechar" : "▼ expandir"}</span>
+      </button>
+
+      {/* Intenção — sempre visível */}
+      {anamnese.intention && (
+        <div className="px-5 py-3 border-b border-gray-50 bg-brand-50/40">
+          <p className="text-[10px] font-semibold text-brand-500 mb-0.5">Intenção da sessão</p>
+          <p className="text-sm text-brand-800 italic leading-relaxed">"{anamnese.intention}"</p>
+        </div>
+      )}
+
+      {expanded && (
+        <div className="divide-y divide-gray-50">
+          {/* Dados pessoais */}
+          {personalRows.length > 0 && (
+            <div className="px-5 py-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Dados pessoais</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                {personalRows.map(r => (
+                  <div key={r.label}>
+                    <span className="text-[10px] font-semibold text-gray-400">{r.label}</span>
+                    <p className="text-xs text-gray-700">{r.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Condições de saúde e clínico */}
+          {hasAnyClinical && (
+            <div className="px-5 py-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Saúde</p>
+              {anamnese.conditions.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-[10px] font-semibold text-gray-400 mb-1">Condições</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {anamnese.conditions.map(c => (
+                      <span key={c} className="text-[10px] bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-1 gap-1.5">
+                {clinicalRows.map(r => (
+                  <div key={r.label}>
+                    <span className="text-[10px] font-semibold text-gray-400">{r.label}: </span>
+                    <span className="text-xs text-gray-700">{r.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Consentimentos */}
+          {(anamnese.consent_nudity || anamnese.consent_touch || anamnese.consent_therapeutic || anamnese.consent_payment) && (
+            <div className="px-5 py-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Consentimentos</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "Nudez",       ok: anamnese.consent_nudity },
+                  { label: "Toque",       ok: anamnese.consent_touch },
+                  { label: "Terapêutico", ok: anamnese.consent_therapeutic },
+                  { label: "Pagamento",   ok: anamnese.consent_payment },
+                ].map(({ label, ok }) => ok && (
+                  <span key={label} className="text-[10px] bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">
+                    ✓ {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Respostas do template específico */}
+          {hasTemplateData && (
+            <div className="px-5 py-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">
+                Questionário — {APPROACH_LABELS[anamnese.approach!] ?? anamnese.approach}
+              </p>
+              <TemplateAnswersView
+                html={templateHtml!}
+                answers={anamnese.template_answers as Record<string, unknown>}
+              />
+            </div>
+          )}
+
+          {/* Botão fechar no rodapé */}
+          <button
+            onClick={() => setExpanded(false)}
+            className="w-full py-2.5 text-[11px] font-semibold text-brand-500 hover:bg-brand-50 transition-colors border-t border-brand-100"
+          >
+            ▲ Fechar anamnese
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -367,6 +537,8 @@ export default function WorkspacePage() {
 
   const [mode, setMode] = useState<Mode>("supervision");
   const [clientIntention, setClientIntention] = useState<string | null>(null);
+  const [clientAnamnese,  setClientAnamnese]  = useState<ClientAnamnese | null>(null);
+  const [templateHtml,    setTemplateHtml]    = useState<string | null>(null);
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -425,16 +597,35 @@ export default function WorkspacePage() {
     }).catch(() => {});
   }, [selectedClientId]);
 
-  /* ── Fetch anamnese intention ── */
+  /* ── Fetch anamnese completa do cliente ── */
   useEffect(() => {
-    if (!selectedClientId || !user) { setClientIntention(null); return; }
+    if (!selectedClientId) {
+      setClientIntention(null); setClientAnamnese(null); setTemplateHtml(null); return;
+    }
     const client = clients.find(c => c.id === selectedClientId);
-    if (!client?.email) return;
-    fetch(`/api/anamnese/list?therapistId=${user.id}&email=${encodeURIComponent(client.email)}&status=ACCEPTED`)
+    if (!client?.anamnese_id) {
+      setClientIntention(null); setClientAnamnese(null); setTemplateHtml(null); return;
+    }
+    fetch(`/api/anamnese/${client.anamnese_id}`)
       .then(r => r.json())
-      .then(d => setClientIntention(d.anamneses?.[0]?.intention ?? null))
+      .then(d => {
+        if (d.anamnese) {
+          setClientIntention(d.anamnese.intention ?? null);
+          setClientAnamnese(d.anamnese);
+          if (d.anamnese.approach && d.anamnese.template_answers) {
+            fetch(`/api/anamnese-templates/${d.anamnese.approach}`, { cache: "no-store" })
+              .then(r => r.json())
+              .then(t => setTemplateHtml(t.content ?? null))
+              .catch(() => setTemplateHtml(null));
+          } else {
+            setTemplateHtml(null);
+          }
+        } else {
+          setClientIntention(null); setClientAnamnese(null); setTemplateHtml(null);
+        }
+      })
       .catch(() => {});
-  }, [selectedClientId, user, clients]);
+  }, [selectedClientId, clients]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
@@ -452,6 +643,11 @@ export default function WorkspacePage() {
   }, []);
 
   function selectClient(clientId: string) {
+    const client = clients.find(c => c.id === clientId);
+    if (client && !client.anamnese_id) {
+      alert("Para fazer a primeira supervisão é OBRIGATÓRIO o preenchimento da anamnese");
+      return;
+    }
     setSelectedClientId(clientId);
     setActiveSessionId(null);
     setMessages([]);
@@ -491,6 +687,13 @@ export default function WorkspacePage() {
     const text = input.trim();
     if (!text || loading || !selectedClientId || !user) return;
 
+    if (!selectedClient?.anamnese_id) {
+      setError("Para supervisionar é OBRIGATÓRIO o preenchimento da anamnese");
+      return;
+    }
+
+    const isFirstSupervision = !activeSessionId && supervisions.length === 0;
+
     const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: text, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput(""); setLoading(true); setError(null);
@@ -515,10 +718,11 @@ export default function WorkspacePage() {
         headers: await aiHeaders(),
         body: JSON.stringify({
           messages: history,
-          approach: approachKey,
+          approach: approachKey,           // sempre enviado com a seleção atual
           clientName: selectedClient?.name ?? "paciente",
           therapistId: user.id,
           clientIntention,
+          clientAnamnese: isFirstSupervision ? clientAnamnese : null,
           lastEvolution: lastEvolution ? {
             sessionDate:     lastEvolution.session_date,
             content:         lastEvolution.content,
@@ -537,7 +741,7 @@ export default function WorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, messages, approachKey, selectedClient, selectedClientId, activeSessionId, user, clientIntention, lastEvolution]);
+  }, [input, loading, messages, approachKey, selectedClient, selectedClientId, activeSessionId, user, clientIntention, clientAnamnese, lastEvolution]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -580,7 +784,7 @@ export default function WorkspacePage() {
                 )}
                 style={{ width: "calc(100% - 8px)" }}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                  style={{ backgroundColor: client.color ?? "#924B92" }}>
+                  style={{ backgroundColor: client.color ?? "#C2542F" }}>
                   {client.initials ?? client.name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -614,7 +818,7 @@ export default function WorkspacePage() {
           {selectedClient ? (
             <>
               <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ backgroundColor: selectedClient.color ?? "#924B92" }}>
+                style={{ backgroundColor: selectedClient.color ?? "#C2542F" }}>
                 {selectedClient.initials ?? selectedClient.name[0]}
               </div>
               <div className="flex-1 min-w-0">
@@ -688,12 +892,7 @@ export default function WorkspacePage() {
                 <p className="text-sm text-gray-500 mt-1 max-w-sm leading-relaxed">
                   Traga um recorte da sessão ou da anamnese de <strong>{selectedClient.name}</strong> para iniciar a supervisão.
                 </p>
-                {clientIntention && (
-                  <div className="mt-3 bg-brand-50 border border-brand-100 rounded-xl px-4 py-2.5 text-left">
-                    <p className="text-[10px] font-semibold text-brand-500 mb-1">Intenção da anamnese</p>
-                    <p className="text-xs text-brand-800 italic">"{clientIntention}"</p>
-                  </div>
-                )}
+                {clientAnamnese && <AnamneseSummaryCard anamnese={clientAnamnese} templateHtml={templateHtml} />}
               </div>
             </div>
           )}

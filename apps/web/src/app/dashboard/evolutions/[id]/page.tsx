@@ -22,11 +22,11 @@ const MOOD_LABELS: Record<number, { label: string; color: string; emoji: string 
 
 function exportPdf(ev: EvolutionWithClient, mood: { label: string; emoji: string }) {
   const date      = new Date(ev.session_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-  const logoUrl   = `${window.location.origin}/ideah-logo.png`;
+  const logoUrl   = `${window.location.origin}/paideia-wordmark-light.svg`;
   const client    = ev.clients;
   const clientName = client?.name ?? "Cliente";
   const initials   = client?.initials ?? clientName[0];
-  const color      = client?.color ?? "#924B92";
+  const color      = client?.color ?? "#C2542F";
   const approach   = client?.approach_label ?? "";
 
   const html = `<!DOCTYPE html>
@@ -37,17 +37,17 @@ function exportPdf(ev: EvolutionWithClient, mood: { label: string; emoji: string
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:system-ui,sans-serif;color:#1a1a1a;padding:32px 48px;font-size:13px;line-height:1.6}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #924B92;padding-bottom:16px;margin-bottom:24px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #C2542F;padding-bottom:16px;margin-bottom:24px}
     .logo img{height:36px;display:block}
     .logo span{font-weight:400;color:#888;font-size:13px;display:block;margin-top:4px}
     .meta{text-align:right;color:#666;font-size:12px}
-    .client-row{display:flex;align-items:center;gap:12px;background:#f9f0f9;border-radius:12px;padding:14px 18px;margin-bottom:20px}
+    .client-row{display:flex;align-items:center;gap:12px;background:#FDF1ED;border-radius:12px;padding:14px 18px;margin-bottom:20px}
     .avatar{width:44px;height:44px;border-radius:50%;background:${color};color:#fff;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .client-name{font-weight:700;font-size:15px}
     .client-sub{color:#666;font-size:12px;margin-top:2px}
     .mood{margin-left:auto;font-size:12px;background:#fff;border:1px solid #e5e7eb;padding:4px 12px;border-radius:20px}
     .section{margin-bottom:18px;break-inside:avoid}
-    .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#924B92;border-bottom:1px solid #f0e6f0;padding-bottom:5px;margin-bottom:10px}
+    .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#C2542F;border-bottom:1px solid #FBE0D6;padding-bottom:5px;margin-bottom:10px}
     .section-body{color:#2d2d2d;white-space:pre-wrap}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
     .ai-box{background:#f5f0ff;border:1px solid #d8c8ff;border-radius:8px;padding:14px;break-inside:avoid}
@@ -57,7 +57,7 @@ function exportPdf(ev: EvolutionWithClient, mood: { label: string; emoji: string
 </head>
 <body>
   <div class="header">
-    <div class="logo"><img src="${logoUrl}" alt="IDEAH"/><span>Evolução Clínica</span></div>
+    <div class="logo"><img src="${logoUrl}" alt="Paideia"/><span>Evolução Clínica</span></div>
     <div class="meta">
       ${date}<br/>
       ${ev.session_number ? `Sessão nº ${ev.session_number} · ` : ""}${approach}<br/>
@@ -89,7 +89,7 @@ function exportPdf(ev: EvolutionWithClient, mood: { label: string; emoji: string
   ${ev.interventions ? `<div class="section"><div class="section-title">Intervenções realizadas</div><div class="section-body">${ev.interventions}</div></div>` : ""}
   ${ev.ai_hypothesis ? `<div class="ai-box"><div class="ai-title">Hipótese gerada pela IA — somente para reflexão</div><div>${ev.ai_hypothesis}</div></div>` : ""}
   <div class="footer">
-    <span>ideah · Copiloto de raciocínio clínico</span>
+    <span>Paideia · Copiloto de raciocínio clínico</span>
     <span>Res. CFP nº 21/2025 · LGPD · Sigilo profissional</span>
   </div>
 </body>
@@ -172,7 +172,7 @@ export default function EvolutionDetailPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: client?.color ?? "#924B92" }}>
+              style={{ backgroundColor: client?.color ?? "#C2542F" }}>
               {client?.initials ?? client?.name?.[0] ?? "?"}
             </div>
             <div>

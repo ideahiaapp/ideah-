@@ -7,8 +7,6 @@ import { CheckCircle2, AlertTriangle, Loader2, ChevronDown } from "lucide-react"
 import Image from "next/image";
 import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 
-type Therapist = { id: string; name: string; email: string };
-
 const HOW_FOUND_OPTIONS = [
   "Indicação de amigo(a)", "Redes sociais", "Google", "Evento ou palestra",
   "Outro profissional de saúde", "Outro",
@@ -32,9 +30,7 @@ function Field({ label, required, hint, children }: {
 }) {
   return (
     <div className="space-y-1">
-      <label className={labelCls}>
-        {label} {required && <span className="text-red-400">*</span>}
-      </label>
+      <label className={labelCls}>{label} {required && <span className="text-red-400">*</span>}</label>
       {children}
       {hint && <p className="text-xs text-gray-400">{hint}</p>}
     </div>
@@ -50,29 +46,27 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default function AnamnesePage() {
-  const params = useParams();
+export default function PreencherAnamnesePage() {
+  const params       = useParams();
   const searchParams = useSearchParams();
-  const therapistId = params.therapistId as string;
-  const approach = searchParams.get("approach") ?? "";
+  const clientId     = params.clientId as string;
+  const approach     = searchParams.get("approach") ?? "";
 
   const templateRef = useRef<HTMLDivElement>(null);
 
-  const [therapist,        setTherapist]        = useState<Therapist | null>(null);
-  const [loadingTherapist, setLoadingTherapist] = useState(true);
-  const [notFound,         setNotFound]         = useState(false);
-  const [templateHtml,     setTemplateHtml]     = useState<string | null>(null);
-  const [loadingTemplate,  setLoadingTemplate]  = useState(false);
+  const [therapistName,   setTherapistName]   = useState("");
+  const [loadingClient,   setLoadingClient]   = useState(true);
+  const [notFound,        setNotFound]        = useState(false);
+  const [templateHtml,    setTemplateHtml]    = useState<string | null>(null);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
 
   const [submitted,   setSubmitted]   = useState(false);
   const [submitting,  setSubmitting]  = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", cpf: "",
-    birth_date: "", emergency_contact: "",
-    how_found: "", accepts_email: true,
-    // Campos somáticos (só exibidos quando approach === SOMATIC ou sem template)
+    name: "", email: "", phone: "", birth_date: "", cpf: "",
+    emergency_contact: "", how_found: "", accepts_email: true,
     conditions: [] as string[],
     latex_allergy: false, oil_allergy: "", medication: "",
     emotional_state: "", body_pain: "", intention: "", sexual_discomfort: "",
@@ -81,12 +75,23 @@ export default function AnamnesePage() {
   });
 
   useEffect(() => {
-    fetch(`/api/anamnese/therapist/${therapistId}`)
+    fetch(`/api/anamnese/client-public/${clientId}`)
       .then(r => r.json())
-      .then(d => { if (d.therapist) setTherapist(d.therapist); else setNotFound(true); })
+      .then(d => {
+        if (d.client) {
+          setTherapistName(d.therapistName ?? "");
+          setForm(prev => ({
+            ...prev,
+            name:       d.client.name  ?? "",
+            email:      d.client.email ?? "",
+            phone:      d.client.phone ?? "",
+            birth_date: d.client.birth_date ? d.client.birth_date.split("T")[0] : "",
+          }));
+        } else setNotFound(true);
+      })
       .catch(() => setNotFound(true))
-      .finally(() => setLoadingTherapist(false));
-  }, [therapistId]);
+      .finally(() => setLoadingClient(false));
+  }, [clientId]);
 
   useEffect(() => {
     if (!approach) return;
@@ -105,12 +110,10 @@ export default function AnamnesePage() {
   const hasTemplate = !!templateHtml;
   const isSomatic   = approach === "SOMATIC" || !approach;
 
-  // Validação dos campos comuns sempre obrigatórios
   const commonValid =
     form.name.trim() && form.email.trim() && form.phone.trim() &&
     form.cpf.trim() && form.birth_date && form.emergency_contact.trim() && form.how_found;
 
-  // Campos somáticos obrigatórios apenas quando não há template
   const somaticValid = hasTemplate ? true :
     form.oil_allergy.trim() && form.medication.trim() &&
     form.emotional_state.trim() && form.body_pain.trim() &&
@@ -130,14 +133,13 @@ export default function AnamnesePage() {
         ? serializeTemplateForm(templateRef.current)
         : undefined;
 
-      const res = await fetch("/api/anamnese/submit", {
-        method: "POST",
+      const res = await fetch(`/api/anamnese/client-public/${clientId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          therapistId,
+          ...form,
           approach: approach || undefined,
           template_answers: templateAnswers,
-          ...form,
         }),
       });
       const data = await res.json();
@@ -150,7 +152,7 @@ export default function AnamnesePage() {
     }
   }
 
-  if (loadingTherapist) return (
+  if (loadingClient) return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
       <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
     </div>
@@ -172,8 +174,7 @@ export default function AnamnesePage() {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-800">Anamnese enviada!</h1>
         <p className="text-gray-500 mt-2 max-w-sm leading-relaxed">
-          Obrigado, <strong>{form.name}</strong>. Suas informações foram recebidas e{" "}
-          <strong>{therapist?.name}</strong> entrará em contato em breve.
+          Obrigado, <strong>{form.name}</strong>. Suas informações foram recebidas.
         </p>
       </div>
     </div>
@@ -187,19 +188,18 @@ export default function AnamnesePage() {
   ];
 
   const CONSENTS = [
-    { key: "consent_nudity" as const, title: "Nudez", text: "Tenho ciência que serei convidado(a) a me despir completamente e que essa nudez é consensual e opcional." },
-    { key: "consent_touch" as const, title: "Toques", text: "Tenho ciência de que na sessão poderão haver toques na pele, genitais (externos/internos), uso de vibrador externo e estímulo do prazer, sempre com consentimento do cliente." },
-    { key: "consent_therapeutic" as const, title: "Trabalho Terapêutico", text: "Estou ciente que o trabalho é 100% terapêutico e educativo, não há interação sexual, os toques são sempre unilaterais, durante todo o tempo o terapeuta fica vestido e os toques genitais são realizados com luvas." },
-    { key: "consent_payment" as const, title: "Pagamento e compromisso", text: "Realizarei o pagamento de 50% do valor da sessão via Pix e enviarei o comprovante. Prazo de desmarcação: até 24h antes. Chave Pix: elimarcia.philos@gmail.com (Nubank — Elimárcia Aguiar Leite)." },
+    { key: "consent_nudity"      as const, title: "Nudez",                   text: "Tenho ciência que serei convidado(a) a me despir completamente e que essa nudez é consensual e opcional." },
+    { key: "consent_touch"       as const, title: "Toques",                  text: "Tenho ciência de que na sessão poderão haver toques na pele, genitais (externos/internos), uso de vibrador externo e estímulo do prazer, sempre com consentimento do cliente." },
+    { key: "consent_therapeutic" as const, title: "Trabalho Terapêutico",    text: "Estou ciente que o trabalho é 100% terapêutico e educativo, não há interação sexual, os toques são sempre unilaterais, durante todo o tempo o terapeuta fica vestido e os toques genitais são realizados com luvas." },
+    { key: "consent_payment"     as const, title: "Pagamento e compromisso", text: "Realizarei o pagamento de 50% do valor da sessão via Pix e enviarei o comprovante. Prazo de desmarcação: até 24h antes. Chave Pix: elimarcia.philos@gmail.com (Nubank — Elimárcia Aguiar Leite)." },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col items-center gap-3">
           <Image src="/paideia-icon.svg" alt="Paideia" width={72} height={72} className="rounded-2xl" />
-          <span className="text-2xl font-bold text-purple-800">{therapist?.name}</span>
+          <span className="text-2xl font-bold text-purple-800">{therapistName}</span>
           {approach && APPROACH_LABELS[approach] && (
             <span className="text-xs font-semibold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
               {APPROACH_LABELS[approach]}
@@ -210,40 +210,33 @@ export default function AnamnesePage() {
 
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-8 space-y-8">
 
-        {/* Dados pessoais — sempre */}
         <Section title="Dados pessoais">
+          <p className="text-xs text-gray-400 -mt-2">Estes dados já vêm preenchidos com o que está no seu cadastro. Corrija aqui caso haja algum erro.</p>
           <Field label="Nome completo" required>
-            <input type="text" value={form.name} onChange={e => set("name", e.target.value)}
-              className={inputCls} placeholder="Seu nome completo" />
+            <input type="text" value={form.name} onChange={e => set("name", e.target.value)} className={inputCls} placeholder="Seu nome completo" />
           </Field>
           <Field label="Email" required>
-            <input type="email" value={form.email} onChange={e => set("email", e.target.value)}
-              className={inputCls} placeholder="seu@email.com" />
+            <input type="email" value={form.email} onChange={e => set("email", e.target.value)} className={inputCls} placeholder="seu@email.com" />
           </Field>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Celular" required>
-              <input type="tel" value={form.phone} onChange={e => set("phone", maskPhone(e.target.value))}
-                className={inputCls} placeholder="(11) 99999-9999" />
+              <input type="tel" value={form.phone} onChange={e => set("phone", maskPhone(e.target.value))} className={inputCls} placeholder="(11) 99999-9999" />
             </Field>
-            <Field label="CPF" required>
-              <input type="text" value={form.cpf} onChange={e => set("cpf", maskCpf(e.target.value))}
-                className={inputCls} placeholder="000.000.000-00" />
+            <Field label="Data de nascimento" required>
+              <input type="date" value={form.birth_date} onChange={e => set("birth_date", e.target.value)} className={inputCls} />
             </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Data de nascimento" required>
-              <input type="date" value={form.birth_date} onChange={e => set("birth_date", e.target.value)}
-                className={inputCls} />
+            <Field label="CPF" required>
+              <input type="text" value={form.cpf} onChange={e => set("cpf", maskCpf(e.target.value))} className={inputCls} placeholder="000.000.000-00" />
             </Field>
             <Field label="Contato de emergência" required>
-              <input type="text" value={form.emergency_contact} onChange={e => set("emergency_contact", e.target.value)}
-                className={inputCls} placeholder="Nome e telefone" />
+              <input type="text" value={form.emergency_contact} onChange={e => set("emergency_contact", e.target.value)} className={inputCls} placeholder="Nome e telefone" />
             </Field>
           </div>
           <Field label="Como chegou até mim" required>
             <div className="relative">
-              <select value={form.how_found} onChange={e => set("how_found", e.target.value)}
-                className={inputCls + " appearance-none pr-9"}>
+              <select value={form.how_found} onChange={e => set("how_found", e.target.value)} className={inputCls + " appearance-none pr-9"}>
                 <option value="">Selecione uma opção</option>
                 {HOW_FOUND_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
@@ -254,8 +247,7 @@ export default function AnamnesePage() {
             <div className="flex gap-4">
               {[true, false].map(v => (
                 <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" checked={form.accepts_email === v}
-                    onChange={() => set("accepts_email", v)} className="accent-purple-600" />
+                  <input type="radio" checked={form.accepts_email === v} onChange={() => set("accepts_email", v)} className="accent-purple-600" />
                   <span className="text-sm">{v ? "Sim" : "Não"}</span>
                 </label>
               ))}
@@ -263,7 +255,7 @@ export default function AnamnesePage() {
           </Field>
         </Section>
 
-        {/* Seção dinâmica do template */}
+        {/* Template dinâmico */}
         {approach && (
           loadingTemplate ? (
             <div className="flex items-center justify-center py-10">
@@ -274,23 +266,18 @@ export default function AnamnesePage() {
               <TemplateFormSection html={templateHtml} />
             </div>
           ) : (
-            /* Fallback: campos somáticos hardcoded quando não há template */
             <Section title="Informações clínicas">
               <Field label="Estado emocional" required>
-                <textarea value={form.emotional_state} onChange={e => set("emotional_state", e.target.value)}
-                  className={inputCls + " resize-none"} rows={3} placeholder="Como está se sentindo emocionalmente" />
+                <textarea value={form.emotional_state} onChange={e => set("emotional_state", e.target.value)} className={inputCls + " resize-none"} rows={3} placeholder="Como está se sentindo emocionalmente" />
               </Field>
               <Field label="Dor no corpo" required>
-                <textarea value={form.body_pain} onChange={e => set("body_pain", e.target.value)}
-                  className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
+                <textarea value={form.body_pain} onChange={e => set("body_pain", e.target.value)} className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Intenção com a sessão" required>
-                <textarea value={form.intention} onChange={e => set("intention", e.target.value)}
-                  className={inputCls + " resize-none"} rows={3} placeholder="O que busca alcançar/superar?" />
+                <textarea value={form.intention} onChange={e => set("intention", e.target.value)} className={inputCls + " resize-none"} rows={3} placeholder="O que busca alcançar/superar?" />
               </Field>
               <Field label="Incômodo na vida sexual" required>
-                <textarea value={form.sexual_discomfort} onChange={e => set("sexual_discomfort", e.target.value)}
-                  className={inputCls + " resize-none"} rows={2} placeholder="Compartilhe ou escreva 'Não'" />
+                <textarea value={form.sexual_discomfort} onChange={e => set("sexual_discomfort", e.target.value)} className={inputCls + " resize-none"} rows={2} placeholder="Compartilhe ou escreva 'Não'" />
               </Field>
             </Section>
           )
@@ -329,36 +316,29 @@ export default function AnamnesePage() {
                 <div className="flex gap-4">
                   {[true, false].map(v => (
                     <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" checked={form.latex_allergy === v}
-                        onChange={() => set("latex_allergy", v)} className="accent-purple-600" />
+                      <input type="radio" checked={form.latex_allergy === v} onChange={() => set("latex_allergy", v)} className="accent-purple-600" />
                       <span className="text-sm">{v ? "Sim" : "Não"}</span>
                     </label>
                   ))}
                 </div>
               </Field>
               <Field label="Alergia a óleos de massagem?" required>
-                <input type="text" value={form.oil_allergy} onChange={e => set("oil_allergy", e.target.value)}
-                  className={inputCls} placeholder="Descreva ou escreva 'Não'" />
+                <input type="text" value={form.oil_allergy} onChange={e => set("oil_allergy", e.target.value)} className={inputCls} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Medicamentos em uso?" required>
-                <textarea value={form.medication} onChange={e => set("medication", e.target.value)}
-                  className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
+                <textarea value={form.medication} onChange={e => set("medication", e.target.value)} className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Estado emocional" required>
-                <textarea value={form.emotional_state} onChange={e => set("emotional_state", e.target.value)}
-                  className={inputCls + " resize-none"} rows={3} placeholder="Como está se sentindo emocionalmente" />
+                <textarea value={form.emotional_state} onChange={e => set("emotional_state", e.target.value)} className={inputCls + " resize-none"} rows={3} placeholder="Como está se sentindo emocionalmente" />
               </Field>
               <Field label="Dor no corpo" required>
-                <textarea value={form.body_pain} onChange={e => set("body_pain", e.target.value)}
-                  className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
+                <textarea value={form.body_pain} onChange={e => set("body_pain", e.target.value)} className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Intenção com a sessão" required>
-                <textarea value={form.intention} onChange={e => set("intention", e.target.value)}
-                  className={inputCls + " resize-none"} rows={3} placeholder="O que busca alcançar/superar?" />
+                <textarea value={form.intention} onChange={e => set("intention", e.target.value)} className={inputCls + " resize-none"} rows={3} placeholder="O que busca alcançar/superar?" />
               </Field>
               <Field label="Incômodo na vida sexual" required>
-                <textarea value={form.sexual_discomfort} onChange={e => set("sexual_discomfort", e.target.value)}
-                  className={inputCls + " resize-none"} rows={2} placeholder="Compartilhe ou escreva 'Não'" />
+                <textarea value={form.sexual_discomfort} onChange={e => set("sexual_discomfort", e.target.value)} className={inputCls + " resize-none"} rows={2} placeholder="Compartilhe ou escreva 'Não'" />
               </Field>
             </Section>
 

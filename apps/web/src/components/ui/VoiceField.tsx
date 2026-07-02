@@ -146,7 +146,8 @@ interface VoiceInputProps {
 export function VoiceInput({
   label, hint, required, value, onChange, placeholder,
 }: VoiceInputProps) {
-  const { state, interimText } = useVoiceInput({
+  // Uma única instância do hook — compartilhada pelo input e pelo botão
+  const { state, interimText, toggle } = useVoiceInput({
     onFinal: (text) => {
       onChange(value ? `${value.trimEnd()} ${text}` : text);
     },
@@ -185,7 +186,22 @@ export function VoiceInput({
           )}
         </div>
         {state !== "unsupported" && (
-          <MicButton onTranscript={(t) => onChange(value ? `${value.trimEnd()} ${t}` : t)} compact />
+          <button
+            type="button"
+            onClick={toggle}
+            title={isRecording ? "Parar gravação" : "Falar para transcrever"}
+            className={cn(
+              "flex-shrink-0 p-2 rounded-xl transition-all border font-medium",
+              isRecording
+                ? "bg-red-500 border-red-500 text-white shadow-md shadow-red-200 animate-pulse"
+                : "bg-white border-gray-200 text-gray-400 hover:border-brand-300 hover:text-brand-500 hover:bg-brand-50"
+            )}
+          >
+            {isRecording
+              ? <MicOff className="w-3.5 h-3.5" />
+              : <Mic    className="w-3.5 h-3.5" />
+            }
+          </button>
         )}
       </div>
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}

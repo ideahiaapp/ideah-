@@ -11,9 +11,9 @@ function serviceClient() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { therapistId, patientEmail } = await req.json();
+    const { therapistId, clientId, patientEmail } = await req.json();
 
-    if (!therapistId || !patientEmail) {
+    if (!therapistId || (!clientId && !patientEmail)) {
       return NextResponse.json({ error: "Dados obrigatórios ausentes." }, { status: 400 });
     }
 
@@ -25,10 +25,30 @@ export async function POST(req: NextRequest) {
       .single();
 
     const origin = req.headers.get("origin") ?? "";
-    const anamneseUrl = `${origin}/anamnese/${therapistId}`;
+
+    let anamneseUrl: string;
+    let toEmail: string;
+
+    if (clientId) {
+      const { data: client } = await supabase
+        .from("clients")
+        .select("id, email, therapist_id")
+        .eq("id", clientId)
+        .single();
+
+      if (!client || client.therapist_id !== therapistId || !client.email) {
+        return NextResponse.json({ error: "Cliente não encontrado ou sem e-mail cadastrado." }, { status: 404 });
+      }
+
+      anamneseUrl = `${origin}/anamnese/preencher/${client.id}`;
+      toEmail = client.email;
+    } else {
+      anamneseUrl = `${origin}/anamnese/${therapistId}`;
+      toEmail = patientEmail;
+    }
 
     await sendAnamneseInvite({
-      patientEmail,
+      patientEmail: toEmail,
       therapistName: therapist?.name ?? "Seu terapeuta",
       anamneseUrl,
     });

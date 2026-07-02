@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -8,22 +8,20 @@ import {
   User, Phone, Mail, Heart, FileText,
   ChevronDown, AlertTriangle, Mic, ShieldAlert, Info,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, maskPhone } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 import { createClient, generateInitials, generateColor } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 
-const APPROACHES = [
-  { value: "PSYCHOANALYSIS",        label: "Psicanálise" },
-  { value: "COGNITIVE_BEHAVIORAL",  label: "TCC" },
-  { value: "JUNGIAN",               label: "Junguiana" },
-  { value: "HUMANISTIC",            label: "Humanista" },
-  { value: "SYSTEMIC",              label: "Sistêmica" },
-  { value: "SOMATIC",               label: "Somática" },
-  { value: "GESTALT",               label: "Gestalt" },
-  { value: "ACCEPTANCE_COMMITMENT", label: "ACT" },
+const ALL_APPROACHES = [
+  { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { value: "JUNGIAN",              label: "Junguiana" },
+  { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "GESTALT",              label: "Gestalt-terapia" },
+  { value: "PSYCHODRAMA",          label: "Psicodrama" },
+  { value: "SYSTEMIC",             label: "Constelação Familiar" },
 ];
-
 
 const FREQUENCIES = ["Semanal","Quinzenal","Mensal","Sob demanda"];
 const DURATIONS   = ["45","50","60","90"];
@@ -44,6 +42,20 @@ export default function NewClientPage() {
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
   const [error,  setError]  = useState<string | null>(null);
+
+  const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>([]);
+  const [loadingApproaches,  setLoadingApproaches]  = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+      .then(r => r.json())
+      .then(d => setAcquiredApproaches(d.approaches ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingApproaches(false));
+  }, [user]);
+
+  const APPROACHES = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
 
   const selectedApproach = APPROACHES.find(a => a.label === form.approach);
   const canSave = form.name.trim() && form.approach && form.mainDemand.trim() && form.lgpdConsent;
@@ -127,7 +139,7 @@ export default function NewClientPage() {
           <Field label="Telefone / WhatsApp">
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="(11) 99999-9999" className={inputCls + " pl-9"} />
+              <input value={form.phone} onChange={e => set("phone", maskPhone(e.target.value))} placeholder="(11) 99999-9999" className={inputCls + " pl-9"} />
             </div>
           </Field>
           <VoiceInput label="Profissão / Ocupação" value={form.occupation} onChange={v => set("occupation", v)} placeholder="Ex: Designer, Engenheiro..." />
@@ -140,7 +152,15 @@ export default function NewClientPage() {
       <Section icon={Heart} title="Configuração clínica">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field label="Abordagem terapêutica" required className="md:col-span-1">
-            <SelectField value={form.approach} onChange={v => set("approach", v)} placeholder="Selecionar..." options={APPROACHES.map(a => a.label)} />
+            {loadingApproaches ? (
+              <div className={inputCls + " flex items-center text-gray-400"}>Carregando...</div>
+            ) : APPROACHES.length === 0 ? (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                Nenhuma base teórica adquirida. Acesse Configurações → Minhas Bases.
+              </p>
+            ) : (
+              <SelectField value={form.approach} onChange={v => set("approach", v)} placeholder="Selecionar..." options={APPROACHES.map(a => a.label)} />
+            )}
           </Field>
           <Field label="Frequência das sessões">
             <SelectField value={form.frequency} onChange={v => set("frequency", v)} options={FREQUENCIES} />
@@ -188,7 +208,7 @@ export default function NewClientPage() {
         {form.vulnerability.length > 0 && (
           <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
             <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
-            <span>Este caso está marcado como vulnerabilidade. O IDEAh sinalizará isso durante o raciocínio clínico.</span>
+            <span>Este caso está marcado como vulnerabilidade. O Paideia sinalizará isso durante o raciocínio clínico.</span>
           </div>
         )}
       </Section>

@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 
 const FAQS = [
   {
-    q: "O ideah faz diagnóstico?",
+    q: "O Paideia faz diagnóstico?",
     a: "Não. É um supervisor dialógico. Traz perguntas, hipóteses abertas e recursos — a decisão é sempre sua.",
   },
   {

@@ -59,13 +59,32 @@ export async function chat(options: {
       ],
       stream: false,
     };
-    const res = await fetch(`${ollamaUrl}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+    // Usa http nativo para evitar headersTimeout do undici
+    const ollamaResult = await new Promise<string>((resolve, reject) => {
+      const http = require("http");
+      const payload = JSON.stringify(body);
+      const urlObj = new URL(`${ollamaUrl}/api/chat`);
+      const req = http.request({
+        hostname: urlObj.hostname,
+        port: urlObj.port || 11434,
+        path: urlObj.pathname,
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) },
+        timeout: 600_000,
+      }, (res: any) => {
+        let data = "";
+        res.on("data", (chunk: any) => { data += chunk; });
+        res.on("end", () => {
+          if (res.statusCode !== 200) reject(new Error(`Ollama error: ${res.statusCode} ${data}`));
+          else resolve(data);
+        });
+      });
+      req.on("error", reject);
+      req.on("timeout", () => { req.destroy(); reject(new Error("Ollama timeout")); });
+      req.write(payload);
+      req.end();
     });
-    if (!res.ok) throw new Error(`Ollama error: ${res.status} ${await res.text()}`);
-    const data = await res.json();
+    const data = JSON.parse(ollamaResult);
     return data.message?.content ?? "";
   }
 

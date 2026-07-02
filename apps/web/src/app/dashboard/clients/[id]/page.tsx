@@ -6,13 +6,31 @@ import Link from "next/link";
 import {
   ArrowLeft, Phone, Mail, Briefcase, Clock, Calendar, FileText,
   MessageSquare, Plus, ChevronRight, Pencil, Sparkles, Target,
-  UserCheck, Hourglass, Activity, Loader2,
+  UserCheck, Hourglass, Activity, Loader2, ClipboardList,
+  ChevronDown, Save, AlertTriangle,
 } from "lucide-react";
 import { getClient, getEvolutionsByClient, getSupervisionsByClient } from "@/lib/db";
 import { formatDate, cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
 import type { Client, Evolution, Supervision } from "@/lib/database.types";
+import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
 
-type Tab = "prontuario" | "evolucoes" | "supervisoes";
+type Tab = "prontuario" | "anamnese" | "evolucoes" | "supervisoes";
+
+interface Anamnese {
+  id: string; name: string; email: string; phone: string | null; cpf: string | null;
+  birth_date: string | null; emergency_contact: string | null;
+  how_found: string | null;
+  conditions: string[]; latex_allergy: boolean;
+  oil_allergy: string | null; medication: string | null;
+  emotional_state: string | null; body_pain: string | null;
+  intention: string | null; sexual_discomfort: string | null;
+  consent_nudity: boolean; consent_touch: boolean;
+  consent_therapeutic: boolean; consent_payment: boolean;
+  approach: string | null;
+  template_answers: Record<string, unknown> | null;
+  created_at: string;
+}
 
 const STATUS_CONFIG = {
   ACTIVE:   { label: "Ativo",           badge: "bg-green-50 text-green-700 border-green-200",  icon: UserCheck },
@@ -29,14 +47,49 @@ function calcAge(dateStr: string) {
   return age;
 }
 
+const CONDITIONS = [
+  "Gravidez", "Diabetes", "Problemas cardíacos", "Cirurgia recente",
+  "Limitação física", "Convulsão ou epilepsia",
+  "IST (Infecções Sexualmente Transmissíveis)", "Depressão",
+  "Ansiedade", "Síndrome do pânico",
+];
+
+const HOW_FOUND_OPTIONS = [
+  "Indicação de amigo(a)", "Redes sociais", "Google", "Evento ou palestra",
+  "Outro profissional de saúde", "Outro",
+];
+
+const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
+
+type AnamneseForm = {
+  cpf: string; emergency_contact: string;
+  how_found: string;
+  conditions: string[];
+  latex_allergy: boolean; oil_allergy: string; medication: string;
+  emotional_state: string; body_pain: string; intention: string; sexual_discomfort: string;
+};
+
 export default function ClientDetailPage() {
   const { id }   = useParams<{ id: string }>();
   const router   = useRouter();
+  const { user } = useAuthStore();
   const [tab, setTab] = useState<Tab>("prontuario");
+  const [anamneseFormOpen, setAnamneseFormOpen] = useState(false);
+  const [anamneseForm, setAnamneseForm] = useState<AnamneseForm>({
+    cpf: "",
+    emergency_contact: "", how_found: "",
+    conditions: [], latex_allergy: false, oil_allergy: "", medication: "",
+    emotional_state: "", body_pain: "", intention: "", sexual_discomfort: "",
+  });
+  const [anamneseSaving, setAnamneseSaving] = useState(false);
+  const [anamneseSaveError, setAnamneseSaveError] = useState<string | null>(null);
 
   const [client,      setClient]      = useState<Client | null>(null);
   const [evolutions,  setEvolutions]  = useState<Evolution[]>([]);
   const [supervisions,setSupervisions]= useState<Supervision[]>([]);
+  const [anamnese,      setAnamnese]      = useState<Anamnese | null>(null);
+  const [templateHtml,  setTemplateHtml]  = useState<string | null>(null);
+  const [anamneseLoading, setAnamneseLoading] = useState(false);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
 
@@ -50,6 +103,67 @@ export default function ClientDetailPage() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!client || client.anamnese_id) return;
+    setAnamneseForm(prev => ({
+      ...prev,
+      emergency_contact: client.emergency_contact ?? "",
+    }));
+  }, [client]);
+
+  function setAF<K extends keyof AnamneseForm>(key: K, value: AnamneseForm[K]) {
+    setAnamneseForm(prev => ({ ...prev, [key]: value }));
+  }
+
+  function toggleAFCondition(c: string) {
+    setAnamneseForm(prev => ({
+      ...prev,
+      conditions: prev.conditions.includes(c)
+        ? prev.conditions.filter(x => x !== c)
+        : [...prev.conditions, c],
+    }));
+  }
+
+  async function handleSaveAnamnese() {
+    if (!client || !user) return;
+    setAnamneseSaving(true); setAnamneseSaveError(null);
+    try {
+      const res = await fetch("/api/anamnese/create-for-client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ therapistId: user.id, clientId: client.id, ...anamneseForm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao salvar anamnese.");
+      const updatedClient = await getClient(id);
+      setClient(updatedClient);
+      setAnamneseFormOpen(false);
+    } catch (e) {
+      setAnamneseSaveError(e instanceof Error ? e.message : "Erro ao salvar anamnese.");
+    } finally {
+      setAnamneseSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!client?.anamnese_id) return;
+    setAnamneseLoading(true);
+    fetch(`/api/anamnese/${client.anamnese_id}`)
+      .then(r => r.json())
+      .then(d => {
+        const a: Anamnese | null = d.anamnese ?? null;
+        setAnamnese(a);
+        if (a?.approach && a?.template_answers) {
+          fetch(`/api/anamnese-templates/${a.approach}`, { cache: "no-store" })
+            .then(r => r.json())
+            .then(t => setTemplateHtml(t.content ?? null))
+            .catch(() => {});
+        }
+      })
+      .catch(() => setAnamnese(null))
+      .finally(() => setAnamneseLoading(false));
+  }, [client?.anamnese_id]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -94,7 +208,7 @@ export default function ClientDetailPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-start gap-5">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0 shadow-sm"
-            style={{ backgroundColor: client.color ?? "#924B92" }}>
+            style={{ backgroundColor: client.color ?? "#C2542F" }}>
             {client.initials ?? client.name[0]}
           </div>
           <div className="flex-1 min-w-0">
@@ -146,6 +260,7 @@ export default function ClientDetailPage() {
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
         {([
           { id: "prontuario",  label: "Prontuário",                              icon: FileText      },
+          { id: "anamnese",    label: "Anamnese",                                icon: ClipboardList },
           { id: "evolucoes",   label: `Evoluções (${evolutions.length})`,        icon: Target        },
           { id: "supervisoes", label: `Supervisões (${supervisions.length})`,    icon: MessageSquare },
         ] as { id: Tab; label: string; icon: React.ElementType }[]).map(t => (
@@ -182,6 +297,109 @@ export default function ClientDetailPage() {
             <ProntuarioSection title="Contato de emergência" icon={Phone}>
               <p className="text-sm text-gray-700">{client.emergency_contact}</p>
             </ProntuarioSection>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Anamnese */}
+      {tab === "anamnese" && (
+        <div className="space-y-4">
+          {anamneseLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 text-brand-400 animate-spin" />
+            </div>
+          ) : !anamnese ? (
+            anamneseFormOpen ? (
+              <AnamneseFormCard
+                client={client}
+                form={anamneseForm}
+                setField={setAF}
+                toggleCondition={toggleAFCondition}
+                saving={anamneseSaving}
+                error={anamneseSaveError}
+                onCancel={() => setAnamneseFormOpen(false)}
+                onSave={handleSaveAnamnese}
+              />
+            ) : (
+              <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+                <ClipboardList className="w-8 h-8 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
+                <p className="text-sm text-gray-400 mb-4">Nenhuma anamnese vinculada a este cliente.</p>
+                <button onClick={() => setAnamneseFormOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> Preencher anamnese
+                </button>
+              </div>
+            )
+          ) : (
+            <>
+              <ProntuarioSection title="Dados preenchidos pelo paciente" icon={ClipboardList}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <AnamneseField label="Nome" value={anamnese.name} />
+                  <AnamneseField label="E-mail" value={anamnese.email} />
+                  <AnamneseField label="Telefone" value={anamnese.phone} />
+                  <AnamneseField label="CPF" value={anamnese.cpf} />
+                  <AnamneseField label="Data de nascimento"
+                    value={anamnese.birth_date ? formatDate(new Date(anamnese.birth_date)) : null} />
+                  <AnamneseField label="Contato de emergência" value={anamnese.emergency_contact} />
+                  <AnamneseField label="Como chegou" value={anamnese.how_found} />
+                </div>
+
+                {anamnese.conditions && anamnese.conditions.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold text-gray-400 mb-1.5">Condições de saúde</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {anamnese.conditions.map(c => (
+                        <span key={c} className="text-xs bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full">{c}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <AnamneseField label="Medicamentos" value={anamnese.medication} />
+                  <AnamneseField label="Alergia a óleos" value={anamnese.oil_allergy} />
+                  {anamnese.latex_allergy && (
+                    <div><p className="text-xs font-semibold text-red-400">Alergia a latex</p></div>
+                  )}
+                  <AnamneseField label="Estado emocional" value={anamnese.emotional_state} />
+                  <AnamneseField label="Dor no corpo" value={anamnese.body_pain} />
+                  <AnamneseField label="Incômodo sexual" value={anamnese.sexual_discomfort} />
+                </div>
+
+                {anamnese.intention && (
+                  <div className="mt-4 bg-brand-50 border border-brand-100 rounded-xl px-4 py-3">
+                    <p className="text-xs font-semibold text-brand-600 mb-1">Intenção da sessão</p>
+                    <p className="text-sm text-brand-900 italic">"{anamnese.intention}"</p>
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-gray-400 mb-1.5">Consentimentos</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: "Nudez",       ok: anamnese.consent_nudity },
+                      { label: "Toque",       ok: anamnese.consent_touch },
+                      { label: "Terapêutico", ok: anamnese.consent_therapeutic },
+                      { label: "Pagamento",   ok: anamnese.consent_payment },
+                    ].map(({ label, ok }) => (
+                      <span key={label} className={cn("text-xs px-2.5 py-1 rounded-full border font-medium",
+                        ok ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200")}>
+                        {ok ? "✓" : "✗"} {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </ProntuarioSection>
+
+              {templateHtml && anamnese.template_answers && (
+                <ProntuarioSection title="Respostas da anamnese específica" icon={ClipboardList}>
+                  <TemplateAnswersView
+                    html={templateHtml}
+                    answers={anamnese.template_answers as Record<string, unknown>}
+                  />
+                </ProntuarioSection>
+              )}
+            </>
           )}
         </div>
       )}
@@ -267,6 +485,151 @@ export default function ClientDetailPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+        {label} {required && <span className="text-red-400">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function AnamneseFormCard({ client, form, setField, toggleCondition, saving, error, onCancel, onSave }: {
+  client: Client;
+  form: {
+    cpf: string; emergency_contact: string; how_found: string;
+    conditions: string[]; latex_allergy: boolean; oil_allergy: string; medication: string;
+    emotional_state: string; body_pain: string; intention: string; sexual_discomfort: string;
+  };
+  setField: (key: keyof AnamneseForm, value: string | boolean | string[]) => void;
+  toggleCondition: (c: string) => void;
+  saving: boolean;
+  error: string | null;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const canSave = true;
+
+  return (
+    <div className="space-y-4">
+      <ProntuarioSection title="Dados pessoais (do cadastro do cliente)" icon={ClipboardList}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <AnamneseField label="Nome completo" value={client.name} />
+          <AnamneseField label="E-mail" value={client.email} />
+          <AnamneseField label="Telefone / WhatsApp" value={client.phone} />
+          <AnamneseField label="Data de nascimento" value={client.birth_date ? formatDate(new Date(client.birth_date)) : null} />
+        </div>
+        <p className="text-xs text-gray-400">Para alterar esses dados, edite o cadastro do cliente.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="CPF">
+            <input value={form.cpf} onChange={e => setField("cpf", e.target.value as never)} className={inputCls} />
+          </FormField>
+          <FormField label="Contato de emergência">
+            <input value={form.emergency_contact} onChange={e => setField("emergency_contact", e.target.value as never)} className={inputCls} />
+          </FormField>
+          <FormField label="Como chegou até você">
+            <div className="relative">
+              <select value={form.how_found} onChange={e => setField("how_found", e.target.value as never)}
+                className={inputCls + " appearance-none pr-9"}>
+                <option value="">Selecionar...</option>
+                {HOW_FOUND_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </FormField>
+        </div>
+      </ProntuarioSection>
+
+      <ProntuarioSection title="Saúde" icon={Activity}>
+        <FormField label="Condições de saúde">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+            {CONDITIONS.map(c => (
+              <label key={c} className="flex items-center gap-2.5 cursor-pointer group">
+                <div onClick={() => toggleCondition(c)}
+                  className={cn(
+                    "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                    form.conditions.includes(c) ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
+                  )}>
+                  {form.conditions.includes(c) && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span className="text-sm text-gray-700">{c}</span>
+              </label>
+            ))}
+          </div>
+        </FormField>
+        <FormField label="Tem alergia a látex?">
+          <div className="flex gap-4">
+            {[true, false].map(v => (
+              <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" checked={form.latex_allergy === v}
+                  onChange={() => setField("latex_allergy", v as never)} className="accent-brand-600" />
+                <span className="text-sm">{v ? "Sim" : "Não"}</span>
+              </label>
+            ))}
+          </div>
+        </FormField>
+        <FormField label="Alergia a óleo de massagem">
+          <input value={form.oil_allergy} onChange={e => setField("oil_allergy", e.target.value as never)} className={inputCls} />
+        </FormField>
+        <FormField label="Medicamentos em uso">
+          <textarea rows={2} value={form.medication} onChange={e => setField("medication", e.target.value as never)} className={inputCls + " resize-none"} />
+        </FormField>
+      </ProntuarioSection>
+
+      <ProntuarioSection title="Estado emocional e intenção" icon={Target}>
+        <FormField label="Estado emocional atual">
+          <textarea rows={3} value={form.emotional_state} onChange={e => setField("emotional_state", e.target.value as never)} className={inputCls + " resize-none"} />
+        </FormField>
+        <FormField label="Dor no corpo">
+          <textarea rows={2} value={form.body_pain} onChange={e => setField("body_pain", e.target.value as never)} className={inputCls + " resize-none"} />
+        </FormField>
+        <FormField label="Intenção com a sessão / processo">
+          <textarea rows={3} value={form.intention} onChange={e => setField("intention", e.target.value as never)} className={inputCls + " resize-none"} />
+        </FormField>
+        <FormField label="Incômodo na vida sexual">
+          <textarea rows={2} value={form.sexual_discomfort} onChange={e => setField("sexual_discomfort", e.target.value as never)} className={inputCls + " resize-none"} />
+        </FormField>
+      </ProntuarioSection>
+
+      {error && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {error}
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 pb-2">
+        <button onClick={onCancel}
+          className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+          Cancelar
+        </button>
+        <button onClick={onSave} disabled={!canSave || saving}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
+            canSave && !saving ? "bg-brand-500 hover:bg-brand-600 text-white shadow-sm" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          )}>
+          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</> : <><Save className="w-4 h-4" /> Salvar anamnese</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AnamneseField({ label, value }: { label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-xs font-semibold text-gray-400 mb-0.5">{label}</p>
+      <p className="text-sm text-gray-800">{value}</p>
     </div>
   );
 }
