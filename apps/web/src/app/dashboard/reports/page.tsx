@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   BarChart2, Users, FileText, Brain, TrendingUp, TrendingDown,
   CalendarDays, Clock, Sparkles, ArrowUpRight, Minus, X,
   ChevronRight, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
+  Download, ScrollText,
 } from "lucide-react";
 import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
 import { aiHeaders } from "@/lib/api-key";
@@ -17,7 +18,7 @@ import type { EvolutionWithClient } from "@/lib/db/evolutions";
 
 /* ─── Paleta ─────────────────────────────────────────────────────── */
 const APPROACH_COLORS: Record<string, string> = {
-  PSYCHOANALYSIS: "#924B92", COGNITIVE_BEHAVIORAL: "#3B82F6",
+  PSYCHOANALYSIS: "#C2542F", COGNITIVE_BEHAVIORAL: "#3B82F6",
   JUNGIAN: "#F59E0B", HUMANISTIC: "#22C55E",
   SYSTEMIC: "#EC4899", SOMATIC: "#F97316",
   GESTALT: "#14B8A6", ACCEPTANCE_COMMITMENT: "#6366F1",
@@ -32,7 +33,7 @@ const MOOD_COLOR = ["", "#EF4444", "#F97316", "#EAB308", "#22C55E", "#10B981"];
 const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Excelente"];
 const MOOD_EMOJI = ["", "😟", "😕", "😐", "🙂", "😊"];
 
-type Tab       = "geral" | "producao" | "clientes" | "clinico";
+type Tab       = "geral" | "producao" | "clientes" | "clinico" | "relatorio";
 type DrillType = "sessions" | "clients" | "hours" | "evolutions";
 
 type MonthData = {
@@ -41,7 +42,7 @@ type MonthData = {
 };
 
 /* ─── SVG Charts ─────────────────────────────────────────────────── */
-function BarChart({ data, valueKey, color = "#924B92", height = 140 }: {
+function BarChart({ data, valueKey, color = "#C2542F", height = 140 }: {
   data: { label: string; [k: string]: number | string }[];
   valueKey: string; color?: string; height?: number;
 }) {
@@ -322,6 +323,213 @@ function PatientProspect({ clients, therapistId }: { clients: Client[]; therapis
   );
 }
 
+/* ─── Relatório de Evolução Clínica ─────────────────────────────── */
+const PERIOD_OPTIONS = [
+  { value: "1m",  label: "Último mês" },
+  { value: "3m",  label: "Últimos 3 meses" },
+  { value: "6m",  label: "Últimos 6 meses" },
+  { value: "1y",  label: "Último ano" },
+  { value: "all", label: "Todo o período de atendimento" },
+];
+
+function MarkdownReport({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
+      {lines.map((line, i) => {
+        if (line.startsWith("# "))  return <h1  key={i} className="text-xl font-bold text-gray-900 mt-2">{line.slice(2)}</h1>;
+        if (line.startsWith("## ")) return <h2  key={i} className="text-base font-bold text-gray-800 mt-5 pb-1 border-b border-gray-100">{line.slice(3)}</h2>;
+        if (line.startsWith("### "))return <h3  key={i} className="text-sm font-semibold text-gray-700 mt-3">{line.slice(4)}</h3>;
+        if (line.startsWith("**") && line.endsWith("**")) {
+          return <p key={i} className="font-semibold text-gray-800">{line.slice(2, -2)}</p>;
+        }
+        if (line.startsWith("- ") || line.startsWith("• ")) {
+          return <li key={i} className="ml-4 list-disc">{line.slice(2)}</li>;
+        }
+        if (line.trim() === "") return <div key={i} className="h-1" />;
+        // inline bold
+        const parts = line.split(/\*\*(.*?)\*\*/g);
+        return (
+          <p key={i}>
+            {parts.map((part, j) =>
+              j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function ClinicalEvolutionReport({ clients, therapistId }: { clients: Client[]; therapistId: string }) {
+  const activeClients = clients.filter(c => c.status === "ACTIVE");
+  const [clientId, setClientId] = useState("");
+  const [period,   setPeriod]   = useState("3m");
+  const [loading,  setLoading]  = useState(false);
+  const [report,   setReport]   = useState<{ report: string; clientName: string; sessionCount: number; period: string; dateRange: string } | null>(null);
+  const [error,    setError]    = useState<string | null>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function generate() {
+    if (!clientId) return;
+    setLoading(true);
+    setReport(null);
+    setError(null);
+    try {
+      const res  = await fetch("/api/reports/clinical-evolution", {
+        method:  "POST",
+        headers: await aiHeaders(),
+        body:    JSON.stringify({ clientId, therapistId, period }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao gerar relatório");
+      setReport(data);
+      setTimeout(() => reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro desconhecido");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handlePrint() {
+    window.print();
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Seletor */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <ScrollText className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+          <h3 className="text-sm font-semibold text-gray-800">Relatório de Evolução Clínica</h3>
+          <span className="ml-auto text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100 font-medium">IA</span>
+        </div>
+        <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+          Selecione um paciente e o período desejado. A IA analisará todas as evoluções e supervisões registradas e gerará um relatório clínico detalhado.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          {/* Paciente */}
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Paciente</label>
+            <div className="relative">
+              <select
+                value={clientId}
+                onChange={e => { setClientId(e.target.value); setReport(null); setError(null); }}
+                className="w-full appearance-none px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
+              >
+                <option value="">Selecionar paciente...</option>
+                {activeClients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Período */}
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Período de análise</label>
+            <div className="relative">
+              <select
+                value={period}
+                onChange={e => { setPeriod(e.target.value); setReport(null); setError(null); }}
+                className="w-full appearance-none px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
+              >
+                {PERIOD_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={generate}
+          disabled={!clientId || loading}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all",
+            clientId && !loading
+              ? "bg-brand-500 hover:bg-brand-600 text-white shadow-sm"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          )}
+        >
+          {loading
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> Gerando relatório...</>
+            : <><Sparkles className="w-4 h-4" /> Gerar relatório</>}
+        </button>
+
+        {error && (
+          <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-pulse">
+          <div className="h-6 bg-gray-100 rounded-lg w-2/3" />
+          <div className="h-3 bg-gray-100 rounded w-1/3" />
+          <div className="space-y-2 pt-4">
+            {[100, 80, 90, 70, 85, 75].map((w, i) => (
+              <div key={i} className="h-3 bg-gray-100 rounded" style={{ width: `${w}%` }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Relatório gerado */}
+      {report && (
+        <div ref={reportRef} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* Header do relatório */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <div>
+              <div className="flex items-center gap-2">
+                <ScrollText className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+                <p className="text-sm font-bold text-gray-800">{report.clientName}</p>
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {report.period} · {report.sessionCount} sessões analisadas · {report.dateRange}
+              </p>
+            </div>
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Imprimir / PDF
+            </button>
+          </div>
+
+          {/* Conteúdo */}
+          <div className="px-6 py-5">
+            <MarkdownReport text={report.report} />
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-[10px] text-gray-400">
+              Relatório gerado por IA com base nos registros clínicos. Não substitui avaliação clínica profissional.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!report && !loading && !error && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-12 text-center">
+          <ScrollText className="w-10 h-10 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
+          <p className="text-sm font-medium text-gray-500">Nenhum relatório gerado</p>
+          <p className="text-xs text-gray-400 mt-1">Selecione um paciente e o período para gerar o relatório de evolução clínica.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Drawer de drill-down ───────────────────────────────────────── */
 function DrillDrawer({ title, subtitle, onClose, children }: {
   title: string; subtitle?: string; onClose: () => void; children: React.ReactNode;
@@ -378,7 +586,7 @@ function DrillClients({ onClose, clients, evolutions, supervisions }: {
             <Link key={c.id} href={`/dashboard/clients/${c.id}`} onClick={onClose}
               className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
               <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ backgroundColor: c.color ?? "#924B92" }}>{c.initials ?? c.name[0]}</div>
+                style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-800">{c.name}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{c.approach_label} · {c.session_frequency} · {c.session_duration}min</p>
@@ -468,7 +676,7 @@ function DrillHours({ onClose, clients, months }: {
                 </div>
                 <div className="h-2 bg-white rounded-full overflow-hidden border border-gray-100">
                   <div className="h-full rounded-full transition-all"
-                    style={{ width: `${pct}%`, backgroundColor: isLast ? "#924B92" : "#E9D5F0" }} />
+                    style={{ width: `${pct}%`, backgroundColor: isLast ? "#C2542F" : "#F5C0AC" }} />
                 </div>
               </div>
             );
@@ -483,13 +691,13 @@ function DrillHours({ onClose, clients, months }: {
             <div key={c.id}>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
-                  style={{ backgroundColor: c.color ?? "#924B92" }}>{c.initials ?? c.name[0]}</div>
+                  style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
                 <span className="text-xs font-medium text-gray-700 flex-1">{c.name}</span>
                 <span className="text-xs font-bold text-gray-600">{c.hours}h ({c.sessions} sessões)</span>
               </div>
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full"
-                  style={{ width: `${Math.round(c.hours / maxH * 100)}%`, backgroundColor: c.color ?? "#924B92" }} />
+                  style={{ width: `${Math.round(c.hours / maxH * 100)}%`, backgroundColor: c.color ?? "#C2542F" }} />
               </div>
             </div>
           ))}
@@ -519,7 +727,7 @@ function DrillEvolutions({ onClose, evolutions }: {
         clientId: e.client_id,
         clientName: e.clients?.name ?? "Cliente",
         initials: e.clients?.initials ?? e.clients?.name?.[0] ?? "?",
-        color: e.clients?.color ?? "#924B92",
+        color: e.clients?.color ?? "#C2542F",
         evolutions: [],
       };
       map[e.client_id].evolutions.push(e);
@@ -689,7 +897,7 @@ export default function ReportsPage() {
   }, [clients]);
 
   const donutSegments = approachDist.map(a => ({
-    label: a.label, value: a.value, color: APPROACH_COLORS[a.approach] || "#924B92",
+    label: a.label, value: a.value, color: APPROACH_COLORS[a.approach] || "#C2542F",
   }));
 
   const moodDist = useMemo(() => {
@@ -721,10 +929,11 @@ export default function ReportsPage() {
   const evolutionTrend = CURRENT_MONTH.evolutions >= PREV_MONTH.evolutions ? "up" : "down" as const;
 
   const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-    { id: "geral",    label: "Visão Geral",  icon: BarChart2 },
-    { id: "producao", label: "Produção",     icon: CalendarDays },
-    { id: "clientes", label: "Clientes",     icon: Users },
-    { id: "clinico",  label: "Clínico",      icon: Brain },
+    { id: "geral",     label: "Visão Geral",  icon: BarChart2 },
+    { id: "producao",  label: "Produção",     icon: CalendarDays },
+    { id: "clientes",  label: "Clientes",     icon: Users },
+    { id: "clinico",   label: "Clínico",      icon: Brain },
+    { id: "relatorio", label: "Relatório",    icon: ScrollText },
   ];
 
   if (loading) return (
@@ -794,7 +1003,7 @@ export default function ReportsPage() {
                 <h3 className="text-sm font-semibold text-gray-800">Evoluções por mês</h3>
                 <span className="text-xs text-gray-400">últimos 6 meses</span>
               </div>
-              <BarChart data={MONTHS} valueKey="sessions" color="#924B92" />
+              <BarChart data={MONTHS} valueKey="sessions" color="#C2542F" />
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="text-sm font-semibold text-gray-800 mb-4">Clientes por abordagem</h3>
@@ -975,7 +1184,7 @@ export default function ReportsPage() {
                 {clients.filter(c => c.status === "ACTIVE").map(c => (
                   <Link key={c.id} href={`/dashboard/clients/${c.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                      style={{ backgroundColor: c.color ?? "#924B92" }}>{c.initials ?? c.name[0]}</div>
+                      style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
                       <p className="text-xs text-gray-400">{c.approach_label} · {c.total_sessions} sessões</p>
@@ -992,7 +1201,7 @@ export default function ReportsPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 className="text-sm font-semibold text-gray-800 mb-1">Novos clientes por mês</h3>
             <p className="text-xs text-gray-400 mb-4">Captação no semestre</p>
-            <BarChart data={MONTHS} valueKey="newClients" color="#924B92" height={80} />
+            <BarChart data={MONTHS} valueKey="newClients" color="#C2542F" height={80} />
           </div>
         </div>
       )}
@@ -1091,7 +1300,7 @@ export default function ReportsPage() {
                 <Link key={e.id} href={`/dashboard/evolutions/${e.id}`}
                   className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5"
-                    style={{ backgroundColor: e.clients?.color ?? "#924B92" }}>
+                    style={{ backgroundColor: e.clients?.color ?? "#C2542F" }}>
                     {e.clients?.initials ?? e.clients?.name?.[0] ?? "?"}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1112,6 +1321,11 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ══ TAB: RELATÓRIO ══ */}
+      {tab === "relatorio" && user && (
+        <ClinicalEvolutionReport clients={clients} therapistId={user.id} />
       )}
 
       {/* ══ Drawers de drill-down ══ */}

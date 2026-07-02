@@ -37,7 +37,7 @@ interface AuthState {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<{ id: string } | null>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
 }
@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>()(
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: `${window.location.origin}/dashboard`,
+            redirectTo: `${window.location.origin}/dashboard/supervision`,
             queryParams: { access_type: "offline", prompt: "consent" },
           },
         });
@@ -89,8 +89,10 @@ export const useAuthStore = create<AuthState>()(
           });
           // register-profile confirma o email via admin API — loga direto
           set({ user: toUser(data.user), isLoading: false });
+          return { id: data.user.id };
         } else {
           set({ isLoading: false });
+          return null;
         }
       },
 

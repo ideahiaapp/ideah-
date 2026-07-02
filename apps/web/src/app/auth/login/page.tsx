@@ -23,7 +23,7 @@ function ErrorFromParams({ onError }: { onError: (msg: string) => void }) {
   const searchParams = useSearchParams();
   useEffect(() => {
     if (searchParams.get("error") === "not_registered") {
-      onError("Acesso não autorizado. Seu e-mail não está cadastrado no IDEAh. Entre em contato com a equipe.");
+      onError("Acesso não autorizado. Seu e-mail não está cadastrado no Paideia. Entre em contato com a equipe.");
     }
   }, [searchParams, onError]);
   return null;
@@ -43,7 +43,7 @@ export default function LoginPage() {
     setError("");
     try {
       await login(email, password);
-      router.push("/dashboard");
+      router.push("/dashboard/supervision");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("Email not confirmed"))
@@ -63,11 +63,10 @@ export default function LoginPage() {
       {/* ── Painel esquerdo (decorativo) ── */}
       <aside className="hidden lg:flex flex-col items-center justify-center w-1/2 bg-brand-500 px-16 gap-8">
         <Image
-          src="/ideah-logo.png"
-          alt="IDEAH"
+          src="/paideia-wordmark-white.svg"
+          alt="Paideia"
           width={320}
-          height={120}
-          className="brightness-0 invert"
+          height={128}
           priority
         />
         <p className="text-white/80 text-center text-lg leading-relaxed max-w-sm">
@@ -77,7 +76,7 @@ export default function LoginPage() {
         {/* Depoimento */}
         <div className="bg-white/10 border border-white/20 rounded-2xl p-6 max-w-sm">
           <p className="text-white/90 italic text-sm leading-relaxed">
-            "O IDEAH mudou a forma como conduzo minha clínica. Ter um supervisor disponível a qualquer hora, ancorado na minha abordagem, é transformador."
+            "O Paideia mudou a forma como conduzo minha clínica. Ter um supervisor disponível a qualquer hora, ancorado na minha abordagem, é transformador."
           </p>
           <div className="flex items-center gap-3 mt-4">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
@@ -96,10 +95,10 @@ export default function LoginPage() {
         {/* Logo mobile */}
         <div className="lg:hidden mb-10">
           <Image
-            src="/ideah-logo.png"
-            alt="IDEAH"
+            src="/paideia-wordmark-light.svg"
+            alt="Paideia"
             width={200}
-            height={75}
+            height={80}
             priority
           />
         </div>
@@ -122,7 +121,7 @@ export default function LoginPage() {
           {/* ── Botão Google ── */}
           <button
             type="button"
-            onClick={async () => { await loginWithGoogle(); router.push("/dashboard"); }}
+            onClick={async () => { await loginWithGoogle(); router.push("/dashboard/supervision"); }}
             disabled={isLoading}
             className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100 transition-all text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mb-5"
           >

@@ -16,11 +16,10 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard",            icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/dashboard/supervision",icon: MessageSquare,   label: "Supervisão / Evolução" },
   { href: "/dashboard/clients",    icon: Users,           label: "Clientes" },
-  { href: "/dashboard/supervision",icon: MessageSquare,   label: "Supervisão" },
-  { href: "/dashboard/evolutions", icon: FileText,        label: "Evoluções" },
   { href: "/dashboard/schedule",   icon: CalendarDays,    label: "Agenda" },
+  { href: "/dashboard",            icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/reports",    icon: BarChart2,       label: "Relatórios" },
 ];
 
@@ -30,9 +29,9 @@ export function Sidebar() {
   return (
     <aside className="w-60 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-100">
+      <div className="px-5 py-6 border-b border-gray-100">
         <Link href="/">
-          <Image src="/ideah-logo.png" alt="IDEAH" width={110} height={41} priority />
+          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={170} height={68} priority />
         </Link>
       </div>
 
