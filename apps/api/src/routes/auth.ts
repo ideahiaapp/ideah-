@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
+import { authenticate } from "../middlewares/auth";
 
 export async function authRoutes(app: FastifyInstance) {
   // POST /auth/register
@@ -66,7 +67,7 @@ export async function authRoutes(app: FastifyInstance) {
   // GET /auth/me
   app.get(
     "/me",
-    { preHandler: [app.authenticate] },
+    { preHandler: [authenticate] },
     async (request, reply) => {
       const { sub } = request.user as { sub: string };
       const user = await prisma.user.findUnique({

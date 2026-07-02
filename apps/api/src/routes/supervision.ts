@@ -82,7 +82,7 @@ export async function supervisionRoutes(app: FastifyInstance) {
     });
 
     // Montar histórico para Claude
-    const history = session.messages.map((m) => ({
+    const history = session.messages.map((m: { role: string; content: string }) => ({
       role: m.role === "USER" ? ("user" as const) : ("assistant" as const),
       content: m.content,
     }));
