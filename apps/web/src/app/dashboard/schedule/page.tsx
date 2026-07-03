@@ -110,18 +110,46 @@ function buildGoogleCalendarUrl(params: {
   startTime: string;
   duration: number;
   notes?: string;
+  meetLink?: string;
 }): string {
   const start = params.date.replace(/-/g, "") + "T" + params.startTime.replace(":", "") + "00";
   const endMin = timeToMinutes(params.startTime) + params.duration;
   const endStr = minutesToTime(endMin).replace(":", "") + "00";
   const end = params.date.replace(/-/g, "") + "T" + endStr;
+  const details = [
+    params.notes || "Sessão registrada via Paideia",
+    params.meetLink ? `Link da videochamada: ${params.meetLink}` : "",
+  ].filter(Boolean).join("\n\n");
   const search = new URLSearchParams({
     action:  "TEMPLATE",
     text:    `Sessão — ${params.clientName}`,
     dates:   `${start}/${end}`,
-    details: params.notes || "Sessão registrada via Paideia",
+    details,
+    ...(params.meetLink ? { location: params.meetLink } : {}),
   });
   return `https://calendar.google.com/calendar/render?${search.toString()}`;
+}
+
+/* ─── WhatsApp: link de envio de agendamento ─────── */
+function buildWhatsAppUrl(phone: string, message: string): string {
+  const digits = phone.replace(/\D/g, "");
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
+}
+
+function buildSessionMessage(params: {
+  clientName: string;
+  date: string;
+  startTime: string;
+  duration: number;
+  meetLink?: string;
+}): string {
+  const dateFmt = params.date.split("-").reverse().join("/");
+  const endTime = minutesToTime(timeToMinutes(params.startTime) + params.duration);
+  const firstName = params.clientName.split(" ")[0];
+  let msg = `Olá, ${firstName}! Confirmando sua sessão:\n📅 ${dateFmt}\n🕐 ${params.startTime} às ${endTime}`;
+  if (params.meetLink) msg += `\n🔗 Link da videochamada: ${params.meetLink}`;
+  return msg;
 }
 
 /* ─── Ícone Google Calendar ──────────────────────── */
@@ -134,6 +162,27 @@ function GoogleCalendarIcon({ className }: { className?: string }) {
       <path d="M8 13h2v2H8zm3 0h2v2h-2zm3 0h2v2h-2zM8 16h2v2H8zm3 0h2v2h-2z" fill="#4285F4"/>
       <rect x="8" y="1" width="2" height="4" rx="1" fill="#4285F4"/>
       <rect x="14" y="1" width="2" height="4" rx="1" fill="#4285F4"/>
+    </svg>
+  );
+}
+
+/* ─── Ícone Google Meet ──────────────────────────── */
+function GoogleMeetIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 8v8a2 2 0 002 2h7V6H5a2 2 0 00-2 2z" fill="#00AC47"/>
+      <path d="M12 6v12l4-3V9l-4-3z" fill="#00832D"/>
+      <path d="M16 9l5-3.6v13.2L16 15V9z" fill="#00AC47"/>
+    </svg>
+  );
+}
+
+/* ─── Ícone WhatsApp ─────────────────────────────── */
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2a10 10 0 00-8.6 15.1L2 22l5.05-1.36A10 10 0 1012 2z" fill="#25D366"/>
+      <path d="M9.1 7.2c-.2-.44-.4-.45-.6-.46h-.5c-.18 0-.46.07-.7.33-.24.26-.92.9-.92 2.2 0 1.3.94 2.55 1.07 2.73.13.18 1.83 2.9 4.5 3.96 2.23.88 2.68.7 3.16.66.48-.04 1.55-.63 1.77-1.24.22-.61.22-1.13.15-1.24-.07-.11-.24-.18-.5-.31-.26-.13-1.55-.77-1.79-.85-.24-.09-.42-.13-.59.13-.18.26-.68.85-.83 1.02-.15.18-.31.2-.57.07-.26-.13-1.09-.4-2.08-1.29-.77-.68-1.29-1.53-1.44-1.79-.15-.26-.02-.4.11-.53.12-.12.26-.31.4-.46.13-.15.17-.26.26-.44.09-.18.04-.33-.02-.46-.07-.13-.58-1.44-.81-1.98z" fill="white"/>
     </svg>
   );
 }
@@ -178,6 +227,8 @@ function SessionModal({
   const [saved,       setSaved]       = useState(false);
   const [calendarUrl, setCalendarUrl] = useState<string | null>(null);
   const [deleting,    setDeleting]    = useState(false);
+  const [meetLink,    setMeetLink]    = useState("");
+  const [createdInfo, setCreatedInfo] = useState<{ clientName: string; phone: string | null } | null>(null);
 
   const isView   = state.mode === "view";
   const session  = state.session;
@@ -205,6 +256,7 @@ function SessionModal({
       });
       onCreate(dbToSchedule({ ...saved, clients: { name: c.name, initials: c.initials, color: c.color } }));
       setSaved(true);
+      setCreatedInfo({ clientName: c.name, phone: c.phone });
       if (form.addToCalendar) {
         setCalendarUrl(buildGoogleCalendarUrl({
           clientName: c.name,
@@ -212,9 +264,8 @@ function SessionModal({
           startTime:  form.startTime,
           duration:   form.duration,
           notes:      form.notes || undefined,
+          meetLink:   meetLink || undefined,
         }));
-      } else {
-        setTimeout(onClose, 800);
       }
     } catch (e) {
       alert(e instanceof Error ? e.message : "Erro ao salvar sessão");
@@ -377,6 +428,29 @@ function SessionModal({
                 Excluir sessão
               </button>
 
+              {/* Link do Google Meet */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-gray-600">Link da videochamada (opcional)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={meetLink}
+                    onChange={e => setMeetLink(e.target.value)}
+                    placeholder="Cole aqui o link gerado pelo Meet"
+                    className="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
+                  />
+                  <a
+                    href="https://meet.google.com/new"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-green-200 hover:text-green-700 transition-colors flex-shrink-0"
+                  >
+                    <GoogleMeetIcon className="w-4 h-4" />
+                    Gerar
+                  </a>
+                </div>
+              </div>
+
               {/* Google Calendar */}
               <a
                 href={buildGoogleCalendarUrl({
@@ -385,6 +459,7 @@ function SessionModal({
                   startTime:  session.startTime,
                   duration:   session.duration,
                   notes:      session.notes,
+                  meetLink:   meetLink || undefined,
                 })}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -393,6 +468,29 @@ function SessionModal({
                 <GoogleCalendarIcon className="w-4 h-4" />
                 Adicionar ao Google Calendar
               </a>
+
+              {/* WhatsApp */}
+              {client?.phone ? (
+                <a
+                  href={buildWhatsAppUrl(client.phone, buildSessionMessage({
+                    clientName: session.clientName,
+                    date:       session.date,
+                    startTime:  session.startTime,
+                    duration:   session.duration,
+                    meetLink:   meetLink || undefined,
+                  }))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors"
+                >
+                  <WhatsAppIcon className="w-4 h-4" />
+                  Enviar agendamento via WhatsApp
+                </a>
+              ) : (
+                <p className="text-[11px] text-gray-400 text-center">
+                  Cadastre o telefone do paciente para enviar o agendamento via WhatsApp.
+                </p>
+              )}
             </>
           )}
 
@@ -527,29 +625,56 @@ function SessionModal({
                 rows={2}
               />
 
-              {/* Google Calendar */}
-              <label className="flex items-center gap-3 cursor-pointer select-none">
-                <div
-                  onClick={() => setForm(p => ({ ...p, addToCalendar: !p.addToCalendar }))}
-                  className={cn(
-                    "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
-                    form.addToCalendar ? "border-blue-500 bg-blue-500" : "border-gray-300 hover:border-blue-300"
-                  )}
-                >
-                  {form.addToCalendar && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <GoogleCalendarIcon className="w-4 h-4" />
-                  <span className="text-sm text-gray-700">Adicionar ao Google Calendar</span>
-                </div>
-              </label>
+              {!createdInfo && (
+                <>
+                  {/* Link do Google Meet */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-gray-600">Link da videochamada (opcional)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={meetLink}
+                        onChange={e => setMeetLink(e.target.value)}
+                        placeholder="Cole aqui o link gerado pelo Meet"
+                        className="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
+                      />
+                      <a
+                        href="https://meet.google.com/new"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-green-200 hover:text-green-700 transition-colors flex-shrink-0"
+                      >
+                        <GoogleMeetIcon className="w-4 h-4" />
+                        Gerar
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Google Calendar */}
+                  <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <div
+                      onClick={() => setForm(p => ({ ...p, addToCalendar: !p.addToCalendar }))}
+                      className={cn(
+                        "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                        form.addToCalendar ? "border-blue-500 bg-blue-500" : "border-gray-300 hover:border-blue-300"
+                      )}
+                    >
+                      {form.addToCalendar && (
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <GoogleCalendarIcon className="w-4 h-4" />
+                      <span className="text-sm text-gray-700">Adicionar ao Google Calendar</span>
+                    </div>
+                  </label>
+                </>
+              )}
 
               {/* Botão salvar */}
-              {!calendarUrl ? (
+              {!createdInfo ? (
                 <button
                   onClick={handleSave}
                   disabled={!canSave || saving || saved}
@@ -570,21 +695,46 @@ function SessionModal({
                     <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
                     <p className="text-sm font-semibold text-green-700">Sessão criada!</p>
                   </div>
-                  <a
-                    href={calendarUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setTimeout(onClose, 400)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-white border-2 border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors"
-                  >
-                    <GoogleCalendarIcon className="w-4 h-4" />
-                    Abrir no Google Calendar
-                  </a>
+
+                  {calendarUrl && (
+                    <a
+                      href={calendarUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-white border-2 border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors"
+                    >
+                      <GoogleCalendarIcon className="w-4 h-4" />
+                      Abrir no Google Calendar
+                    </a>
+                  )}
+
+                  {createdInfo.phone ? (
+                    <a
+                      href={buildWhatsAppUrl(createdInfo.phone, buildSessionMessage({
+                        clientName: createdInfo.clientName,
+                        date:       form.date,
+                        startTime:  form.startTime,
+                        duration:   form.duration,
+                        meetLink:   meetLink || undefined,
+                      }))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      <WhatsAppIcon className="w-4 h-4" />
+                      Enviar agendamento via WhatsApp
+                    </a>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 text-center">
+                      Cadastre o telefone do paciente para enviar o agendamento via WhatsApp.
+                    </p>
+                  )}
+
                   <button
                     onClick={onClose}
                     className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    Fechar sem adicionar
+                    Fechar
                   </button>
                 </div>
               )}
