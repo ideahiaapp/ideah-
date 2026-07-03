@@ -26,7 +26,7 @@ export default function HomePage() {
     .slice(0, 5);
 
   return (
-    <div className="max-w-3xl mx-auto -m-6 min-h-[calc(100vh-4rem)] bg-brand-50/60 px-6 py-12 space-y-10">
+    <div className="-m-6 min-h-[calc(100vh-4rem)] bg-brand-50/60 px-10 py-10 space-y-10">
       <div>
         <p className="text-gray-500 text-sm">{greeting},</p>
         <h1 className="font-serif text-5xl text-ink mt-1">{firstName}</h1>
