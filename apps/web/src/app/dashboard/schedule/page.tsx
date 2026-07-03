@@ -111,6 +111,7 @@ function buildGoogleCalendarUrl(params: {
   duration: number;
   notes?: string;
   meetLink?: string;
+  clientEmail?: string | null;
 }): string {
   const start = params.date.replace(/-/g, "") + "T" + params.startTime.replace(":", "") + "00";
   const endMin = timeToMinutes(params.startTime) + params.duration;
@@ -126,6 +127,7 @@ function buildGoogleCalendarUrl(params: {
     dates:   `${start}/${end}`,
     details,
     ...(params.meetLink ? { location: params.meetLink } : {}),
+    ...(params.clientEmail ? { add: params.clientEmail } : {}),
   });
   return `https://calendar.google.com/calendar/render?${search.toString()}`;
 }
@@ -259,12 +261,13 @@ function SessionModal({
       setCreatedInfo({ clientName: c.name, phone: c.phone });
       if (form.addToCalendar) {
         setCalendarUrl(buildGoogleCalendarUrl({
-          clientName: c.name,
-          date:       form.date,
-          startTime:  form.startTime,
-          duration:   form.duration,
-          notes:      form.notes || undefined,
-          meetLink:   meetLink || undefined,
+          clientName:  c.name,
+          date:        form.date,
+          startTime:   form.startTime,
+          duration:    form.duration,
+          notes:       form.notes || undefined,
+          meetLink:    meetLink || undefined,
+          clientEmail: c.email,
         }));
       }
     } catch (e) {
@@ -454,12 +457,13 @@ function SessionModal({
               {/* Google Calendar */}
               <a
                 href={buildGoogleCalendarUrl({
-                  clientName: session.clientName,
-                  date:       session.date,
-                  startTime:  session.startTime,
-                  duration:   session.duration,
-                  notes:      session.notes,
-                  meetLink:   meetLink || undefined,
+                  clientName:  session.clientName,
+                  date:        session.date,
+                  startTime:   session.startTime,
+                  duration:    session.duration,
+                  notes:       session.notes,
+                  meetLink:    meetLink || undefined,
+                  clientEmail: client?.email,
                 })}
                 target="_blank"
                 rel="noopener noreferrer"
