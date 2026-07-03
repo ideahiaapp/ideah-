@@ -49,6 +49,7 @@ export default function RegisterPage() {
   const [confirm, setConfirm]     = useState("");
   const [showPass, setShowPass]   = useState(false);
   const [selectedBases, setSelectedBases] = useState<string[]>([]);
+  const [ethicsAccepted, setEthicsAccepted] = useState(false);
   const [error, setError]         = useState("");
   const [emailSent, setEmailSent] = useState(false);
 
@@ -83,6 +84,7 @@ export default function RegisterPage() {
 
   async function handleSubmit() {
     if (selectedBases.length === 0) { setError("Selecione ao menos uma base de conhecimento."); return; }
+    if (!ethicsAccepted) { setError("Confirme que está ciente do uso ético da ferramenta para continuar."); return; }
     setError("");
     try {
       const user = await signUp(name, email, password);
@@ -106,6 +108,7 @@ export default function RegisterPage() {
 
   async function handleGoogle() {
     if (selectedBases.length === 0) { setError("Selecione ao menos uma base antes de continuar."); return; }
+    if (!ethicsAccepted) { setError("Confirme que está ciente do uso ético da ferramenta para continuar."); return; }
     setError("");
     // Salva bases em localStorage para usar após o callback OAuth
     localStorage.setItem("ideah_pending_bases", JSON.stringify(selectedBases));
@@ -316,12 +319,33 @@ export default function RegisterPage() {
                 )}
               </div>
 
+              {/* Aceite ético */}
+              <button
+                type="button"
+                onClick={() => setEthicsAccepted(v => !v)}
+                className={cn(
+                  "w-full flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all mb-4",
+                  ethicsAccepted ? "border-amber-400 bg-amber-50" : "border-gray-200 bg-white hover:border-amber-200"
+                )}
+              >
+                <span className={cn(
+                  "w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-colors",
+                  ethicsAccepted ? "border-amber-500 bg-amber-500" : "border-gray-300"
+                )}>
+                  {ethicsAccepted && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </span>
+                <span className="text-xs text-gray-700 leading-relaxed">
+                  <strong className="text-amber-800">Recurso de apoio clínico — Res. CFP nº 21/2025</strong><br />
+                  Estou ciente de que as respostas geradas pela IA são suporte ao raciocínio clínico e <strong>não substituem o juízo profissional do(a) psicólogo(a)</strong>. A decisão clínica é sempre minha.
+                </span>
+              </button>
+
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
 
               <div className="space-y-3">
                 {/* Se veio pelo Google (sem nome/email preenchidos) */}
                 {!name && (
-                  <button type="button" onClick={handleGoogle} disabled={isLoading || selectedBases.length === 0}
+                  <button type="button" onClick={handleGoogle} disabled={isLoading || selectedBases.length === 0 || !ethicsAccepted}
                     className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <GoogleIcon />}
                     Cadastrar com Google
@@ -330,10 +354,10 @@ export default function RegisterPage() {
 
                 {/* Se veio pelo formulário */}
                 {name && (
-                  <button type="button" onClick={handleSubmit} disabled={isLoading || selectedBases.length === 0}
+                  <button type="button" onClick={handleSubmit} disabled={isLoading || selectedBases.length === 0 || !ethicsAccepted}
                     className={cn(
                       "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors",
-                      selectedBases.length > 0 && !isLoading
+                      selectedBases.length > 0 && ethicsAccepted && !isLoading
                         ? "bg-brand-500 hover:bg-brand-600 text-white"
                         : "bg-gray-100 text-gray-400 cursor-not-allowed"
                     )}>

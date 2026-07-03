@@ -92,30 +92,6 @@ function formatInline(text: string) {
   );
 }
 
-/* ─── Banner ético ───────────────────────────────────── */
-function EthicsBanner() {
-  const [open, setOpen] = useState(true);
-  if (!open) return (
-    <button onClick={() => setOpen(true)}
-      className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-amber-50 border-b border-amber-100 text-[11px] text-amber-600 hover:bg-amber-100 transition-colors flex-shrink-0">
-      <AlertCircle className="w-3 h-3" strokeWidth={1.8} />
-      Aviso ético CFP nº 21/2025 — clique para expandir
-    </button>
-  );
-  return (
-    <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-start gap-3 flex-shrink-0">
-      <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-amber-800 mb-0.5">Recurso de apoio clínico — Res. CFP nº 21/2025</p>
-        <p className="text-[11px] text-amber-700 leading-relaxed">
-          As respostas geradas pela IA são suporte ao raciocínio clínico e <strong>não substituem o juízo profissional do(a) psicólogo(a)</strong>.
-          A decisão clínica é sempre sua.
-        </p>
-      </div>
-      <button onClick={() => setOpen(false)} className="text-amber-400 hover:text-amber-600 text-lg leading-none flex-shrink-0">×</button>
-    </div>
-  );
-}
 
 /* ─── Bolha de mensagem ──────────────────────────────── */
 function MessageBubble({ message }: { message: Message }) {
@@ -844,7 +820,6 @@ export default function WorkspacePage() {
           )}
         </div>
 
-        {selectedClient && <EthicsBanner />}
 
         {/* Thread */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-2">
