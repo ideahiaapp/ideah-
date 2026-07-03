@@ -22,9 +22,11 @@ const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rou
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-600 mb-1.5">{label}</label>
-      {children}
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      <label className="block text-xs font-semibold text-gray-600">
+        <div className="mb-1.5">{label}</div>
+        <div className="font-normal normal-case">{children}</div>
+      </label>
+      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
     </div>
   );
 }
@@ -38,7 +40,7 @@ function SaveButton({ saving, saved, disabled, onClick, label = "Salvar alteraç
         "flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all",
         saved ? "bg-green-500 text-white"
           : !disabled && !saving ? "bg-brand-500 hover:bg-brand-600 text-white shadow-sm"
-          : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          : "bg-gray-100 text-gray-500 cursor-not-allowed"
       )}>
       {saved   ? <><CheckCircle2 className="w-4 h-4" /> Salvo!</>
        : saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
@@ -119,6 +121,7 @@ function TabPerfil() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
+              aria-label="Alterar foto do perfil"
               className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
               {uploadingAvatar
                 ? <Loader2 className="w-3.5 h-3.5 text-brand-500 animate-spin" />
@@ -127,14 +130,14 @@ function TabPerfil() {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-700">Carregar nova foto</p>
-            <p className="text-xs text-gray-400 mt-0.5">PNG, JPG ou WEBP · Máx. 2MB</p>
+            <p className="text-xs text-gray-500 mt-0.5">PNG, JPG ou WEBP · Máx. 2MB</p>
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
               className="mt-2 text-xs text-brand-500 hover:text-brand-700 font-medium disabled:opacity-50">
               {uploadingAvatar ? "Enviando..." : "Selecionar arquivo"}
             </button>
-            {avatarError && <p className="text-xs text-red-500 mt-1">{avatarError}</p>}
+            {avatarError && <p className="text-xs text-red-600 mt-1">{avatarError}</p>}
           </div>
           <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp"
             className="hidden" onChange={handleAvatarChange} />
@@ -171,7 +174,7 @@ function TabPerfil() {
                 <option key={a}>{a}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
         </Field>
         <VoiceTextarea label="Bio profissional" hint="Visível no seu perfil público (opcional)"
@@ -223,7 +226,7 @@ function ClinicSettingsBlock() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Field label="Valor por sessão (R$)" hint="Usado nos relatórios de produção">
           <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">R$</span>
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">R$</span>
             <input
               type="number" min={0} step={10}
               value={cfg.sessionPrice}
@@ -240,7 +243,7 @@ function ClinicSettingsBlock() {
               className={inputCls + " appearance-none pr-9"}>
               {[45, 50, 60, 90].map(d => <option key={d} value={d}>{d} min</option>)}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
         </Field>
         <div className="grid grid-cols-2 gap-2">
@@ -274,11 +277,11 @@ function ClinicSettingsBlock() {
       </Field>
 
       <div className="flex items-center justify-between pt-1">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-500">
           Receita mensal estimada: <strong className="text-gray-700">
             R$ {(cfg.sessionPrice * 16).toLocaleString("pt-BR")}
           </strong>
-          <span className="text-gray-300 ml-1">(16 sessões/mês)</span>
+          <span className="text-gray-500 ml-1">(16 sessões/mês)</span>
         </p>
         <SaveButton saving={saving} saved={saved} disabled={false} onClick={save} label="Salvar configurações" />
       </div>
@@ -323,7 +326,8 @@ function TabSeguranca() {
   function ToggleEye({ field }: { field: keyof typeof show }) {
     return (
       <button type="button" onClick={() => setShow(p => ({...p, [field]: !p[field]}))}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+        aria-label={show[field] ? "Ocultar senha" : "Mostrar senha"}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
         {show[field] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
     );
@@ -357,7 +361,7 @@ function TabSeguranca() {
                   <div key={i} className={cn("h-1 flex-1 rounded-full transition-colors", i <= sc ? strengthColor : "bg-gray-100")} />
                 ))}
               </div>
-              <p className={cn("text-xs font-medium", sc >= 3 ? "text-green-600" : sc === 2 ? "text-yellow-600" : "text-red-500")}>
+              <p className={cn("text-xs font-medium", sc >= 3 ? "text-green-600" : sc === 2 ? "text-yellow-600" : "text-red-600")}>
                 Força: {strengthLabel}
               </p>
             </div>
@@ -372,7 +376,7 @@ function TabSeguranca() {
             <ToggleEye field="confirm" />
           </div>
           {form.confirm && form.newPwd !== form.confirm && (
-            <p className="text-xs text-red-500 mt-1">As senhas não coincidem.</p>
+            <p className="text-xs text-red-600 mt-1">As senhas não coincidem.</p>
           )}
         </Field>
 
@@ -393,15 +397,15 @@ function TabSeguranca() {
         <p className="text-sm font-semibold text-gray-700 mb-4">Segurança da conta</p>
         <div className="space-y-3">
           {[
-            { icon: ShieldCheck, label: "Autenticação em dois fatores", sub: "Adicione uma camada extra de segurança", badge: "Em breve", color: "text-gray-400" },
-            { icon: Lock,        label: "Encerrar todas as sessões",    sub: "Desconectar de todos os dispositivos",  badge: "Encerrar", color: "text-red-500 hover:text-red-700 cursor-pointer" },
+            { icon: ShieldCheck, label: "Autenticação em dois fatores", sub: "Adicione uma camada extra de segurança", badge: "Em breve", color: "text-gray-500" },
+            { icon: Lock,        label: "Encerrar todas as sessões",    sub: "Desconectar de todos os dispositivos",  badge: "Encerrar", color: "text-red-600 hover:text-red-700 cursor-pointer" },
           ].map((item) => (
             <div key={item.label} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
               <div className="flex items-center gap-3">
-                <item.icon className="w-4 h-4 text-gray-400" strokeWidth={1.8} />
+                <item.icon className="w-4 h-4 text-gray-500" strokeWidth={1.8} />
                 <div>
                   <p className="text-sm font-medium text-gray-700">{item.label}</p>
-                  <p className="text-xs text-gray-400">{item.sub}</p>
+                  <p className="text-xs text-gray-500">{item.sub}</p>
                 </div>
               </div>
               <span className={cn("text-xs font-semibold", item.color)}>{item.badge}</span>
@@ -462,24 +466,25 @@ function TabPlano() {
           </div>
           <div>
             <p className="text-sm font-bold text-amber-800">Você está no Trial</p>
-            <p className="text-xs text-amber-600 mt-0.5">
+            <p className="text-xs text-amber-700 mt-0.5">
               {"Trial ativo"}
             </p>
           </div>
         </div>
-        <a href="#pro" className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+        <a href="#pro" className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
           Ver planos
         </a>
       </div>
 
       {/* Toggle cobrança */}
       <div className="flex items-center justify-center gap-3">
-        <span className={cn("text-sm font-medium", billingCycle === "monthly" ? "text-gray-900" : "text-gray-400")}>Mensal</span>
+        <span className={cn("text-sm font-medium", billingCycle === "monthly" ? "text-gray-900" : "text-gray-500")}>Mensal</span>
         <button onClick={() => setBillingCycle(b => b === "monthly" ? "annual" : "monthly")}
+          aria-label={billingCycle === "annual" ? "Mudar para cobrança mensal" : "Mudar para cobrança anual"}
           className={cn("relative w-12 h-6 rounded-full transition-colors", billingCycle === "annual" ? "bg-brand-500" : "bg-gray-200")}>
           <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all", billingCycle === "annual" ? "left-7" : "left-1")} />
         </button>
-        <span className={cn("text-sm font-medium", billingCycle === "annual" ? "text-gray-900" : "text-gray-400")}>
+        <span className={cn("text-sm font-medium", billingCycle === "annual" ? "text-gray-900" : "text-gray-500")}>
           Anual
           <span className="ml-1.5 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold">−20%</span>
         </span>
@@ -492,7 +497,6 @@ function TabPlano() {
             className={cn(
               "rounded-2xl border-2 p-5 flex flex-col transition-all",
               plan.highlight ? "border-brand-400 shadow-lg shadow-brand-100 bg-white" : "border-gray-100 bg-white",
-              plan.current && "opacity-80"
             )}>
             {plan.highlight && (
               <div className="flex justify-center mb-3">
@@ -505,7 +509,7 @@ function TabPlano() {
             <p className="text-xs text-gray-500 mt-0.5 mb-3">{plan.description}</p>
             <div className="mb-4">
               <span className="text-3xl font-black text-gray-900">{plan.price[billingCycle]}</span>
-              {plan.priceSub && <span className="text-xs text-gray-400 ml-1">{plan.priceSub[billingCycle]}</span>}
+              {plan.priceSub && <span className="text-xs text-gray-500 ml-1">{plan.priceSub[billingCycle]}</span>}
             </div>
             <ul className="space-y-2 flex-1 mb-5">
               {plan.features.map((f) => (
@@ -518,7 +522,7 @@ function TabPlano() {
             <button disabled={plan.current}
               className={cn(
                 "w-full py-2.5 rounded-xl text-sm font-semibold transition-colors",
-                plan.current ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                plan.current ? "bg-gray-100 text-gray-500 cursor-not-allowed"
                   : plan.highlight ? "bg-brand-500 hover:bg-brand-600 text-white"
                   : "border border-gray-200 text-gray-700 hover:bg-gray-50"
               )}>
@@ -533,8 +537,8 @@ function TabPlano() {
         <p className="text-sm font-semibold text-gray-700 mb-4">Histórico de cobrança</p>
         <div className="text-center py-6">
           <CreditCard className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-          <p className="text-sm text-gray-400">Nenhuma cobrança ainda</p>
-          <p className="text-xs text-gray-300 mt-0.5">Seu histórico aparecerá aqui após a assinatura</p>
+          <p className="text-sm text-gray-500">Nenhuma cobrança ainda</p>
+          <p className="text-xs text-gray-500 mt-0.5">Seu histórico aparecerá aqui após a assinatura</p>
         </div>
       </div>
     </div>
@@ -640,13 +644,13 @@ function TabAPI() {
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                 provider === p ? "bg-brand-100" : "bg-gray-100"
               }`}>
-                <Sparkles className={`w-4 h-4 ${provider === p ? "text-brand-600" : "text-gray-400"}`} />
+                <Sparkles className={`w-4 h-4 ${provider === p ? "text-brand-600" : "text-gray-500"}`} />
               </div>
               <div>
                 <p className={`text-xs font-semibold ${provider === p ? "text-brand-700" : "text-gray-600"}`}>
                   {PROVIDER_LABELS[p]}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className={`text-xs mt-0.5 ${provider === p ? "text-gray-600" : "text-gray-500"}`}>
                   {p === "anthropic" ? "Claude Opus / Sonnet" : p === "gemini" ? "Gemini 2.0 Flash" : "Llama / Mistral / etc"}
                 </p>
               </div>
@@ -669,7 +673,7 @@ function TabAPI() {
               Chave configurada
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full font-medium">
+            <span className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-full font-medium">
               <span className="w-1.5 h-1.5 bg-amber-400 rounded-full" />
               Não configurada
             </span>
@@ -677,24 +681,26 @@ function TabAPI() {
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 py-4 text-xs text-gray-400">
+          <div className="flex items-center gap-2 py-4 text-xs text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" /> Carregando...
           </div>
         ) : hasKey ? (
           <>
             <div className="flex items-center gap-3">
               <div className="flex-1 flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 min-w-0">
-                <Key className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <Key className="w-4 h-4 text-gray-500 flex-shrink-0" />
                 <span className="text-sm font-mono text-gray-600 truncate">
                   {showKey ? storedKey : maskApiKey(storedKey)}
                 </span>
               </div>
               <button onClick={() => setShowKey(s => !s)}
-                className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-400 flex-shrink-0">
+                aria-label={showKey ? "Ocultar chave" : "Mostrar chave"}
+                className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 flex-shrink-0">
                 {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
               <button onClick={copyKey}
-                className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-400 flex-shrink-0">
+                aria-label="Copiar chave"
+                className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-500 flex-shrink-0">
                 {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
@@ -712,7 +718,7 @@ function TabAPI() {
                 </span>
               )}
               {testResult === "error" && (
-                <span className="flex items-center gap-1.5 text-xs text-red-500 font-medium">
+                <span className="flex items-center gap-1.5 text-xs text-red-600 font-medium">
                   <AlertTriangle className="w-4 h-4" /> Falhou — verifique a chave
                 </span>
               )}
@@ -725,8 +731,8 @@ function TabAPI() {
         ) : (
           <div className="text-center py-4">
             <Key className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-            <p className="text-sm text-gray-400">Nenhuma chave configurada</p>
-            <p className="text-xs text-gray-300 mt-0.5">As funcionalidades de IA ficarão indisponíveis</p>
+            <p className="text-sm text-gray-500">Nenhuma chave configurada</p>
+            <p className="text-xs text-gray-500 mt-0.5">As funcionalidades de IA ficarão indisponíveis</p>
           </div>
         )}
       </div>
@@ -742,7 +748,7 @@ function TabAPI() {
           hint={`Começa com ${PROVIDER_KEY_HINTS[provider]} · Armazenada localmente no seu navegador.`}
         >
           <div className="relative">
-            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type={showKey ? "text" : "password"}
               value={inputKey}
@@ -751,12 +757,13 @@ function TabAPI() {
               className={inputCls + " pl-9 pr-10 font-mono"}
             />
             <button type="button" onClick={() => setShowKey(s => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              aria-label={showKey ? "Ocultar chave" : "Mostrar chave"}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600">
               {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
           {inputKey && !isValidFormat && (
-            <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+            <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5" /> Formato inválido para {PROVIDER_LABELS[provider]}
             </p>
           )}
@@ -911,7 +918,7 @@ function TabEtica() {
             { icon: ShieldCheck, title: "Sem retenção para treino", desc: "Os dados clínicos não são usados para treinar modelos. Consulte a política de privacidade da Anthropic." },
           ].map(item => (
             <div key={item.title} className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
-              <item.icon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+              <item.icon className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
               <div>
                 <p className="text-xs font-semibold text-gray-700">{item.title}</p>
                 <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{item.desc}</p>
@@ -1050,7 +1057,7 @@ function TabBase() {
                 <option key={a.key} value={a.key}>{a.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
         </Field>
 
@@ -1065,7 +1072,7 @@ function TabBase() {
             : <Upload className="w-7 h-7 text-indigo-300" strokeWidth={1.5} />}
           <div className="text-center">
             <p className="text-sm font-semibold text-gray-600">{uploading ? "Indexando…" : "Clique para selecionar"}</p>
-            <p className="text-xs text-gray-400 mt-0.5">PDF ou TXT · Múltiplos arquivos · Máx. 200MB cada</p>
+            <p className="text-xs text-gray-500 mt-0.5">PDF ou TXT · Múltiplos arquivos · Máx. 200MB cada</p>
           </div>
         </button>
 
@@ -1090,18 +1097,18 @@ function TabBase() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <p className="text-sm font-semibold text-gray-700 mb-4">
           Documentos indexados
-          {docs.length > 0 && <span className="ml-2 text-xs font-normal text-gray-400">({docs.length} no total)</span>}
+          {docs.length > 0 && <span className="ml-2 text-xs font-normal text-gray-500">({docs.length} no total)</span>}
         </p>
 
         {loading ? (
-          <div className="flex items-center gap-2 py-6 text-xs text-gray-400 justify-center">
+          <div className="flex items-center gap-2 py-6 text-xs text-gray-500 justify-center">
             <Loader2 className="w-4 h-4 animate-spin" /> Carregando…
           </div>
         ) : grouped.length === 0 ? (
           <div className="text-center py-8">
             <BookOpen className="w-8 h-8 text-gray-200 mx-auto mb-2" strokeWidth={1.5} />
-            <p className="text-sm text-gray-400">Nenhum documento ainda</p>
-            <p className="text-xs text-gray-300 mt-0.5">Selecione uma abordagem e envie um PDF ou TXT</p>
+            <p className="text-sm text-gray-500">Nenhum documento ainda</p>
+            <p className="text-xs text-gray-500 mt-0.5">Selecione uma abordagem e envie um PDF ou TXT</p>
           </div>
         ) : (
           <div className="space-y-5">
@@ -1109,7 +1116,7 @@ function TabBase() {
               <div key={group.key}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide">{group.label}</span>
-                  <span className="text-xs text-gray-400">({group.docs.length})</span>
+                  <span className="text-xs text-gray-500">({group.docs.length})</span>
                 </div>
                 <div className="space-y-1.5">
                   {group.docs.map(doc => (
@@ -1117,7 +1124,7 @@ function TabBase() {
                       <FileText className="w-4 h-4 text-indigo-300 flex-shrink-0" strokeWidth={1.8} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-500 mt-0.5">
                           {fmtSize(doc.size_bytes)} · {doc.chunk_count} trechos · {new Date(doc.created_at).toLocaleDateString("pt-BR")}
                         </p>
                       </div>
@@ -1166,13 +1173,13 @@ function ApproachManager({ therapist }: { therapist: TherapistRow }) {
       .finally(() => setLoading(false));
   }, [therapist.userId]);
 
-  if (loading) return <div className="py-2 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>;
+  if (loading) return <div className="py-2 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-gray-500" /></div>;
 
   return (
     <div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
       <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Bases adquiridas</p>
       {acquired.length === 0 ? (
-        <p className="text-xs text-gray-400 italic">Nenhuma base adquirida.</p>
+        <p className="text-xs text-gray-500 italic">Nenhuma base adquirida.</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {ALL_APPROACHES.filter(a => acquired.includes(a.key)).map(a => (
@@ -1234,14 +1241,14 @@ function TabTerapeutas() {
 
         <div className="space-y-2">
           {list.length === 0 && (
-            <p className="text-center text-gray-400 text-sm py-8">Nenhum terapeuta cadastrado ainda.</p>
+            <p className="text-center text-gray-500 text-sm py-8">Nenhum terapeuta cadastrado ainda.</p>
           )}
           {list.map(t => (
             <div key={t.userId} className="border border-gray-100 rounded-xl overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50/50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{t.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{t.email} · {new Date(t.createdAt).toLocaleDateString("pt-BR")}</p>
+                  <p className="text-xs text-gray-500 truncate">{t.email} · {new Date(t.createdAt).toLocaleDateString("pt-BR")}</p>
                 </div>
                 <span className={cn(
                   "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0",
@@ -1392,7 +1399,7 @@ function TabPrompts() {
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
+          <div className="flex items-center gap-2 text-sm text-gray-500 py-8 justify-center">
             <Loader2 className="w-4 h-4 animate-spin" /> Carregando prompts…
           </div>
         ) : loadErr ? (
@@ -1406,7 +1413,7 @@ function TabPrompts() {
                 <label className="text-xs font-semibold text-gray-600">{currentLabel}</label>
                 {isCustomized
                   ? <span className="text-xs text-green-600 font-medium">● Personalizado</span>
-                  : <span className="text-xs text-gray-400">Usando prompt padrão do sistema</span>
+                  : <span className="text-xs text-gray-500">Usando prompt padrão do sistema</span>
                 }
               </div>
               <textarea
@@ -1416,7 +1423,7 @@ function TabPrompts() {
                 placeholder="Cole aqui o prompt personalizado para esta abordagem. Deixe vazio para usar o prompt padrão do sistema."
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
               />
-              <p className="text-xs text-gray-400">{draft.length} caracteres</p>
+              <p className="text-xs text-gray-500">{draft.length} caracteres</p>
             </div>
 
             {msg && (
@@ -1437,7 +1444,7 @@ function TabPrompts() {
                 className={cn(
                   "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors",
                   saving || !isDirty
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    ? "bg-gray-100 text-gray-500 cursor-not-allowed"
                     : "bg-purple-600 hover:bg-purple-700 text-white"
                 )}
               >
@@ -1507,7 +1514,7 @@ function TabMinhasBases() {
 
   const changed = JSON.stringify([...selected].sort()) !== JSON.stringify([...original].sort());
 
-  if (loading) return <div className="text-sm text-gray-400 py-8 text-center">Carregando...</div>;
+  if (loading) return <div className="text-sm text-gray-500 py-8 text-center">Carregando...</div>;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -1517,7 +1524,7 @@ function TabMinhasBases() {
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-700">Bases de conhecimento</p>
-          <p className="text-xs text-gray-400">Abordagens teóricas disponíveis na supervisão</p>
+          <p className="text-xs text-gray-500">Abordagens teóricas disponíveis na supervisão</p>
         </div>
       </div>
       <div className="p-5 space-y-2">
@@ -1534,22 +1541,22 @@ function TabMinhasBases() {
                 {on && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
               <span className={cn("text-sm font-medium", on ? "text-brand-700" : "text-gray-700")}>{b.label}</span>
-              <span className={cn("ml-auto text-xs font-semibold", on ? "text-brand-500" : "text-gray-400")}>
+              <span className={cn("ml-auto text-xs font-semibold", on ? "text-brand-500" : "text-gray-500")}>
                 R$ 49,90/mês
               </span>
             </button>
           );
         })}
       </div>
-      {error && <p className="px-5 pb-3 text-sm text-red-500">{error}</p>}
+      {error && <p className="px-5 pb-3 text-sm text-red-600">{error}</p>}
       <div className="px-5 pb-5 flex items-center justify-between">
-        <p className="text-xs text-gray-400">{selected.length} base{selected.length !== 1 ? "s" : ""} ativa{selected.length !== 1 ? "s" : ""} · R$ {(selected.length * 49.90).toFixed(2).replace(".", ",")}/mês</p>
+        <p className="text-xs text-gray-500">{selected.length} base{selected.length !== 1 ? "s" : ""} ativa{selected.length !== 1 ? "s" : ""} · R$ {(selected.length * 49.90).toFixed(2).replace(".", ",")}/mês</p>
         <button onClick={handleSave} disabled={!changed || saving || saved}
           className={cn(
             "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all",
             saved ? "bg-green-500 text-white"
               : changed && !saving ? "bg-brand-500 hover:bg-brand-600 text-white"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-gray-100 text-gray-500 cursor-not-allowed"
           )}>
           {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
             : saved   ? <><CheckCircle2 className="w-4 h-4" /> Salvo!</>
@@ -1605,9 +1612,9 @@ function TabAnamnese() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50/60 border-b border-gray-100">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Abordagem Terapêutica</th>
-                <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide w-32">Anamnese</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Última atualização</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Abordagem Terapêutica</th>
+                <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Anamnese</th>
+                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Última atualização</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -1625,12 +1632,12 @@ function TabAnamnese() {
                           <CheckCircle2 className="w-3 h-3" /> Sim
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold bg-gray-50 text-gray-400 border border-gray-200 px-2.5 py-1 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold bg-gray-50 text-gray-500 border border-gray-200 px-2.5 py-1 rounded-full">
                           <AlertTriangle className="w-3 h-3" /> Não
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-gray-400 text-xs">
+                    <td className="px-5 py-4 text-gray-500 text-xs">
                       {updatedAt
                         ? new Date(updatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
                         : "—"}
@@ -1696,7 +1703,7 @@ export default function SettingsPage() {
           <button key={t.id} onClick={() => setTab(t.id)}
             className={cn(
               "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
-              tab === t.id ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+              tab === t.id ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:text-gray-800"
             )}>
             <t.icon className="w-3.5 h-3.5" strokeWidth={1.8} />
             {t.label}

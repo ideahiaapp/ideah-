@@ -905,6 +905,7 @@ export default function SchedulePage() {
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
             <button
               onClick={() => setWeekStart(d => addDays(d, -7))}
+              aria-label="Semana anterior"
               className="p-1.5 hover:bg-white rounded-lg transition-colors text-gray-500"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -917,6 +918,7 @@ export default function SchedulePage() {
             </button>
             <button
               onClick={() => setWeekStart(d => addDays(d, 7))}
+              aria-label="Próxima semana"
               className="p-1.5 hover:bg-white rounded-lg transition-colors text-gray-500"
             >
               <ChevronRight className="w-4 h-4" />
@@ -953,7 +955,7 @@ export default function SchedulePage() {
       </div>
 
       {/* ── Grid da semana ── */}
-      <div className="flex-1 overflow-auto bg-gray-50">
+      <div className="flex-1 overflow-auto bg-gray-50" tabIndex={0} aria-label="Grade semanal de sessões">
         <div className="min-w-[640px]">
 
           {/* Cabeçalho dos dias */}
@@ -971,7 +973,7 @@ export default function SchedulePage() {
                     isToday && "bg-brand-50"
                   )}
                 >
-                  <p className={cn("text-xs font-medium", isToday ? "text-brand-500" : "text-gray-400")}>
+                  <p className={cn("text-xs font-medium", isToday ? "text-brand-500" : "text-gray-500")}>
                     {weekday}
                   </p>
                   <div className="flex items-center justify-center gap-1.5 mt-0.5">
@@ -1005,7 +1007,7 @@ export default function SchedulePage() {
                   className="border-b border-gray-100 flex items-start justify-end pr-2 pt-1"
                   style={{ height: SLOT_H }}
                 >
-                  <span className="text-[10px] text-gray-400 font-medium leading-none">
+                  <span className="text-[10px] text-gray-600 font-medium leading-none">
                     {h.toString().padStart(2, "0")}h
                   </span>
                 </div>
@@ -1066,14 +1068,14 @@ export default function SchedulePage() {
       </div>
 
       {/* ── Legenda de status ── */}
-      <div className="flex items-center gap-4 px-6 py-2.5 bg-white border-t border-gray-100 flex-shrink-0 overflow-x-auto">
+      <div className="flex items-center gap-4 px-6 py-2.5 bg-white border-t border-gray-100 flex-shrink-0 overflow-x-auto" tabIndex={0} aria-label="Legenda de status das sessões">
         {(Object.entries(STATUS_CONFIG) as [SessionStatus, typeof STATUS_CONFIG[SessionStatus]][]).map(([key, cfg]) => (
           <div key={key} className="flex items-center gap-1.5 flex-shrink-0">
             <span className={cn("w-2 h-2 rounded-full", cfg.dot)} />
             <span className="text-xs text-gray-500">{cfg.label}</span>
           </div>
         ))}
-        <span className="ml-auto text-xs text-gray-400 flex-shrink-0 hidden sm:block">
+        <span className="ml-auto text-xs text-gray-500 flex-shrink-0 hidden sm:block">
           Clique em qualquer horário para marcar uma sessão
         </span>
       </div>

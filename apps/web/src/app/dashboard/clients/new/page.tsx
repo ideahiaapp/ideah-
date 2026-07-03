@@ -109,14 +109,14 @@ export default function NewClientPage() {
     <div className="max-w-3xl mx-auto space-y-6">
 
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/clients" className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600">
+        <Link href="/dashboard/clients" aria-label="Voltar" className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500 hover:text-gray-600">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
           <h1 className="text-xl font-bold text-ink">Novo Cliente</h1>
           <p className="text-gray-500 text-sm">Cadastro e configuração inicial</p>
         </div>
-        <div className="ml-auto hidden sm:flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+        <div className="ml-auto hidden sm:flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
           <Mic className="w-3.5 h-3.5" />
           Campos aceitam voz
         </div>
@@ -243,10 +243,10 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
 function Field({ label, required, className, children }: { label: string; required?: boolean; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
-      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-        {label} {required && <span className="text-red-400">*</span>}
+      <label className="block text-xs font-semibold text-gray-600">
+        <div className="mb-1.5">{label} {required && <span className="text-red-400">*</span>}</div>
+        <div className="font-normal normal-case">{children}</div>
       </label>
-      {children}
     </div>
   );
 }

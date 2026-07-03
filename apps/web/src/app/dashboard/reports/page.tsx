@@ -101,7 +101,7 @@ function KpiCard({ label, value, sub, icon: Icon, color, trend, trendLabel, onCl
   onClick?: () => void; active?: boolean;
 }) {
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
-  const trendCls  = trend === "up" ? "text-green-500" : trend === "down" ? "text-red-400" : "text-gray-400";
+  const trendCls  = trend === "up" ? "text-green-700" : trend === "down" ? "text-red-600" : "text-gray-500";
   return (
     <button onClick={onClick} className={cn(
       "bg-white rounded-2xl border shadow-sm p-5 text-left w-full transition-all",
@@ -123,7 +123,7 @@ function KpiCard({ label, value, sub, icon: Icon, color, trend, trendLabel, onCl
       </div>
       <p className="text-2xl font-bold text-ink leading-none">{value}</p>
       <p className="text-xs font-medium text-gray-500 mt-1">{label}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
     </button>
   );
 }
@@ -139,9 +139,9 @@ function DrillDrawer({ title, subtitle, onClose, children }: {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-gray-900">{title}</h2>
-            {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
-          <button onClick={onClose} aria-label="Fechar" className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} aria-label="Fechar" className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -158,7 +158,7 @@ function DrillSessions({ onClose }: { onClose: () => void }) {
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-center px-8">
         <CalendarDays className="w-10 h-10 text-gray-200" strokeWidth={1.5} />
         <p className="text-sm font-semibold text-gray-500">Agenda ainda não persistida</p>
-        <p className="text-xs text-gray-400 leading-relaxed">
+        <p className="text-xs text-gray-500 leading-relaxed">
           As sessões agendadas ficam apenas em memória local. Em breve haverá sincronização com o banco de dados.
         </p>
       </div>
@@ -187,9 +187,9 @@ function DrillClients({ onClose, clients, evolutions, supervisions }: {
                 style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-800">{c.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{c.approach_label} · {c.session_frequency} · {c.session_duration}min</p>
+                <p className="text-xs text-gray-500 mt-0.5">{c.approach_label} · {c.session_frequency} · {c.session_duration}min</p>
                 <div className="flex items-center gap-3 mt-1.5">
-                  <span className="text-[10px] text-gray-400">{c.total_sessions} sessões</span>
+                  <span className="text-[10px] text-gray-500">{c.total_sessions} sessões</span>
                   <span className="text-[10px] text-gray-300">·</span>
                   <span className="text-[10px] text-green-600">{evols} evoluções</span>
                   {sups > 0 && <>
@@ -200,7 +200,7 @@ function DrillClients({ onClose, clients, evolutions, supervisions }: {
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 {c.next_session && (
-                  <span className="text-[10px] text-gray-400">
+                  <span className="text-[10px] text-gray-500">
                     próx. {new Date(c.next_session).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                   </span>
                 )}
@@ -210,12 +210,12 @@ function DrillClients({ onClose, clients, evolutions, supervisions }: {
           );
         })}
         {activeClients.length === 0 && (
-          <div className="px-6 py-16 text-center text-sm text-gray-400">Nenhum cliente ativo</div>
+          <div className="px-6 py-16 text-center text-sm text-gray-500">Nenhum cliente ativo</div>
         )}
       </div>
       <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
         <Link href="/dashboard/clients" onClick={onClose}
-          className="flex items-center justify-center gap-2 text-sm text-brand-500 font-semibold hover:text-brand-700">
+          className="flex items-center justify-center gap-2 text-sm text-brand-600 font-semibold hover:text-brand-700">
           Ver todos os clientes <ArrowUpRight className="w-4 h-4" />
         </Link>
       </div>
@@ -250,9 +250,9 @@ function DrillHours({ onClose, clients, months }: {
           { label: "Por sessão",     value: `${clinicCfg.sessionDuration}min`, sub: "duração padrão" },
         ].map(s => (
           <div key={s.label} className="bg-gray-50 rounded-xl p-3 text-center">
-            <p className="text-xs text-gray-400">{s.label}</p>
+            <p className="text-xs text-gray-500">{s.label}</p>
             <p className="text-lg font-bold text-gray-800 mt-0.5">{s.value}</p>
-            <p className="text-[10px] text-gray-400">{s.sub}</p>
+            <p className="text-[10px] text-gray-500">{s.sub}</p>
           </div>
         ))}
       </div>
@@ -300,7 +300,7 @@ function DrillHours({ onClose, clients, months }: {
             </div>
           ))}
           {perClient.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">Nenhum cliente ativo</p>
+            <p className="text-sm text-gray-500 text-center py-4">Nenhum cliente ativo</p>
           )}
         </div>
       </div>
@@ -346,7 +346,7 @@ function DrillEvolutions({ onClose, evolutions }: {
       {selected && (
         <div className="px-6 pt-4 pb-0">
           <button onClick={() => setSelectedClientId(null)}
-            className="flex items-center gap-1.5 text-xs text-brand-500 font-medium hover:text-brand-700">
+            className="flex items-center gap-1.5 text-xs text-brand-600 font-medium hover:text-brand-700">
             ← Todos os pacientes
           </button>
         </div>
@@ -364,7 +364,7 @@ function DrillEvolutions({ onClose, evolutions }: {
                   style={{ backgroundColor: c.color }}>{c.initials}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-800">{c.clientName}</p>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
                     Última: {lastEv?.hypothesis || lastEv?.content?.slice(0, 40) || "—"}…
                   </p>
                 </div>
@@ -378,7 +378,7 @@ function DrillEvolutions({ onClose, evolutions }: {
             );
           })}
           {clientsWithEvolutions.length === 0 && (
-            <div className="px-6 py-16 text-center text-sm text-gray-400">Nenhuma evolução registrada</div>
+            <div className="px-6 py-16 text-center text-sm text-gray-500">Nenhuma evolução registrada</div>
           )}
         </div>
       )}
@@ -396,7 +396,7 @@ function DrillEvolutions({ onClose, evolutions }: {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-500">
                       {new Date(ev.session_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
                     </p>
                     <span className="text-xs text-gray-300">·</span>
@@ -544,9 +544,9 @@ export default function ReportsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-ink">Relatórios</h1>
-          <p className="text-gray-400 text-sm mt-0.5">Análise da sua prática clínica</p>
+          <p className="text-gray-500 text-sm mt-0.5">Análise da sua prática clínica</p>
         </div>
-        <span className="text-xs text-gray-400 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
+        <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
           Dados dos últimos 6 meses
         </span>
       </div>
@@ -557,7 +557,7 @@ export default function ReportsPage() {
           <button key={t.id} onClick={() => { setTab(t.id); setDrillDown(null); }}
             className={cn(
               "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-              tab === t.id ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+              tab === t.id ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:text-gray-800"
             )}>
             <t.icon className="w-3.5 h-3.5" strokeWidth={1.8} />
             {t.label}
@@ -587,7 +587,7 @@ export default function ReportsPage() {
           </div>
 
           {!drillDown && (
-            <p className="text-xs text-gray-400 text-center -mt-2">
+            <p className="text-xs text-gray-500 text-center -mt-2">
               Clique em qualquer card para ver o detalhamento
             </p>
           )}
@@ -595,13 +595,13 @@ export default function ReportsPage() {
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-800">Evoluções por mês</h3>
-                <span className="text-xs text-gray-400">últimos 6 meses</span>
+                <h2 className="text-sm font-semibold text-gray-800">Evoluções por mês</h2>
+                <span className="text-xs text-gray-500">últimos 6 meses</span>
               </div>
               <BarChart data={MONTHS} valueKey="sessions" color="#C2542F" />
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h3 className="text-sm font-semibold text-gray-800 mb-4">Clientes por abordagem</h3>
+              <h2 className="text-sm font-semibold text-gray-800 mb-4">Clientes por abordagem</h2>
               {donutSegments.length > 0 ? (
                 <div className="flex items-center gap-6">
                   <DonutChart segments={donutSegments} size={140} />
@@ -614,7 +614,7 @@ export default function ReportsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-gray-800">{s.value}</span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-500">
                             {Math.round(s.value / donutSegments.reduce((a, x) => a + x.value, 0) * 100)}%
                           </span>
                         </div>
@@ -623,13 +623,13 @@ export default function ReportsPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 text-center py-8">Nenhum cliente ativo</p>
+                <p className="text-sm text-gray-500 text-center py-8">Nenhum cliente ativo</p>
               )}
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-4">Status das sessões registradas</h3>
+            <h2 className="text-sm font-semibold text-gray-800 mb-4">Status das sessões registradas</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {sessionStatusDist.map(s => {
                 const total = sessionStatusDist.reduce((a, x) => a + x.value, 0) || 1;
@@ -638,7 +638,7 @@ export default function ReportsPage() {
                     <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-white text-xl font-bold mb-2"
                       style={{ backgroundColor: s.color }}>{s.value}</div>
                     <p className="text-xs font-semibold text-gray-700">{s.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{Math.round(s.value / total * 100)}%</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{Math.round(s.value / total * 100)}%</p>
                   </div>
                 );
               })}
@@ -658,7 +658,7 @@ export default function ReportsPage() {
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h3 className="text-sm font-semibold text-gray-800 mb-4">Distribuição por abordagem</h3>
+              <h2 className="text-sm font-semibold text-gray-800 mb-4">Distribuição por abordagem</h2>
               {donutSegments.length > 0 ? (
                 <div className="flex items-center gap-6">
                   <DonutChart segments={donutSegments} size={160} />
@@ -683,12 +683,12 @@ export default function ReportsPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 text-center py-8">Nenhum cliente ativo</p>
+                <p className="text-sm text-gray-500 text-center py-8">Nenhum cliente ativo</p>
               )}
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-800">Clientes ativos</h3>
+                <h2 className="text-sm font-semibold text-gray-800">Clientes ativos</h2>
                 <Link href="/dashboard/clients" className="text-xs text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1">Ver todos <ArrowUpRight className="w-3 h-3" /></Link>
               </div>
               <div className="divide-y divide-gray-50">
@@ -698,20 +698,20 @@ export default function ReportsPage() {
                       style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
-                      <p className="text-xs text-gray-400">{c.approach_label} · {c.total_sessions} sessões</p>
+                      <p className="text-xs text-gray-500">{c.approach_label} · {c.total_sessions} sessões</p>
                     </div>
-                    <span className="text-xs text-gray-400 flex-shrink-0">{c.session_frequency}</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">{c.session_frequency}</span>
                   </Link>
                 ))}
                 {clients.filter(c => c.status === "ACTIVE").length === 0 && (
-                  <p className="text-sm text-gray-400 text-center py-8">Nenhum cliente ativo</p>
+                  <p className="text-sm text-gray-500 text-center py-8">Nenhum cliente ativo</p>
                 )}
               </div>
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-gray-800 mb-1">Novos clientes por mês</h3>
-            <p className="text-xs text-gray-400 mb-4">Captação no semestre</p>
+            <h2 className="text-sm font-semibold text-gray-800 mb-1">Novos clientes por mês</h2>
+            <p className="text-xs text-gray-500 mb-4">Captação no semestre</p>
             <BarChart data={MONTHS} valueKey="newClients" color="#C2542F" height={80} />
           </div>
         </div>

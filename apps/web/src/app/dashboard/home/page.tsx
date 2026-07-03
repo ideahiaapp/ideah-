@@ -28,9 +28,9 @@ export default function HomePage() {
   return (
     <div className="-m-6 min-h-[calc(100vh-4rem)] bg-brand-50/60 px-10 py-10 space-y-10">
       <div>
-        <p className="text-gray-500 text-sm">{greeting},</p>
+        <p className="text-gray-600 text-sm">{greeting},</p>
         <h1 className="font-serif text-5xl text-ink mt-1">{firstName}</h1>
-        <p className="text-gray-500 mt-4">Qual caso você quer acompanhar agora?</p>
+        <p className="text-gray-600 mt-4">Qual caso você quer acompanhar agora?</p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5">
@@ -70,7 +70,7 @@ export default function HomePage() {
       <div>
         <h3 className="font-serif text-lg text-ink mb-3">Últimos clientes</h3>
         {activeClients.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhum cliente ativo ainda.</p>
+          <p className="text-sm text-gray-600">Nenhum cliente ativo ainda.</p>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50 overflow-hidden">
             {activeClients.map(c => (
@@ -87,7 +87,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
-                  <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                     <Clock className="w-3 h-3" /> {c.total_sessions} sessões · {c.approach_label}
                   </p>
                 </div>

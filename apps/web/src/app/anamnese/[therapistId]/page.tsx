@@ -25,18 +25,17 @@ const APPROACH_LABELS: Record<string, string> = {
 };
 
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-transparent placeholder-gray-400";
-const labelCls = "block text-sm font-semibold text-gray-700 mb-1.5";
 
 function Field({ label, required, hint, children }: {
   label: string; required?: boolean; hint?: string; children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1">
-      <label className={labelCls}>
-        {label} {required && <span className="text-red-400">*</span>}
+      <label className="block text-sm font-semibold text-gray-700">
+        <div className="mb-1.5">{label} {required && <span className="text-red-400">*</span>}</div>
+        <div className="font-normal">{children}</div>
       </label>
-      {children}
-      {hint && <p className="text-xs text-gray-400">{hint}</p>}
+      {hint && <p className="text-xs text-gray-500">{hint}</p>}
     </div>
   );
 }

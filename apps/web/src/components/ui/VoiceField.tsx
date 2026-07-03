@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -66,11 +67,12 @@ export function VoiceTextarea({
   });
 
   const isRecording = state === "recording";
+  const inputId = useId();
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs font-semibold text-gray-600">
+        <label htmlFor={inputId} className="text-xs font-semibold text-gray-600">
           {label} {required && <span className="text-red-400">*</span>}
         </label>
         {state !== "unsupported" && (
@@ -100,6 +102,7 @@ export function VoiceTextarea({
           : "border-gray-200 focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-100 bg-white"
       )}>
         <textarea
+          id={inputId}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
@@ -128,7 +131,7 @@ export function VoiceTextarea({
         )}
       </div>
 
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
     </div>
   );
 }
@@ -154,10 +157,11 @@ export function VoiceInput({
   });
 
   const isRecording = state === "recording";
+  const inputId = useId();
 
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+      <label htmlFor={inputId} className="block text-xs font-semibold text-gray-600 mb-1.5">
         {label} {required && <span className="text-red-400">*</span>}
       </label>
       <div className="flex gap-2">
@@ -168,6 +172,7 @@ export function VoiceInput({
             : "border-gray-200 focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-100"
         )}>
           <input
+            id={inputId}
             type="text"
             value={isRecording && interimText ? `${value} ${interimText}` : value}
             onChange={e => !isRecording && onChange(e.target.value)}
@@ -204,7 +209,7 @@ export function VoiceInput({
           </button>
         )}
       </div>
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
     </div>
   );
 }

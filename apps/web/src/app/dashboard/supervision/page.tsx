@@ -117,12 +117,12 @@ function MessageBubble({ message }: { message: Message }) {
         </div>
         {!isUser && (
           <div className="flex items-center gap-1.5 px-1">
-            <AlertCircle className="w-3 h-3 text-gray-300 flex-shrink-0" strokeWidth={1.8} />
-            <p className="text-[10px] text-gray-300">Apoio ao raciocínio clínico — CFP nº 21/2025</p>
+            <AlertCircle className="w-3 h-3 text-gray-400 flex-shrink-0" strokeWidth={1.8} />
+            <p className="text-[10px] text-gray-500">Apoio ao raciocínio clínico — CFP nº 21/2025</p>
           </div>
         )}
         <div className={cn("flex items-center gap-2 px-1", isUser ? "flex-row-reverse" : "flex-row")}>
-          <span className="text-xs text-gray-300">
+          <span className="text-xs text-gray-500">
             {new Intl.DateTimeFormat("pt-BR", { hour:"2-digit", minute:"2-digit" }).format(message.timestamp)}
           </span>
           {!isUser && (
@@ -198,11 +198,11 @@ function AnamneseSummaryCard({ anamnese, templateHtml }: { anamnese: ClientAnamn
           {/* Dados pessoais */}
           {personalRows.length > 0 && (
             <div className="px-5 py-4">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Dados pessoais</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Dados pessoais</p>
               <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
                 {personalRows.map(r => (
                   <div key={r.label}>
-                    <span className="text-[10px] font-semibold text-gray-400">{r.label}</span>
+                    <span className="text-[10px] font-semibold text-gray-500">{r.label}</span>
                     <p className="text-xs text-gray-700">{r.value}</p>
                   </div>
                 ))}
@@ -213,10 +213,10 @@ function AnamneseSummaryCard({ anamnese, templateHtml }: { anamnese: ClientAnamn
           {/* Condições de saúde e clínico */}
           {hasAnyClinical && (
             <div className="px-5 py-4">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Saúde</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Saúde</p>
               {anamnese.conditions.length > 0 && (
                 <div className="mb-3">
-                  <p className="text-[10px] font-semibold text-gray-400 mb-1">Condições</p>
+                  <p className="text-[10px] font-semibold text-gray-500 mb-1">Condições</p>
                   <div className="flex flex-wrap gap-1.5">
                     {anamnese.conditions.map(c => (
                       <span key={c} className="text-[10px] bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full">{c}</span>
@@ -227,7 +227,7 @@ function AnamneseSummaryCard({ anamnese, templateHtml }: { anamnese: ClientAnamn
               <div className="grid grid-cols-1 gap-1.5">
                 {clinicalRows.map(r => (
                   <div key={r.label}>
-                    <span className="text-[10px] font-semibold text-gray-400">{r.label}: </span>
+                    <span className="text-[10px] font-semibold text-gray-500">{r.label}: </span>
                     <span className="text-xs text-gray-700">{r.value}</span>
                   </div>
                 ))}
@@ -238,7 +238,7 @@ function AnamneseSummaryCard({ anamnese, templateHtml }: { anamnese: ClientAnamn
           {/* Consentimentos */}
           {(anamnese.consent_nudity || anamnese.consent_touch || anamnese.consent_therapeutic || anamnese.consent_payment) && (
             <div className="px-5 py-4">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">Consentimentos</p>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-2">Consentimentos</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { label: "Nudez",       ok: anamnese.consent_nudity },
@@ -257,7 +257,7 @@ function AnamneseSummaryCard({ anamnese, templateHtml }: { anamnese: ClientAnamn
           {/* Respostas do template específico */}
           {hasTemplateData && (
             <div className="px-5 py-4">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-3">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-3">
                 Questionário — {APPROACH_LABELS[anamnese.approach!] ?? anamnese.approach}
               </p>
               <TemplateAnswersView
@@ -313,18 +313,18 @@ function EvolutionCard({ evolution }: { evolution: Evolution }) {
           {expanded && (
             <div className="border-t border-emerald-100 px-4 py-3 space-y-2 bg-white">
               <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">O que aconteceu</p>
+                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">O que aconteceu</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{evolution.content}</p>
               </div>
               {evolution.hypothesis && (
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Hipótese clínica</p>
+                  <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Hipótese clínica</p>
                   <p className="text-sm text-gray-700">{evolution.hypothesis}</p>
                 </div>
               )}
               {evolution.next_session_plan && (
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Plano para próxima sessão</p>
+                  <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Plano para próxima sessão</p>
                   <p className="text-sm text-gray-700">{evolution.next_session_plan}</p>
                 </div>
               )}
@@ -444,7 +444,7 @@ function EvolutionForm({
       {/* Conteúdo */}
       <div>
         <label className="block text-[10px] font-semibold text-gray-500 mb-1">
-          O que aconteceu na sessão * <span className="font-normal text-gray-400">({form.content.length}/20 mín.)</span>
+          O que aconteceu na sessão * <span className="font-normal text-gray-500">({form.content.length}/20 mín.)</span>
         </label>
         <textarea
           value={form.content} onChange={e => set("content", e.target.value)}
@@ -480,7 +480,7 @@ function EvolutionForm({
           "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
           canSave && !saving
             ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
-            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "bg-gray-100 text-gray-500 cursor-not-allowed"
         )}>
         {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
                 : <><FileText className="w-4 h-4" /> Salvar evolução</>}
@@ -732,14 +732,15 @@ export default function WorkspacePage() {
 
   return (
     <div className="flex h-full -m-6 overflow-hidden">
+      <h1 className="sr-only">Supervisão e Evolução</h1>
 
       {/* ══ SIDEBAR ══ */}
-      <aside className="w-[248px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
+      <aside aria-label="Lista de pacientes" className="w-[248px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
         <div className="p-3 border-b border-gray-100">
           <button onClick={newSession} disabled={!selectedClientId}
             className={cn(
               "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors",
-              selectedClientId ? "bg-brand-500 hover:bg-brand-600 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              selectedClientId ? "bg-brand-500 hover:bg-brand-600 text-white" : "bg-gray-100 text-gray-500 cursor-not-allowed"
             )}>
             <Plus className="w-4 h-4" strokeWidth={2.5} />
             Nova supervisão
@@ -747,7 +748,7 @@ export default function WorkspacePage() {
         </div>
 
         <div className="overflow-y-auto flex-1 pb-3">
-          <p className="text-[10.5px] font-bold tracking-widest uppercase text-gray-400 px-4 pt-4 pb-2">Pacientes</p>
+          <p className="text-[10.5px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-4 pb-2">Pacientes</p>
           {clients.filter(c => c.status !== "WAITLIST").map(client => {
             const isSelected = selectedClientId === client.id;
             const evCount    = isSelected ? evolutions.length : 0;
@@ -767,7 +768,7 @@ export default function WorkspacePage() {
                   <p className={cn("text-[13px] font-semibold truncate", isSelected ? "text-brand-700" : "text-gray-800")}>
                     {client.name}
                   </p>
-                  <p className="text-[11px] text-gray-400 truncate">{client.approach_label}</p>
+                  <p className="text-[11px] text-gray-500 truncate">{client.approach_label}</p>
                 </div>
                 {isSelected && (evCount > 0 || svCount > 0) && (
                   <div className="flex gap-1 flex-shrink-0">
@@ -781,8 +782,8 @@ export default function WorkspacePage() {
         </div>
 
         <div className="border-t border-gray-100 px-4 py-3 flex items-center gap-2">
-          <Shield className="w-3 h-3 text-gray-400 flex-shrink-0" strokeWidth={1.8} />
-          <p className="text-[10px] text-gray-400 leading-tight">Casos pseudonimizados · LGPD</p>
+          <Shield className="w-3 h-3 text-gray-500 flex-shrink-0" strokeWidth={1.8} />
+          <p className="text-[10px] text-gray-500 leading-tight">Casos pseudonimizados · LGPD</p>
         </div>
       </aside>
 
@@ -800,9 +801,9 @@ export default function WorkspacePage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{selectedClient.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-gray-400">{selectedClient.approach_label}</span>
+                  <span className="text-xs text-gray-500">{selectedClient.approach_label}</span>
                   <span className="text-gray-200">·</span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-500">
                     {evolutions.length} {evolutions.length === 1 ? "evolução" : "evoluções"} · {supervisions.length} supervisões
                   </span>
                 </div>
@@ -813,7 +814,7 @@ export default function WorkspacePage() {
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-2 text-gray-400">
+            <div className="flex items-center gap-2 text-gray-500">
               <MessageSquare className="w-5 h-5" strokeWidth={1.5} />
               <p className="text-sm">Selecione um paciente para iniciar</p>
             </div>
@@ -822,7 +823,7 @@ export default function WorkspacePage() {
 
 
         {/* Thread */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-2">
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-2" tabIndex={0} aria-label="Histórico da conversa">
 
           {!selectedClient && (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
@@ -830,8 +831,8 @@ export default function WorkspacePage() {
                 <MessageSquare className="w-7 h-7 text-brand-400" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-700">Supervisão & Evolução</h3>
-                <p className="text-sm text-gray-400 mt-1 max-w-xs leading-relaxed">
+                <h2 className="text-base font-bold text-gray-700">Supervisão & Evolução</h2>
+                <p className="text-sm text-gray-500 mt-1 max-w-xs leading-relaxed">
                   Selecione um paciente para acessar o workspace clínico integrado.
                 </p>
               </div>
@@ -879,7 +880,7 @@ export default function WorkspacePage() {
             <div className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-1 text-xs font-bold text-gray-500">IA</div>
               <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 text-gray-500">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-xs">Elaborando resposta clínica...</span>
                 </div>
@@ -912,7 +913,7 @@ export default function WorkspacePage() {
                   "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-colors",
                   mode === "supervision"
                     ? "text-brand-700 border-b-2 border-brand-500 bg-brand-50/50"
-                    : "text-gray-400 hover:text-gray-600"
+                    : "text-gray-500 hover:text-gray-600"
                 )}>
                 <Brain className="w-3.5 h-3.5" strokeWidth={1.8} />
                 Supervisionar
@@ -923,7 +924,7 @@ export default function WorkspacePage() {
                   "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-colors",
                   mode === "evolution"
                     ? "text-emerald-700 border-b-2 border-emerald-500 bg-emerald-50/50"
-                    : "text-gray-400 hover:text-gray-600"
+                    : "text-gray-500 hover:text-gray-600"
                 )}>
                 <FileText className="w-3.5 h-3.5" strokeWidth={1.8} />
                 Registrar sessão
@@ -933,7 +934,7 @@ export default function WorkspacePage() {
             {/* Modo Supervisionar */}
             {mode === "supervision" && (
               <div className="px-5 py-4">
-                <p className="text-[10px] text-gray-300 text-center mb-3">
+                <p className="text-[10px] text-gray-500 text-center mb-3">
                   Apoio ao raciocínio clínico — sem diagnósticos. O julgamento clínico é sempre do terapeuta.
                 </p>
                 <div className={cn(
@@ -977,7 +978,7 @@ export default function WorkspacePage() {
                       </button>
                       {lensMenuOpen && (
                         <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 min-w-[200px] z-30">
-                          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 px-3 py-1.5">Referencial teórico</p>
+                          <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500 px-3 py-1.5">Referencial teórico</p>
                           {APPROACH_ORDER.filter(key => acquiredApproaches.includes(key)).map(key => {
                             const ap = APPROACHES[key]; const Icon = ap.Icon;
                             return (
@@ -1003,7 +1004,7 @@ export default function WorkspacePage() {
                             "w-8 h-8 rounded-lg flex items-center justify-center transition-all border",
                             isRecording
                               ? "bg-red-500 border-red-500 text-white animate-pulse"
-                              : "bg-white border-gray-200 text-gray-400 hover:border-brand-300 hover:text-brand-500"
+                              : "bg-white border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-500"
                           )}>
                           {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                         </button>

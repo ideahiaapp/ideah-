@@ -94,17 +94,17 @@ export default function EvolutionPage() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-ink">Evolução</h1>
-        <p className="text-gray-400 text-sm mt-0.5">Relatório de evolução clínica gerado por IA</p>
+        <p className="text-gray-500 text-sm mt-0.5">Relatório de evolução clínica gerado por IA</p>
       </div>
 
       {/* Seletor */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-4">
           <ScrollText className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
-          <h3 className="text-sm font-semibold text-gray-800">Gerar relatório de evolução clínica</h3>
+          <h2 className="text-sm font-semibold text-gray-800">Gerar relatório de evolução clínica</h2>
           <span className="ml-auto text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100 font-medium">IA</span>
         </div>
-        <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
           Selecione um paciente e o período desejado. A IA analisará todas as evoluções e supervisões registradas e gerará um relatório clínico detalhado.
         </p>
 
@@ -115,6 +115,7 @@ export default function EvolutionPage() {
               <select
                 value={clientId}
                 onChange={e => { setClientId(e.target.value); setReport(null); setError(null); }}
+                aria-label="Paciente"
                 className="w-full appearance-none px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
               >
                 <option value="">Selecionar paciente...</option>
@@ -132,6 +133,7 @@ export default function EvolutionPage() {
               <select
                 value={period}
                 onChange={e => { setPeriod(e.target.value); setReport(null); setError(null); }}
+                aria-label="Período de análise"
                 className="w-full appearance-none px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
               >
                 {PERIOD_OPTIONS.map(o => (
@@ -188,7 +190,7 @@ export default function EvolutionPage() {
                 <ScrollText className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
                 <p className="text-sm font-bold text-gray-800">{report.clientName}</p>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-500 mt-0.5">
                 {report.period} · {report.sessionCount} sessões analisadas · {report.dateRange}
               </p>
             </div>
@@ -206,7 +208,7 @@ export default function EvolutionPage() {
           </div>
 
           <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
-            <p className="text-[10px] text-gray-400">
+            <p className="text-[10px] text-gray-500">
               Relatório gerado por IA com base nos registros clínicos. Não substitui avaliação clínica profissional.
             </p>
           </div>
@@ -217,7 +219,7 @@ export default function EvolutionPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-16 text-center">
           <ScrollText className="w-10 h-10 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
           <p className="text-sm font-medium text-gray-500">Nenhum relatório gerado</p>
-          <p className="text-xs text-gray-400 mt-1">Selecione um paciente e o período para gerar o relatório de evolução clínica.</p>
+          <p className="text-xs text-gray-500 mt-1">Selecione um paciente e o período para gerar o relatório de evolução clínica.</p>
         </div>
       )}
     </div>

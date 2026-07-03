@@ -460,10 +460,10 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-        {label} {required && <span className="text-red-400">*</span>}
+      <label className="block text-xs font-semibold text-gray-600">
+        <div className="mb-1.5">{label} {required && <span className="text-red-400">*</span>}</div>
+        <div className="font-normal normal-case">{children}</div>
       </label>
-      {children}
     </div>
   );
 }

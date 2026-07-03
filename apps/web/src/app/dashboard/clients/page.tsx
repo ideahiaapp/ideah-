@@ -158,7 +158,7 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-brand-900">Enviar anamnese</p>
-          <p className="text-xs text-brand-500 mt-0.5">
+          <p className="text-xs text-brand-600 mt-0.5">
             {mode === "new"
               ? "Novo paciente — o preenchimento é o pré-cadastro. Ao receber, você ativa como cliente."
               : "Paciente já cadastrado — os dados de cadastro já vêm preenchidos no link."}
@@ -200,9 +200,10 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
             <select
               value={approach}
               onChange={e => { setApproach(e.target.value); setCopied(false); setEmailOpen(false); }}
+              aria-label="Abordagem terapêutica"
               className={cn(
                 "w-full appearance-none pr-9 px-4 py-2.5 text-sm bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300",
-                approach ? "border-brand-300 text-gray-800" : "border-brand-200 text-gray-400"
+                approach ? "border-brand-300 text-gray-800" : "border-brand-200 text-gray-500"
               )}
             >
               <option value="">Selecionar abordagem terapêutica *</option>
@@ -219,6 +220,7 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
             <select
               value={selectedId}
               onChange={e => { setSelectedId(e.target.value); setEmailOpen(false); setEmailSent(false); setEmailError(null); }}
+              aria-label="Selecionar paciente"
               className="w-full appearance-none pr-9 px-4 py-2.5 text-sm bg-white border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
             >
               <option value="">Selecionar paciente...</option>
@@ -614,7 +616,7 @@ function ClientsPageInner() {
               "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
               tab === t.id
                 ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                : "text-gray-600 hover:text-gray-800"
             )}
           >
             <t.icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.8} />
