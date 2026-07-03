@@ -7,20 +7,21 @@ import {
   LayoutDashboard,
   Users,
   MessageSquare,
-  FileText,
   BarChart2,
   Settings,
   LogOut,
   CalendarDays,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard/supervision",icon: MessageSquare,   label: "Supervisão / Evolução" },
-  { href: "/dashboard/clients",    icon: Users,           label: "Clientes" },
-  { href: "/dashboard/schedule",   icon: CalendarDays,    label: "Agenda" },
-  { href: "/dashboard",            icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/dashboard/reports",    icon: BarChart2,       label: "Relatórios" },
+  { href: "/dashboard/supervision", icon: MessageSquare,   label: "Supervisão" },
+  { href: "/dashboard/evolution",   icon: ScrollText,      label: "Evolução" },
+  { href: "/dashboard/clients",     icon: Users,           label: "Clientes" },
+  { href: "/dashboard/schedule",    icon: CalendarDays,    label: "Agenda" },
+  { href: "/dashboard",             icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/dashboard/reports",     icon: BarChart2,       label: "Relatórios" },
 ];
 
 export function Sidebar() {

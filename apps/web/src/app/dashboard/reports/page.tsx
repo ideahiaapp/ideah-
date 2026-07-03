@@ -33,7 +33,7 @@ const MOOD_COLOR = ["", "#EF4444", "#F97316", "#EAB308", "#22C55E", "#10B981"];
 const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Excelente"];
 const MOOD_EMOJI = ["", "😟", "😕", "😐", "🙂", "😊"];
 
-type Tab       = "geral" | "producao" | "clientes" | "clinico" | "relatorio";
+type Tab       = "geral" | "producao" | "clientes" | "clinico";
 type DrillType = "sessions" | "clients" | "hours" | "evolutions";
 
 type MonthData = {
@@ -929,11 +929,10 @@ export default function ReportsPage() {
   const evolutionTrend = CURRENT_MONTH.evolutions >= PREV_MONTH.evolutions ? "up" : "down" as const;
 
   const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-    { id: "geral",     label: "Visão Geral",  icon: BarChart2 },
-    { id: "producao",  label: "Produção",     icon: CalendarDays },
-    { id: "clientes",  label: "Clientes",     icon: Users },
-    { id: "clinico",   label: "Clínico",      icon: Brain },
-    { id: "relatorio", label: "Relatório",    icon: ScrollText },
+    { id: "geral",    label: "Visão Geral",  icon: BarChart2 },
+    { id: "producao", label: "Produção",     icon: CalendarDays },
+    { id: "clientes", label: "Clientes",     icon: Users },
+    { id: "clinico",  label: "Clínico",      icon: Brain },
   ];
 
   if (loading) return (
@@ -1321,11 +1320,6 @@ export default function ReportsPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* ══ TAB: RELATÓRIO ══ */}
-      {tab === "relatorio" && user && (
-        <ClinicalEvolutionReport clients={clients} therapistId={user.id} />
       )}
 
       {/* ══ Drawers de drill-down ══ */}
