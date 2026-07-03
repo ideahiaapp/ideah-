@@ -46,7 +46,7 @@ export function ForWhomSection() {
               <span className={`text-xs font-semibold px-3 py-1 rounded-full ${p.tagColor}`}>
                 {p.tag}
               </span>
-              <p className="text-xs text-gray-400 font-medium mt-4 mb-2 uppercase tracking-wide">Precisa:</p>
+              <p className="text-xs text-gray-500 font-medium mt-4 mb-2 uppercase tracking-wide">Precisa:</p>
               <p className="text-brand-600 font-semibold text-sm mb-3">{p.need}</p>
               <p className="text-gray-500 text-sm leading-relaxed">{p.description}</p>
             </div>

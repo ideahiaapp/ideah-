@@ -18,6 +18,7 @@ export function TopBar() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
+          aria-label="Buscar cliente, supervisão"
           placeholder="Buscar cliente, supervisão..."
           className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent"
         />
@@ -25,7 +26,7 @@ export function TopBar() {
 
       <div className="flex items-center gap-4">
         {/* Notificações */}
-        <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">
+        <button aria-label="Notificações" className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">
           <Bell className="w-5 h-5" strokeWidth={1.8} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full" />
         </button>
@@ -47,7 +48,7 @@ export function TopBar() {
           )}
           <div className="hidden md:block">
             <p className="text-sm font-semibold text-gray-800 leading-none">{firstName}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{role}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{role}</p>
           </div>
         </div>
       </div>

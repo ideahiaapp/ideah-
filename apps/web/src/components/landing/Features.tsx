@@ -46,7 +46,7 @@ export function FeaturesSection() {
     <section className="py-24 bg-gray-50">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
-          <span className="text-brand-500 text-sm font-semibold uppercase tracking-widest">Tudo em um lugar</span>
+          <span className="text-brand-600 text-sm font-semibold uppercase tracking-widest">Tudo em um lugar</span>
           <h2 className="text-3xl md:text-4xl font-bold text-ink mt-3">
             Do relato ao registro vivo — no mesmo lugar em que você trabalha
           </h2>
@@ -65,7 +65,7 @@ export function FeaturesSection() {
             >
               <span className="text-3xl block mb-3">{f.icon}</span>
               <p className="font-semibold text-ink text-sm">{f.title}</p>
-              <p className="text-gray-400 text-xs mt-1 leading-relaxed">{f.description}</p>
+              <p className="text-gray-500 text-xs mt-1 leading-relaxed">{f.description}</p>
             </div>
           ))}
         </div>

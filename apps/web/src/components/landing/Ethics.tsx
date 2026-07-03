@@ -55,7 +55,7 @@ export function EthicsSection() {
             >
               <span className="text-2xl block mb-3">{p.icon}</span>
               <h3 className="font-bold text-ink text-sm mb-2">{p.title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">{p.description}</p>
+              <p className="text-gray-600 text-sm leading-relaxed">{p.description}</p>
             </div>
           ))}
         </div>

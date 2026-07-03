@@ -15,7 +15,7 @@ export function WhatIsSection() {
     <section className="py-24 bg-gray-50">
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-16">
-          <span className="text-brand-500 text-sm font-semibold uppercase tracking-widest">Transparência</span>
+          <span className="text-brand-600 text-sm font-semibold uppercase tracking-widest">Transparência</span>
           <h2 className="text-3xl md:text-4xl font-bold text-ink mt-3">O que é · O que não é</h2>
         </div>
 
@@ -54,7 +54,7 @@ export function WhatIsSection() {
         </div>
 
         {/* Nota de rodapé */}
-        <p className="text-center text-sm text-gray-400 mt-8 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-center text-sm text-gray-500 mt-8 max-w-2xl mx-auto leading-relaxed">
           O Paideia não confirma vontades; ele ancora na teoria e pode contrapor pedidos que contrariem a abordagem,{" "}
           <strong className="text-gray-500">convidando à reflexão ética.</strong>
         </p>

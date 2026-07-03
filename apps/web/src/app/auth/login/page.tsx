@@ -135,7 +135,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-xs text-gray-400">ou continue com e-mail</span>
+              <span className="bg-white px-3 text-xs text-gray-500">ou continue com e-mail</span>
             </div>
           </div>
 
@@ -182,6 +182,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
+                  aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -218,7 +219,7 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-xs text-gray-400 bg-white px-3 mx-auto w-fit">
+            <div className="relative flex justify-center text-xs text-gray-500 bg-white px-3 mx-auto w-fit">
               Não tem conta?
             </div>
           </div>

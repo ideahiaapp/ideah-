@@ -240,6 +240,14 @@ function SessionModal({
 
   const canSave  = !isView && form.clientId && form.date && form.startTime;
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   async function handleSave() {
     if (!canSave) return;
     setSaving(true);
@@ -307,7 +315,7 @@ function SessionModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div role="dialog" aria-modal="true" aria-label={isView && session ? `Sessão de ${session.clientName}` : "Nova sessão"} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div
           className="px-6 py-4 flex items-center justify-between"
@@ -337,7 +345,7 @@ function SessionModal({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-black/5 rounded-lg transition-colors">
+          <button onClick={onClose} aria-label="Fechar" className="p-1.5 hover:bg-black/5 rounded-lg transition-colors">
             <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
@@ -433,9 +441,10 @@ function SessionModal({
 
               {/* Link do Google Meet */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-gray-600">Link da videochamada (opcional)</label>
+                <label htmlFor="meet-link-input" className="block text-xs font-semibold text-gray-600">Link da videochamada (opcional)</label>
                 <div className="flex gap-2">
                   <input
+                    id="meet-link-input"
                     type="text"
                     value={meetLink}
                     onChange={e => setMeetLink(e.target.value)}

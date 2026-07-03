@@ -140,7 +140,7 @@ export default function EvolutionDetailPage() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()}
+          <button onClick={() => router.back()} aria-label="Voltar"
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600">
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -162,7 +162,7 @@ export default function EvolutionDetailPage() {
           <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
             <Pencil className="w-3.5 h-3.5" /> Editar
           </button>
-          <button className="p-2 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 transition-colors">
+          <button aria-label="Excluir evolução" className="p-2 rounded-xl border border-red-100 text-red-400 hover:bg-red-50 transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>

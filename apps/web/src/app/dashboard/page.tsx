@@ -242,7 +242,7 @@ export default function DashboardPage() {
           {activeClients.length === 0 ? (
             <div className="px-5 py-10 text-center">
               <CheckCircle2 className="w-8 h-8 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-sm text-gray-400">Nenhum cliente ativo ainda</p>
+              <p className="text-sm text-gray-500">Nenhum cliente ativo ainda</p>
               <Link href="/dashboard/clients/new"
                 className="mt-3 inline-flex items-center gap-1 text-xs text-brand-500 font-medium hover:underline">
                 <Plus className="w-3.5 h-3.5" /> Cadastrar cliente
@@ -350,8 +350,8 @@ export default function DashboardPage() {
           {recentActivity.length === 0 ? (
             <div className="px-5 py-10 text-center">
               <Activity className="w-8 h-8 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-sm text-gray-400">Nenhuma atividade ainda</p>
-              <p className="text-xs text-gray-300 mt-1">Suas evoluções e supervisões aparecerão aqui</p>
+              <p className="text-sm text-gray-500">Nenhuma atividade ainda</p>
+              <p className="text-xs text-gray-400 mt-1">Suas evoluções e supervisões aparecerão aqui</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -368,8 +368,8 @@ export default function DashboardPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{item.label}</p>
-                    {item.sub && <p className="text-xs text-gray-400 truncate mt-0.5">{item.sub}</p>}
-                    <p className="text-xs text-gray-300 mt-1 flex items-center gap-1">
+                    {item.sub && <p className="text-xs text-gray-500 truncate mt-0.5">{item.sub}</p>}
+                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                       <span className={cn(
                         "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
                         item.type === "supervision" ? "bg-brand-50 text-brand-600" : "bg-green-50 text-green-600"

@@ -199,7 +199,7 @@ export default function RegisterPage() {
 
               <div className="relative mb-5">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-                <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400">ou preencha o formulário</span></div>
+                <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-500">ou preencha o formulário</span></div>
               </div>
 
               <form onSubmit={goToStep2} className="space-y-4">
@@ -227,7 +227,7 @@ export default function RegisterPage() {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required placeholder="Mínimo 6 caracteres"
                       className="w-full pl-10 pr-11 py-3 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-sm" />
-                    <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <button type="button" onClick={() => setShowPass(!showPass)} aria-label={showPass ? "Ocultar senha" : "Mostrar senha"} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                       {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
@@ -256,12 +256,12 @@ export default function RegisterPage() {
                   Próximo — Escolher bases <ArrowRight className="w-4 h-4" />
                 </button>
 
-                <p className="text-xs text-gray-400 text-center">
+                <p className="text-xs text-gray-500 text-center">
                   Ao criar sua conta, você concorda com os <Link href="/termos" className="text-brand-500 hover:underline">Termos de Uso</Link> e a <Link href="/privacidade" className="text-brand-500 hover:underline">Política de Privacidade</Link>.
                 </p>
               </form>
 
-              <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div><div className="relative flex justify-center text-xs text-gray-400 bg-white/0 px-3 mx-auto w-fit">Já tem conta?</div></div>
+              <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div><div className="relative flex justify-center text-xs text-gray-500 bg-white px-3 mx-auto w-fit">Já tem conta?</div></div>
               <Link href="/auth/login" className="block w-full text-center border border-brand-300 text-brand-600 hover:bg-brand-50 font-semibold rounded-xl py-3 transition-colors text-sm">Fazer login</Link>
             </>
           )}

@@ -268,6 +268,7 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
           <Mail className="w-4 h-4 text-brand-300 flex-shrink-0" />
           <input
             type="email"
+            aria-label="E-mail do paciente"
             value={newEmail}
             onChange={e => setNewEmail(e.target.value)}
             placeholder="email@dopaciente.com"
@@ -350,8 +351,8 @@ function AnamneseCard({ anamnese, onDecision }: { anamnese: Anamnese; onDecision
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{anamnese.name}</p>
-              <p className="text-xs text-gray-400 truncate">{anamnese.email}</p>
-              {anamnese.phone && <p className="text-xs text-gray-400">{anamnese.phone}</p>}
+              <p className="text-xs text-gray-500 truncate">{anamnese.email}</p>
+              {anamnese.phone && <p className="text-xs text-gray-500">{anamnese.phone}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -468,7 +469,7 @@ function ClientRow({ client }: { client: Client }) {
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-gray-900 truncate">{client.name}</p>
-          <p className="text-xs text-gray-400 truncate">{client.email}</p>
+          <p className="text-xs text-gray-500 truncate">{client.email}</p>
         </div>
         <span className={cn("w-2 h-2 rounded-full flex-shrink-0 hidden md:block", status.dot)} title={status.label} />
       </div>
@@ -638,6 +639,7 @@ function ClientsPageInner() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
+            aria-label="Buscar por nome, e-mail ou abordagem"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por nome, e-mail ou abordagem..."
@@ -675,7 +677,7 @@ function ClientsPageInner() {
             <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
               <Users className="w-8 h-8 text-brand-300" strokeWidth={1.5} />
             </div>
-            <h3 className="text-gray-700 font-bold text-lg mb-2">Nenhum cliente cadastrado ainda</h3>
+            <h2 className="text-gray-700 font-bold text-lg mb-2">Nenhum cliente cadastrado ainda</h2>
             <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed mb-6">
               Comece cadastrando seu primeiro paciente. O prontuário, as evoluções e as supervisões ficam todos aqui.
             </p>

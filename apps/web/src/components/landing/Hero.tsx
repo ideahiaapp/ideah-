@@ -27,7 +27,7 @@ export function HeroSection() {
           <strong className="text-gray-700">sem diagnóstico nem rótulos.</strong>
         </p>
 
-        <p className="text-sm text-gray-400 mb-10">
+        <p className="text-sm text-gray-500 mb-10">
           Um supervisor clínico dialógico que respeita a orientação do Conselho Federal de Psicologia quanto ao uso de IA.
         </p>
 
@@ -52,7 +52,7 @@ export function HeroSection() {
           </a>
         </div>
 
-        <p className="text-xs text-gray-400 mt-4">Sem cartão de crédito · Cancele quando quiser</p>
+        <p className="text-xs text-gray-500 mt-4">Sem cartão de crédito · Cancele quando quiser</p>
       </div>
     </section>
   );

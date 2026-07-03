@@ -49,10 +49,10 @@ export function HowItWorksSection() {
               <div className="bg-brand-50 rounded-2xl p-6 h-full hover:bg-brand-100 transition-colors">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-3xl">{step.icon}</span>
-                  <span className="text-brand-300 font-bold text-lg">{step.number}</span>
+                  <span className="text-brand-600 font-bold text-lg">{step.number}</span>
                 </div>
                 <h3 className="font-bold text-ink text-base mb-2">{step.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{step.description}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{step.description}</p>
               </div>
             </div>
           ))}
