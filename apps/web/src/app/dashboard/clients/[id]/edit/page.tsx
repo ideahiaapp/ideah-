@@ -411,9 +411,6 @@ export default function EditClientPage() {
 
       <Section icon={Info} title="Sigilo, consentimento e LGPD">
         <div className="space-y-3">
-          <Checkbox checked={form.pseudonymized} onChange={v => setForm(p => ({ ...p, pseudonymized: v }))}>
-            <strong>Pseudonimização ativa</strong> — o nome real não será exibido nas interações com a IA.
-          </Checkbox>
           <Checkbox checked={form.lgpdConsent} onChange={v => setForm(p => ({ ...p, lgpdConsent: v }))}>
             TCLE obtido — consentimento LGPD confirmado <span className="text-gray-400 text-xs">(Res. CFP nº 21/2025)</span>
           </Checkbox>
