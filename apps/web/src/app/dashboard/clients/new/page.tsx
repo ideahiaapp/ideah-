@@ -184,35 +184,6 @@ export default function NewClientPage() {
         <p className="text-xs text-gray-400 mt-1">Informação confidencial — utilizada apenas em situações de risco iminente.</p>
       </Section>
 
-      <Section icon={ShieldAlert} title="Situação de vulnerabilidade">
-        <p className="text-xs text-gray-500 leading-relaxed mb-3">
-          Conforme a <strong>Res. CFP nº 21/2025</strong>, casos envolvendo pessoas em situação de vulnerabilidade requerem atenção ética redobrada. Marque se aplicável:
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {["Criança ou adolescente","Idoso(a)","Crise psíquica aguda","Situação de violência","Condição socioeconômica vulnerável","Privação de liberdade","Deficiência / necessidade especial","Outro"].map(v => (
-            <button key={v} type="button" onClick={() => toggleVulnerability(v)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium text-left transition-colors",
-                form.vulnerability.includes(v) ? "border-amber-400 bg-amber-50 text-amber-800" : "border-gray-200 bg-white text-gray-600 hover:border-amber-200 hover:bg-amber-50/50"
-              )}>
-              <span className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center",
-                form.vulnerability.includes(v) ? "border-amber-500 bg-amber-500" : "border-gray-300")}>
-                {form.vulnerability.includes(v) && (
-                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                )}
-              </span>
-              {v}
-            </button>
-          ))}
-        </div>
-        {form.vulnerability.length > 0 && (
-          <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
-            <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
-            <span>Este caso está marcado como vulnerabilidade. O Paideia sinalizará isso durante o raciocínio clínico.</span>
-          </div>
-        )}
-      </Section>
-
       <Section icon={Info} title="Sigilo, consentimento e LGPD">
         <div className="space-y-3">
           <Checkbox checked={form.pseudonymized} onChange={v => setForm(p => ({ ...p, pseudonymized: v }))}>
