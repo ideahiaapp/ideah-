@@ -89,7 +89,7 @@ export default function RegisterPage() {
     try {
       const user = await signUp(name, email, password);
       if (user?.id) await saveApproaches(user.id, selectedBases);
-      router.push("/dashboard/supervision");
+      router.push("/dashboard/home");
     } catch (err: unknown) {
       const raw = err instanceof Error ? err.message : String(err);
       if (raw.includes("User already registered"))
@@ -113,7 +113,7 @@ export default function RegisterPage() {
     // Salva bases em localStorage para usar após o callback OAuth
     localStorage.setItem("ideah_pending_bases", JSON.stringify(selectedBases));
     await loginWithGoogle();
-    router.push("/dashboard/supervision");
+    router.push("/dashboard/home");
   }
 
   if (emailSent) {

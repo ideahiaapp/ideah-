@@ -12,10 +12,12 @@ import {
   LogOut,
   CalendarDays,
   ScrollText,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { href: "/dashboard/home",        icon: Home,            label: "Home" },
   { href: "/dashboard/supervision", icon: MessageSquare,   label: "Supervisão" },
   { href: "/dashboard/evolution",   icon: ScrollText,      label: "Evolução" },
   { href: "/dashboard/clients",     icon: Users,           label: "Clientes" },
