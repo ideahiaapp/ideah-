@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { UserPlus, Users, Clock } from "lucide-react";
+import { Users, MessageSquare, Clock } from "lucide-react";
 import { getClients } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client } from "@/lib/database.types";
@@ -35,22 +35,6 @@ export default function HomePage() {
 
       <div className="grid sm:grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
-          <div className="w-11 h-11 rounded-xl bg-brand-500 flex items-center justify-center mb-4">
-            <UserPlus className="w-5 h-5 text-white" strokeWidth={1.8} />
-          </div>
-          <h2 className="font-serif text-xl text-ink">Novo cliente</h2>
-          <p className="text-sm text-gray-500 mt-1.5 flex-1">
-            Envie a anamnese ou cadastre um paciente manualmente.
-          </p>
-          <Link
-            href="/dashboard/clients/new"
-            className="mt-5 inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-fit"
-          >
-            Novo cliente
-          </Link>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
           <div className="w-11 h-11 rounded-xl bg-brand-100 flex items-center justify-center mb-4">
             <Users className="w-5 h-5 text-brand-600" strokeWidth={1.8} />
           </div>
@@ -63,6 +47,22 @@ export default function HomePage() {
             className="mt-5 inline-flex items-center justify-center bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-fit"
           >
             Ver clientes
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+          <div className="w-11 h-11 rounded-xl bg-brand-500 flex items-center justify-center mb-4">
+            <MessageSquare className="w-5 h-5 text-white" strokeWidth={1.8} />
+          </div>
+          <h2 className="font-serif text-xl text-ink">Supervisionar cliente</h2>
+          <p className="text-sm text-gray-500 mt-1.5 flex-1">
+            Inicie uma supervisão dialógica com apoio da IA para um caso em acompanhamento.
+          </p>
+          <Link
+            href="/dashboard/supervision"
+            className="mt-5 inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-fit"
+          >
+            Supervisionar
           </Link>
         </div>
       </div>
