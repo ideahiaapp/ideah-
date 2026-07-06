@@ -37,6 +37,17 @@ export function getAIOptions(req: NextRequest): AIClientOptions {
   return { provider, apiKey };
 }
 
+export interface ChatResult {
+  text: string;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/** Estimativa grosseira de tokens (~4 caracteres por token) para provedores que não retornam contagem real. */
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
 /* ── Chat unificado ───────────────────────────────────── */
 export async function chat(options: {
   provider: AIProvider;
@@ -45,7 +56,7 @@ export async function chat(options: {
   messages: AIMessage[];
   maxTokens?: number;
   model?: string;
-}): Promise<string> {
+}): Promise<ChatResult> {
   const { provider, apiKey, system, messages, maxTokens = 1024 } = options;
 
   if (provider === "ollama") {
@@ -85,7 +96,12 @@ export async function chat(options: {
       req.end();
     });
     const data = JSON.parse(ollamaResult);
-    return data.message?.content ?? "";
+    const text = data.message?.content ?? "";
+    return {
+      text,
+      inputTokens:  data.prompt_eval_count  ?? estimateTokens(system + messages.map(m => m.content).join("")),
+      outputTokens: data.eval_count         ?? estimateTokens(text),
+    };
   }
 
   if (provider === "gemini") {
@@ -104,7 +120,13 @@ export async function chat(options: {
     const lastMessage = messages[messages.length - 1];
     const chatSession = model.startChat({ history });
     const result = await chatSession.sendMessage(lastMessage.content);
-    return result.response.text();
+    const text = result.response.text();
+    const usage = result.response.usageMetadata;
+    return {
+      text,
+      inputTokens:  usage?.promptTokenCount     ?? estimateTokens(system + messages.map(m => m.content).join("")),
+      outputTokens: usage?.candidatesTokenCount ?? estimateTokens(text),
+    };
   }
 
   // Anthropic (padrão)
@@ -118,5 +140,9 @@ export async function chat(options: {
 
   const content = response.content[0];
   if (content.type !== "text") throw new Error("Resposta inesperada da API");
-  return content.text;
+  return {
+    text: content.text,
+    inputTokens:  response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+  };
 }

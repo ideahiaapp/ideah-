@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { getAIOptions, chat } from "@/lib/ai-client";
+import { assertUnderUsageLimit, logAiUsage, UsageLimitError } from "@/lib/usage";
 
 export const maxDuration = 60;
 
@@ -32,6 +33,13 @@ export async function POST(req: NextRequest) {
 
     if (!clientId || !therapistId || !period) {
       return NextResponse.json({ error: "Parâmetros inválidos." }, { status: 400 });
+    }
+
+    try {
+      await assertUnderUsageLimit(therapistId);
+    } catch (e) {
+      if (e instanceof UsageLimitError) return NextResponse.json({ error: e.message }, { status: 429 });
+      throw e;
     }
 
     const db = serviceClient();
@@ -182,13 +190,14 @@ Sessões analisadas: ${evolutions.length}
 EVOLUÇÕES DE SESSÃO:
 ${evoLines}${supervisionContext}`;
 
-    const text = await chat({
+    const { text, inputTokens, outputTokens } = await chat({
       provider,
       apiKey,
       system:    systemPrompt,
       messages:  [{ role: "user", content: userPrompt }],
       maxTokens: 3000,
     });
+    logAiUsage({ therapistId, provider, feature: "clinical_evolution_report", inputTokens, outputTokens }).catch(() => {});
 
     return NextResponse.json({
       report:       text,

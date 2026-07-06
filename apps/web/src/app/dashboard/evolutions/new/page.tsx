@@ -75,9 +75,10 @@ export default function NewEvolutionPage() {
         method: "POST",
         headers: await aiHeaders(),
         body: JSON.stringify({
-          content:    form.content,
-          approach:   selectedClient?.approach_label,
-          clientName: selectedClient?.name,
+          content:      form.content,
+          approach:     selectedClient?.approach_label,
+          clientName:   selectedClient?.name,
+          therapistId:  user?.id,
         }),
       });
       const data = await res.json();

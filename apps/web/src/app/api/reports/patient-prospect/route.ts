@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { getAIOptions, chat } from "@/lib/ai-client";
+import { assertUnderUsageLimit, logAiUsage, UsageLimitError } from "@/lib/usage";
 
 export const maxDuration = 30;
 
@@ -18,6 +19,13 @@ export async function POST(req: NextRequest) {
     const { clientId, therapistId } = await req.json();
     if (!clientId || !therapistId) {
       return NextResponse.json({ error: "clientId e therapistId são obrigatórios." }, { status: 400 });
+    }
+
+    try {
+      await assertUnderUsageLimit(therapistId);
+    } catch (e) {
+      if (e instanceof UsageLimitError) return NextResponse.json({ error: e.message }, { status: 429 });
+      throw e;
     }
 
     // Busca cliente
@@ -91,13 +99,14 @@ EVOLUÇÕES:
 ${evoLines}`;
 
     const { provider, apiKey } = getAIOptions(req);
-    const raw = await chat({
+    const { text: raw, inputTokens, outputTokens } = await chat({
       provider,
       apiKey,
       system:    systemPrompt,
       messages:  [{ role: "user", content: userPrompt }],
       maxTokens: 1024,
     });
+    logAiUsage({ therapistId, provider, feature: "patient_prospect", inputTokens, outputTokens }).catch(() => {});
     const result = JSON.parse(raw);
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIOptions, chat } from "@/lib/ai-client";
 import { searchChunks } from "@/lib/rag";
+import { assertUnderUsageLimit, logAiUsage, UsageLimitError } from "@/lib/usage";
 import { createClient } from "@supabase/supabase-js";
 
 async function getApproachPrompt(approach: string): Promise<string | null> {
@@ -30,6 +31,15 @@ export async function POST(req: NextRequest) {
 
     if (!messages || !approach) {
       return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
+    }
+
+    if (therapistId) {
+      try {
+        await assertUnderUsageLimit(therapistId);
+      } catch (e) {
+        if (e instanceof UsageLimitError) return NextResponse.json({ error: e.message }, { status: 429 });
+        throw e;
+      }
     }
 
     const systemPrompt = await getApproachPrompt(approach);
@@ -108,13 +118,17 @@ Responda de forma estruturada quando apropriado, usando:
       content: m.content,
     }));
 
-    const responseText = await chat({
+    const { text: responseText, inputTokens, outputTokens } = await chat({
       provider,
       apiKey,
       system: systemWithContext,
       messages: aiMessages,
       maxTokens: 1024,
     });
+
+    if (therapistId) {
+      logAiUsage({ therapistId, provider, feature: "supervision_chat", inputTokens, outputTokens }).catch(() => {});
+    }
 
     return NextResponse.json({ content: responseText });
   } catch (error: unknown) {

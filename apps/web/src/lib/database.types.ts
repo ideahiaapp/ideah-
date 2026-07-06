@@ -13,6 +13,7 @@ export interface Database {
           name: string | null;
           email: string | null;
           crp: string | null;
+          plan: string;
           created_at: string;
         };
         Insert: {
@@ -20,12 +21,14 @@ export interface Database {
           name?: string | null;
           email?: string | null;
           crp?: string | null;
+          plan?: string;
           created_at?: string;
         };
         Update: {
           name?: string | null;
           email?: string | null;
           crp?: string | null;
+          plan?: string;
         };
       };
       clients: {
@@ -228,12 +231,53 @@ export interface Database {
         };
         Update: Record<string, never>;
       };
+      plan_limits: {
+        Row: {
+          plan: string;
+          monthly_token_limit: number;
+          updated_at: string;
+        };
+        Insert: {
+          plan: string;
+          monthly_token_limit: number;
+          updated_at?: string;
+        };
+        Update: {
+          monthly_token_limit?: number;
+          updated_at?: string;
+        };
+      };
+      ai_usage_log: {
+        Row: {
+          id: string;
+          therapist_id: string;
+          provider: string;
+          model: string | null;
+          feature: string;
+          input_tokens: number;
+          output_tokens: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          therapist_id: string;
+          provider: string;
+          model?: string | null;
+          feature: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+      };
     };
   };
 }
 
 /* Aliases convenientes */
 export type Profile            = Database["public"]["Tables"]["profiles"]["Row"];
+export type PlanLimit          = Database["public"]["Tables"]["plan_limits"]["Row"];
+export type AiUsageLog         = Database["public"]["Tables"]["ai_usage_log"]["Row"];
 export type Client             = Database["public"]["Tables"]["clients"]["Row"];
 export type ClientInsert       = Database["public"]["Tables"]["clients"]["Insert"];
 export type ClientUpdate       = Database["public"]["Tables"]["clients"]["Update"];
