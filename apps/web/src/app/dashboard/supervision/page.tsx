@@ -510,6 +510,18 @@ export default function WorkspacePage() {
   const [input,    setInput]    = useState("");
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
+  const [liveAnnouncement, setLiveAnnouncement] = useState("");
+
+  useEffect(() => {
+    if (loading) {
+      setLiveAnnouncement("Gerando resposta...");
+      return;
+    }
+    const last = messages[messages.length - 1];
+    if (last?.role === "assistant") {
+      setLiveAnnouncement(`Resposta da IA: ${last.content}`);
+    }
+  }, [messages, loading]);
 
   const [mode, setMode] = useState<Mode>("supervision");
   const [clientIntention, setClientIntention] = useState<string | null>(null);
@@ -821,6 +833,9 @@ export default function WorkspacePage() {
           )}
         </div>
 
+
+        {/* Anúncio para leitores de tela */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">{liveAnnouncement}</div>
 
         {/* Thread */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-2" tabIndex={0} aria-label="Histórico da conversa">

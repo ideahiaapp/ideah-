@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, Plus, X, Save, Loader2,
@@ -239,6 +239,7 @@ function SessionModal({
     : clients.find(c => c.id === form.clientId);
 
   const canSave  = !isView && form.clientId && form.date && form.startTime;
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -247,6 +248,12 @@ function SessionModal({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
+    return () => previouslyFocused?.focus();
+  }, []);
 
   async function handleSave() {
     if (!canSave) return;
@@ -315,7 +322,7 @@ function SessionModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
-      <div role="dialog" aria-modal="true" aria-label={isView && session ? `Sessão de ${session.clientName}` : "Nova sessão"} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={isView && session ? `Sessão de ${session.clientName}` : "Nova sessão"} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden focus:outline-none">
         {/* Header */}
         <div
           className="px-6 py-4 flex items-center justify-between"

@@ -50,8 +50,9 @@ function BarChart({ data, valueKey, color = "#C2542F", height = 140 }: {
   const max = Math.max(...values, 1);
   const W = 480; const BAR_W = 44;
   const GAP = (W - data.length * BAR_W) / (data.length + 1);
+  const summary = data.map(d => `${d.label}: ${d[valueKey]}`).join(", ");
   return (
-    <svg viewBox={`0 0 ${W} ${height + 30}`} className="w-full">
+    <svg viewBox={`0 0 ${W} ${height + 30}`} className="w-full" role="img" aria-label={`Gráfico de barras. ${summary}`}>
       {data.map((d, i) => {
         const val  = d[valueKey] as number;
         const x    = GAP + i * (BAR_W + GAP);
@@ -80,8 +81,9 @@ function DonutChart({ segments, size = 140 }: { segments: { label: string; value
     offset += pct;
     return { ...seg, dash, gap, rot };
   });
+  const summary = segments.map(s => `${s.label}: ${s.value}`).join(", ");
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Gráfico de rosca. Total: ${total}. ${summary}`}>
       {arcs.map((arc, i) => (
         <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={arc.color} strokeWidth={20}
           strokeDasharray={`${arc.dash} ${arc.gap}`} strokeDashoffset={0}
@@ -132,10 +134,26 @@ function KpiCard({ label, value, sub, icon: Icon, color, trend, trendLabel, onCl
 function DrillDrawer({ title, subtitle, onClose, children }: {
   title: string; subtitle?: string; onClose: () => void; children: React.ReactNode;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
+    return () => previouslyFocused?.focus();
+  }, []);
+
   return (
     <>
       <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
-      <div role="dialog" aria-modal="true" aria-label={title} className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 flex flex-col">
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 flex flex-col focus:outline-none">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-gray-900">{title}</h2>
