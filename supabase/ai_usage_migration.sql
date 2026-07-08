@@ -27,3 +27,24 @@ CREATE TABLE IF NOT EXISTS ai_usage_log (
 
 CREATE INDEX IF NOT EXISTS ai_usage_log_therapist_month_idx
   ON ai_usage_log (therapist_id, created_at);
+
+-- Lista de administradores (fonte única de verdade, substitui ADMIN_EMAILS hardcoded no código)
+CREATE TABLE IF NOT EXISTS admins (
+  email       TEXT PRIMARY KEY,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO admins (email) VALUES
+  ('carlos.magno@gmail.com'),
+  ('betinha.potter@gmail.com'),
+  ('elimarcia.philos@gmail.com'),
+  ('ideahiaapp@gmail.com')
+ON CONFLICT (email) DO NOTHING;
+
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+
+-- Usuários autenticados podem ler a lista (usada apenas para exibir/ocultar UI no cliente;
+-- a autorização real das rotas admin é feita no servidor via requireAdmin(), que verifica
+-- o token de sessão com o Supabase Auth antes de consultar esta tabela).
+CREATE POLICY "authenticated users can read admins" ON admins
+  FOR SELECT TO authenticated USING (true);

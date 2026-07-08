@@ -9,13 +9,19 @@ build
 *.env.production
 .DS_Store
 basePesquisa/
+Anamnese/
+documentação/
 
 # Environment & Secrets (AIOX)
 .env
 .env.local
 .env.*.local
+.env.vercel
 *.key
 *.pem
+
+# Runtime caches / downloaded models
+*.traineddata
 
 # Dependencies (AIOX)
 node_modules/

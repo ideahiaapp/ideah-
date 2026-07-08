@@ -1,9 +1,9 @@
 <!-- Coloque o arquivo do logo em ./assets/ideah-mark.svg (ou .png) para ele aparecer abaixo -->
 <p align="center">
-  <img src="https://github.com/betinhapotter/ideah/blob/main/img/ideah-logo.png" alt="IDEAh" width="120" />
+  <img src="https://github.com/betinhapotter/ideah/blob/main/img/ideah-logo.png" alt="Paideia" width="120" />
 </p>
 
-<h1 align="center">IDEAh</h1>
+<h1 align="center">Paideia</h1>
 
 <p align="center">
   <strong>Inteligência Dialógica</strong><br/>
@@ -35,13 +35,13 @@
 
 A clínica vive um paradoxo: nunca houve tanta informação e tão pouco espaço para elaborar. O cliente chega com o diagnóstico pronto da internet; a IA generativa entrega respostas instantâneas para qualquer pergunta. No meio disso, ficou estreito o lugar de **pensar o caso de verdade**.
 
-A **IDEAh** existe para proteger esse lugar — não para preenchê-lo com mais respostas prontas. Ela é um espaço onde o terapeuta dialoga com a tradição teórica da abordagem que escolheu: levanta hipóteses, recebe perguntas que abrem campo, consulta referências, e registra a evolução viva do caso. Sempre com o juízo clínico no comando do humano.
+A **Paideia** existe para proteger esse lugar — não para preenchê-lo com mais respostas prontas. Ela é um espaço onde o terapeuta dialoga com a tradição teórica da abordagem que escolheu: levanta hipóteses, recebe perguntas que abrem campo, consulta referências, e registra a evolução viva do caso. Sempre com o juízo clínico no comando do humano.
 
 ---
 
 ## O que é
 
-A IDEAh é uma **plataforma de apoio ao raciocínio clínico** para psicólogos e terapeutas. Não é um chatbot terapêutico, não é ferramenta de diagnóstico, não é supervisor humano.
+A Paideia é uma **plataforma de apoio ao raciocínio clínico** para psicólogos e terapeutas. Não é um chatbot terapêutico, não é ferramenta de diagnóstico, não é supervisor humano.
 
 | É | Não é |
 |---|---|
@@ -49,17 +49,17 @@ A IDEAh é uma **plataforma de apoio ao raciocínio clínico** para psicólogos 
 | Um ambiente de estudo aplicado, ancorado em base teórica curada | Substituto da sua escuta, do seu juízo ou da supervisão humana |
 | Um registro vivo do caso — hipóteses abertas e próximos focos | Chatbot para pacientes |
 
-> A IDEAh não confirma vontades: ela ancora na teoria e pode contrapor pedidos que contrariem a abordagem, convidando à reflexão ética.
+> A Paideia não confirma vontades: ela ancora na teoria e pode contrapor pedidos que contrariem a abordagem, convidando à reflexão ética.
 
 ---
 
 ## O fio paradigmático
 
-O diferencial defensável da IDEAh não é "ter IA". É a **profundidade teórica curada por abordagem** — e o conceito que nasce dela.
+O diferencial defensável da Paideia não é "ter IA". É a **profundidade teórica curada por abordagem** — e o conceito que nasce dela.
 
 Ferramentas de documentação ligam etapas de processo: problema → objetivo → intervenção → progresso. Um fio operacional, que qualquer prontuário copia.
 
-A IDEAh propõe o **fio paradigmático**: o mesmo caso evoluindo dentro de uma ou mais lentes teóricas, em paralelo. O mesmo material clínico lido por Reich *e* por Jung, dois fios coexistindo. Isso só funciona com bases curadas e auditadas por abordagem — e é exatamente o trabalho que ninguém mais fez.
+A Paideia propõe o **fio paradigmático**: o mesmo caso evoluindo dentro de uma ou mais lentes teóricas, em paralelo. O mesmo material clínico lido por Reich *e* por Jung, dois fios coexistindo. Isso só funciona com bases curadas e auditadas por abordagem — e é exatamente o trabalho que ninguém mais fez.
 
 - **Defensável** porque exige curadoria, não código: replicar pede meses de trabalho teórico auditado.
 - **Coerente** porque cada lente fala a partir de uma abordagem só, sem misturar paradigmas.
@@ -97,13 +97,13 @@ flowchart TD
     L --> M[(O caso amadurece<br/>ao longo do tempo)]
 ```
 
-Os passos de anonimização, guarda ética e registro longitudinal são o que separa a IDEAh de "um prompt bonito".
+Os passos de anonimização, guarda ética e registro longitudinal são o que separa a Paideia de "um prompt bonito".
 
 ---
 
 ## As lentes teóricas
 
-A IDEAh estreia na abordagem mais rica e menos atendida por ferramentas de IA. As próximas lentes entram com a mesma curadoria, uma a uma — profundidade antes de quantidade.
+A Paideia estreia na abordagem mais rica e menos atendida por ferramentas de IA. As próximas lentes entram com a mesma curadoria, uma a uma — profundidade antes de quantidade.
 
 | Lente | Status | Base de referência |
 |---|---|---|
@@ -136,7 +136,7 @@ A **coerência paradigmática** é garantida no nível do banco: a recuperação
 ## Estrutura do projeto
 
 ```text
-ideah/
+paideia/
 ├─ app/                  # rotas e UI (Next.js App Router)
 │  ├─ (workspace)/       # workspace do caso
 │  └─ api/               # endpoints de diálogo, transcrição, ingestão
@@ -160,8 +160,8 @@ ideah/
 
 ```bash
 # 1. clonar
-git clone https://github.com/<org>/ideah.git
-cd ideah
+git clone https://github.com/<org>/paideia.git
+cd paideia
 
 # 2. instalar dependências
 npm install
@@ -192,20 +192,20 @@ EMBEDDINGS_API_KEY=...
 WHISPER_API_KEY=...
 ```
 
-> O protótipo navegável (sem backend, só com dados de exemplo) está em `ideah-prototipo.html` — abra direto no navegador para sentir o fluxo.
+> O protótipo navegável (sem backend, só com dados de exemplo) está em `paideia-prototipo.html` — abra direto no navegador para sentir o fluxo.
 
 ---
 
 ## Ética, CFP & LGPD
 
-A IDEAh é construída em torno de uma fronteira clara, que é também seu cinto de segurança:
+A Paideia é construída em torno de uma fronteira clara, que é também seu cinto de segurança:
 
-> **A IDEAh não atende pacientes, não diagnostica, não prescreve condutas e não substitui supervisão clínica. Ela apoia o raciocínio profissional, organiza hipóteses e favorece a reflexão clínica fundamentada.**
+> **A Paideia não atende pacientes, não diagnostica, não prescreve condutas e não substitui supervisão clínica. Ela apoia o raciocínio profissional, organiza hipóteses e favorece a reflexão clínica fundamentada.**
 
 Princípios operacionais:
 
 - **Sem diagnóstico ou rótulo** — entrega perguntas, hipóteses abertas e recursos. A decisão é do profissional.
-- **Decisão e supervisão humanas** — o juízo clínico é sempre do terapeuta; a IDEAh apoia, não substitui.
+- **Decisão e supervisão humanas** — o juízo clínico é sempre do terapeuta; a Paideia apoia, não substitui.
 - **Base curada e fechada** — respostas ancoradas na obra. Quando não há base, não inventa.
 - **Rastreabilidade** — fonte consultada, versão do prompt e da base, recusas e alertas, tudo registrado.
 - **Consentimento e LGPD** — dados de caso pseudonimizados; o profissional controla o que registrar, exportar e por quanto tempo.
@@ -253,8 +253,8 @@ Projeto privado, em fase de fundação. O fluxo de trabalho, padrões de branch 
 
 ## Aviso legal
 
-A IDEAh é uma ferramenta de apoio ao raciocínio profissional. Não realiza diagnósticos, não substitui o julgamento clínico, a supervisão humana ou o atendimento de emergência. O uso pressupõe consentimento informado e respeito à LGPD. Este documento não constitui parecer jurídico; a estrutura societária e de proteção de dados deve ser validada por profissionais habilitados.
+A Paideia é uma ferramenta de apoio ao raciocínio profissional. Não realiza diagnósticos, não substitui o julgamento clínico, a supervisão humana ou o atendimento de emergência. O uso pressupõe consentimento informado e respeito à LGPD. Este documento não constitui parecer jurídico; a estrutura societária e de proteção de dados deve ser validada por profissionais habilitados.
 
 <p align="center">
-  <sub>IDEAh — Inteligência Dialógica · © 2026 · Todos os direitos reservados</sub>
+  <sub>Paideia — Inteligência Dialógica · © 2026 · Todos os direitos reservados</sub>
 </p>

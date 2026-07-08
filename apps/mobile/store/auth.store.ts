@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
-import type { User } from "@ideah/types";
+import type { User } from "@paideia/types";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const ADMIN_EMAILS = [

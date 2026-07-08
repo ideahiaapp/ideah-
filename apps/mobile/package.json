@@ -1,10 +1,11 @@
 {
-  "name": "@ideah/mobile",
+  "name": "@paideia/mobile",
   "version": "1.0.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.js",
   "scripts": {
     "dev": "expo start",
+    "web": "expo start --web",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:android": "eas build --platform android",

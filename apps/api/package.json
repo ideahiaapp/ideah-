@@ -1,5 +1,5 @@
 {
-  "name": "@ideah/api",
+  "name": "@paideia/api",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.0",
-    "@ideah/types": "*",
-    "@ideah/utils": "*",
+    "@paideia/types": "*",
+    "@paideia/utils": "*",
     "@prisma/client": "^5.15.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

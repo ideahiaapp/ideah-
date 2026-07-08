@@ -120,7 +120,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Versão */}
-        <Text style={s.version}>IDEAh v1.0.0 · Em conformidade com o CFP e a LGPD</Text>
+        <Text style={s.version}>Paideia v1.0.0 · Em conformidade com o CFP e a LGPD</Text>
 
         {/* Logout */}
         <TouchableOpacity style={s.logoutBtn} onPress={confirmLogout} activeOpacity={0.8}>

@@ -7,6 +7,10 @@ const DEFAULT_LIMITS: Record<string, number> = {
 };
 
 export class UsageLimitError extends Error {}
+export class RateLimitError extends Error {}
+
+const RATE_LIMIT_WINDOW_MS  = 60_000;
+const RATE_LIMIT_MAX_CALLS  = 15; // por terapeuta, por minuto, somando todas as features de IA
 
 function serviceClient() {
   return createClient(
@@ -66,6 +70,22 @@ export async function assertUnderUsageLimit(therapistId: string): Promise<void> 
     throw new UsageLimitError(
       `Limite mensal de uso de IA atingido (${limit.toLocaleString("pt-BR")} tokens). Faça upgrade do seu plano para continuar.`
     );
+  }
+}
+
+/** Lança RateLimitError se o terapeuta excedeu o limite de chamadas de IA por minuto. */
+export async function assertUnderRateLimit(therapistId: string): Promise<void> {
+  const supabase = serviceClient();
+  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+
+  const { count } = await supabase
+    .from("ai_usage_log")
+    .select("id", { count: "exact", head: true })
+    .eq("therapist_id", therapistId)
+    .gte("created_at", since);
+
+  if ((count ?? 0) >= RATE_LIMIT_MAX_CALLS) {
+    throw new RateLimitError("Muitas requisições em pouco tempo. Aguarde um minuto e tente novamente.");
   }
 }
 

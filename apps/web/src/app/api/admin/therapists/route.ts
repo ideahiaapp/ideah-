@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/adminAuth";
 
 function serviceClient() {
   return createClient(
@@ -8,24 +9,10 @@ function serviceClient() {
   );
 }
 
-const ADMIN_EMAILS = [
-  "carlos.magno@gmail.com",
-  "betinha.potter@gmail.com",
-  "elimarcia.philos@gmail.com",
-  "ideahiaapp@gmail.com",
-];
-
-async function assertAdmin(req: NextRequest) {
-  const email = req.headers.get("x-admin-email")?.toLowerCase().trim();
-  if (!email || !ADMIN_EMAILS.includes(email)) {
-    throw new Error("Acesso negado.");
-  }
-}
-
 // GET /api/admin/therapists — lista todos
 export async function GET(req: NextRequest) {
   try {
-    await assertAdmin(req);
+    await requireAdmin(req);
     const supabaseAdmin = serviceClient();
 
     const { data: profiles, error } = await supabaseAdmin
@@ -57,7 +44,7 @@ export async function GET(req: NextRequest) {
 // PATCH /api/admin/therapists — bloquear/desbloquear
 export async function PATCH(req: NextRequest) {
   try {
-    await assertAdmin(req);
+    await requireAdmin(req);
     const supabaseAdmin = serviceClient();
     const { userId, blocked } = await req.json();
     if (!userId || typeof blocked !== "boolean") {

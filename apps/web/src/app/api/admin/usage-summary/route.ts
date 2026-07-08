@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin, AdminAuthError } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
-
-const ADMIN_EMAILS = ["carlos.magno@gmail.com", "betinha.potter@gmail.com", "elimarcia.philos@gmail.com"];
 
 function serviceClient() {
   return createClient(
@@ -20,9 +19,11 @@ function monthStartIso(): string {
 }
 
 export async function GET(req: NextRequest) {
-  const adminEmail = req.headers.get("x-admin-email")?.toLowerCase().trim();
-  if (!ADMIN_EMAILS.includes(adminEmail ?? "")) {
-    return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+  try {
+    await requireAdmin(req);
+  } catch (e) {
+    if (e instanceof AdminAuthError) return NextResponse.json({ error: e.message }, { status: 403 });
+    throw e;
   }
 
   const supabase = serviceClient();

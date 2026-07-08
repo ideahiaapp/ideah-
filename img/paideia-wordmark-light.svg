@@ -1,0 +1,6 @@
+<svg width="525" height="210" viewBox="0 0 350 140" xmlns="http://www.w3.org/2000/svg">
+  <rect x="30" y="40" width="60" height="60" rx="14" fill="#c2542f"/>
+  <path d="M44 64 Q70 48 70 68 Q70 84 52 84 L52 76" fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="52" cy="93" r="3.5" fill="white"/>
+  <text x="105" y="80" font-family="Helvetica, Arial, sans-serif" font-size="32" font-weight="500" fill="#1a1a1a">Paideia</text>
+</svg>

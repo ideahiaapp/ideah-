@@ -1,12 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-const ADMIN_EMAILS = [
-  "carlos.magno@gmail.com",
-  "betinha.potter@gmail.com",
-  "elimarcia.philos@gmail.com",
-  "ideahiaapp@gmail.com",
-];
+import { checkIsAdmin } from "@/store/auth.store";
+import { supabase } from "@/lib/supabase";
 
 interface AdminState {
   email:    string | null;
@@ -14,7 +9,7 @@ interface AdminState {
   isLoading: boolean;
   error:    string | null;
   login:    (email: string, password: string) => Promise<void>;
-  logout:   () => void;
+  logout:   () => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -27,21 +22,29 @@ export const useAdminStore = create<AdminState>()(
 
       login: async (email, password) => {
         set({ isLoading: true, error: null });
-        await new Promise(r => setTimeout(r, 600));
 
-        if (!ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
+        // Autentica via Supabase Auth (mesma sessão usada pelo resto do app —
+        // sem senha hardcoded, sem lista de e-mails no código).
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error || !data.user?.email) {
+          set({ isLoading: false, error: "E-mail ou senha incorretos." });
+          return;
+        }
+
+        const isAdmin = await checkIsAdmin(data.user.email);
+        if (!isAdmin) {
+          await supabase.auth.signOut();
           set({ isLoading: false, error: "E-mail não autorizado como administrador." });
           return;
         }
-        // Senha mock — troca por auth real quando tiver backend
-        if (password !== "ideah@admin2025") {
-          set({ isLoading: false, error: "Senha incorreta." });
-          return;
-        }
-        set({ email, isAdmin: true, isLoading: false, error: null });
+
+        set({ email: data.user.email, isAdmin: true, isLoading: false, error: null });
       },
 
-      logout: () => set({ email: null, isAdmin: false }),
+      logout: async () => {
+        await supabase.auth.signOut();
+        set({ email: null, isAdmin: false });
+      },
     }),
     {
       name: "@ideah:admin",

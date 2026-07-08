@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore, ADMIN_EMAILS } from "@/store/auth.store";
+import { useAuthStore, checkIsAdmin } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
@@ -17,7 +17,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         const u = session.user;
         const email = u.email ?? "";
 
-        // Verifica se o terapeuta está cadastrado e não bloqueado no IDEAh
+        // Verifica se o terapeuta está cadastrado e não bloqueado no Paideia
         let allowed = false;
         try {
           const res = await fetch(`/api/auth/verify?email=${encodeURIComponent(email)}`);
@@ -32,12 +32,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        const isAdmin = await checkIsAdmin(email);
         useAuthStore.setState({
           user: {
             id: u.id,
             name: u.user_metadata?.name ?? email.split("@")[0] ?? "Terapeuta",
             email,
-            role: ADMIN_EMAILS.includes(email.toLowerCase().trim()) ? "admin" : "therapist",
+            role: isAdmin ? "admin" : "therapist",
             avatarUrl: u.user_metadata?.avatar_url ?? undefined,
             createdAt: new Date(u.created_at),
           },

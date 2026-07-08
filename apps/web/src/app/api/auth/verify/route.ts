@@ -8,20 +8,19 @@ function serviceClient() {
   );
 }
 
-const ADMIN_EMAILS = [
-  "carlos.magno@gmail.com",
-  "betinha.potter@gmail.com",
-  "elimarcia.philos@gmail.com",
-  "ideahiaapp@gmail.com",
-];
-
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email")?.toLowerCase().trim();
   if (!email) return NextResponse.json({ allowed: false });
 
-  if (ADMIN_EMAILS.includes(email)) return NextResponse.json({ allowed: true });
-
   const supabaseAdmin = serviceClient();
+
+  const { data: adminRow } = await supabaseAdmin
+    .from("admins")
+    .select("email")
+    .eq("email", email)
+    .maybeSingle();
+  if (adminRow) return NextResponse.json({ allowed: true });
+
   const { data } = await supabaseAdmin
     .from("therapist_profiles")
     .select("user_id, blocked")

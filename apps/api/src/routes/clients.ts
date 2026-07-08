@@ -13,6 +13,7 @@ const clientSchema = z.object({
     "PSYCHOANALYSIS",
     "COGNITIVE_BEHAVIORAL",
     "SOMATIC",
+    "TANTRA",
     "HUMANISTIC",
     "SYSTEMIC",
     "JUNGIAN",

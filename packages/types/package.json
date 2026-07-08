@@ -1,5 +1,5 @@
 {
-  "name": "@ideah/types",
+  "name": "@paideia/types",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",

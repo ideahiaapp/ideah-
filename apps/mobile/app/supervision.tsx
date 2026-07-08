@@ -15,6 +15,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 const APPROACHES = [
   { key: "SOMATIC",            label: "Terapia Corporal" },
+  { key: "TANTRA",             label: "Sexualidade Humana e Tantra" },
   { key: "PSYCHOANALYSIS",     label: "Psicanálise Freudiana" },
   { key: "JUNGIAN",            label: "Psicologia Junguiana" },
   { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },

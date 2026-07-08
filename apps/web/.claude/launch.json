@@ -1,1 +1,1 @@
-﻿{"version":"0.0.1","configurations":[{"name":"ideah-web","runtimeExecutable":"npm","runtimeArgs":["run","dev"],"port":3000}]}
+﻿{"version":"0.0.1","configurations":[{"name":"paideia-web","runtimeExecutable":"npm","runtimeArgs":["run","dev"],"port":3000}]}

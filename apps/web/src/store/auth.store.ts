@@ -12,21 +12,26 @@ export type User = {
 };
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-export const ADMIN_EMAILS = [
-  "carlos.magno@gmail.com",
-  "betinha.potter@gmail.com",
-  "elimarcia.philos@gmail.com",
-  "ideahiaapp@gmail.com",
-];
+/* Consulta a tabela `admins` no Supabase — fonte única de verdade
+ * (a autorização real das rotas admin é feita no servidor via requireAdmin()). */
+export async function checkIsAdmin(email: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("admins")
+    .select("email")
+    .eq("email", email.toLowerCase().trim())
+    .maybeSingle();
+  return !!data;
+}
 
 /* ─── Mapeia usuário Supabase → tipo interno ─────────── */
-function toUser(u: SupabaseUser): User {
+async function toUser(u: SupabaseUser): Promise<User> {
   const email = u.email ?? "";
+  const isAdmin = await checkIsAdmin(email);
   return {
     id: u.id,
     name: u.user_metadata?.name ?? email.split("@")[0] ?? "Terapeuta",
     email,
-    role: ADMIN_EMAILS.includes(email.toLowerCase().trim()) ? "admin" : "therapist",
+    role: isAdmin ? "admin" : "therapist",
     avatarUrl: u.user_metadata?.avatar_url ?? undefined,
     createdAt: new Date(u.created_at),
   };
@@ -53,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) { set({ isLoading: false }); throw error; }
-        set({ user: toUser(data.user), isLoading: false });
+        set({ user: await toUser(data.user), isLoading: false });
       },
 
       /* ── Google OAuth ──────────────────────────────── */
@@ -80,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
         });
         if (error) { set({ isLoading: false }); throw error; }
 
-        // Registra o terapeuta como autorizado no IDEAh (mesmo antes de confirmar email)
+        // Registra o terapeuta como autorizado no Paideia (mesmo antes de confirmar email)
         if (data.user) {
           await fetch("/api/auth/register-profile", {
             method: "POST",
@@ -88,7 +93,7 @@ export const useAuthStore = create<AuthState>()(
             body: JSON.stringify({ userId: data.user.id, email }),
           });
           // register-profile confirma o email via admin API — loga direto
-          set({ user: toUser(data.user), isLoading: false });
+          set({ user: await toUser(data.user), isLoading: false });
           return { id: data.user.id };
         } else {
           set({ isLoading: false });
@@ -105,7 +110,7 @@ export const useAuthStore = create<AuthState>()(
       /* ── Recupera sessão ativa (ex: refresh de página) */
       fetchMe: async () => {
         const { data } = await supabase.auth.getUser();
-        if (data.user) set({ user: toUser(data.user) });
+        if (data.user) set({ user: await toUser(data.user) });
         else set({ user: null });
       },
     }),

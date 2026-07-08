@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIOptions, chat } from "@/lib/ai-client";
 import { searchChunks } from "@/lib/rag";
-import { assertUnderUsageLimit, logAiUsage, UsageLimitError } from "@/lib/usage";
+import { assertUnderUsageLimit, assertUnderRateLimit, logAiUsage, UsageLimitError, RateLimitError } from "@/lib/usage";
 import { createClient } from "@supabase/supabase-js";
 
 async function getApproachPrompt(approach: string): Promise<string | null> {
@@ -35,9 +35,12 @@ export async function POST(req: NextRequest) {
 
     if (therapistId) {
       try {
+        await assertUnderRateLimit(therapistId);
         await assertUnderUsageLimit(therapistId);
       } catch (e) {
-        if (e instanceof UsageLimitError) return NextResponse.json({ error: e.message }, { status: 429 });
+        if (e instanceof RateLimitError || e instanceof UsageLimitError) {
+          return NextResponse.json({ error: e.message }, { status: 429 });
+        }
         throw e;
       }
     }

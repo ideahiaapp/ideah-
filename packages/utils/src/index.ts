@@ -1,4 +1,4 @@
-import { APPROACH_LABELS, TherapeuticApproach } from "@ideah/types";
+import { APPROACH_LABELS, TherapeuticApproach } from "@paideia/types";
 
 // ─── Date Formatters ─────────────────────────────────────────────────────────
 

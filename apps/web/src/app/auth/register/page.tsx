@@ -24,6 +24,7 @@ const BASES = [
   { key: "COGNITIVE_BEHAVIORAL", label: "TCC",                     price: 49.90 },
   { key: "JUNGIAN",              label: "Junguiana",               price: 49.90 },
   { key: "SOMATIC",              label: "Somática / Corporal",     price: 49.90 },
+  { key: "TANTRA",               label: "Sexualidade Humana e Tantra", price: 49.90 },
   { key: "GESTALT",              label: "Gestalt-terapia",         price: 49.90 },
   { key: "PSYCHODRAMA",          label: "Psicodrama",              price: 49.90 },
   { key: "SYSTEMIC",             label: "Constelação Familiar",    price: 49.90 },
@@ -112,8 +113,7 @@ export default function RegisterPage() {
     setError("");
     // Salva bases em localStorage para usar após o callback OAuth
     localStorage.setItem("ideah_pending_bases", JSON.stringify(selectedBases));
-    await loginWithGoogle();
-    router.push("/dashboard/home");
+    loginWithGoogle();
   }
 
   if (emailSent) {

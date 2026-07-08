@@ -35,8 +35,8 @@ export default function LoginScreen() {
     setError("");
     try {
       const redirectTo = Platform.OS === "web"
-        ? `${window.location.origin}/auth/callback`
-        : "ideah://auth/callback";
+        ? `${window.location.origin}/callback`
+        : "ideah://callback";
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo, skipBrowserRedirect: true },

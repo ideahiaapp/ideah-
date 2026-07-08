@@ -19,6 +19,7 @@ const APPROACH_LABELS: Record<string, string> = {
   COGNITIVE_BEHAVIORAL: "TCC",
   JUNGIAN: "Junguiana",
   SOMATIC: "Somática / Corporal",
+  TANTRA: "Sexualidade Humana e Tantra",
   GESTALT: "Gestalt-terapia",
   PSYCHODRAMA: "Psicodrama",
   SYSTEMIC: "Constelação Familiar",

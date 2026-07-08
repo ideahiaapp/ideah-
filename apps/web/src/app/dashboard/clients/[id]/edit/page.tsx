@@ -47,6 +47,7 @@ const ALL_APPROACHES = [
   { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
   { value: "JUNGIAN",              label: "Junguiana" },
   { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "TANTRA",               label: "Sexualidade Humana e Tantra" },
   { value: "GESTALT",              label: "Gestalt-terapia" },
   { value: "PSYCHODRAMA",          label: "Psicodrama" },
   { value: "SYSTEMIC",             label: "Constelação Familiar" },

@@ -22,12 +22,14 @@ const APPROACH_COLORS: Record<string, string> = {
   JUNGIAN: "#F59E0B", HUMANISTIC: "#22C55E",
   SYSTEMIC: "#EC4899", SOMATIC: "#F97316",
   GESTALT: "#14B8A6", ACCEPTANCE_COMMITMENT: "#6366F1",
+  TANTRA: "#A855F7",
 };
 const APPROACH_LABEL: Record<string, string> = {
   PSYCHOANALYSIS: "Psicanálise", COGNITIVE_BEHAVIORAL: "TCC",
   JUNGIAN: "Junguiana", HUMANISTIC: "Humanista",
   SYSTEMIC: "Sistêmica", SOMATIC: "Somática",
   GESTALT: "Gestalt", ACCEPTANCE_COMMITMENT: "ACT",
+  TANTRA: "Sexualidade Humana e Tantra",
 };
 const MOOD_COLOR = ["", "#EF4444", "#F97316", "#EAB308", "#22C55E", "#10B981"];
 const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Excelente"];

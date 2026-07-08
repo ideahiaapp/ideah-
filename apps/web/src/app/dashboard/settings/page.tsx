@@ -11,6 +11,7 @@ import {
   Users, ShieldOff, MessageSquare,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
+import { adminHeaders } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 
@@ -937,6 +938,7 @@ const APPROACH_LIST = [
   { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },
   { key: "JUNGIAN",              label: "Junguiana" },
   { key: "SOMATIC",              label: "Somática / Corporal" },
+  { key: "TANTRA",               label: "Sexualidade Humana e Tantra" },
   { key: "GESTALT",              label: "Gestalt-terapia" },
   { key: "PSYCHODRAMA",          label: "Psicodrama" },
   { key: "SYSTEMIC",             label: "Constelação Familiar" },
@@ -953,6 +955,16 @@ function TabBase() {
   const [uploadMsg,   setUploadMsg]   = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [deleting,    setDeleting]    = useState<string | null>(null);
   const [approach,    setApproach]    = useState("PSYCHOANALYSIS");
+  const [collapsed,   setCollapsed]   = useState<Set<string>>(new Set());
+
+  function toggleCollapsed(key: string) {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   function loadDocs() {
     if (!user) return;
@@ -973,7 +985,7 @@ function TabBase() {
     setUploadMsg(null);
 
     const label = APPROACH_LIST.find(a => a.key === approach)?.label ?? approach;
-    const results = { ok: 0, fail: 0, errors: [] as string[] };
+    const results = { ok: 0, fail: 0, errors: [] as string[], emptyPageNotes: [] as string[] };
 
     for (const file of files) {
       try {
@@ -985,6 +997,9 @@ function TabBase() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         results.ok++;
+        if (data.emptyPageCount > 0) {
+          results.emptyPageNotes.push(`${file.name}: ${data.emptyPageCount} página(s) sem texto extraído (p. ${data.emptyPageRanges}) — possível falha ao decodificar a imagem escaneada.`);
+        }
       } catch (err) {
         results.fail++;
         results.errors.push(`${file.name}: ${err instanceof Error ? err.message : "erro"}`);
@@ -992,7 +1007,8 @@ function TabBase() {
     }
 
     if (results.fail === 0) {
-      setUploadMsg({ type: "ok", text: `${results.ok} arquivo(s) indexado(s) em ${label}.` });
+      const emptyText = results.emptyPageNotes.length ? ` ${results.emptyPageNotes.join(" ")}` : "";
+      setUploadMsg({ type: results.emptyPageNotes.length ? "err" : "ok", text: `${results.ok} arquivo(s) indexado(s) em ${label}.${emptyText}` });
     } else if (results.ok === 0) {
       setUploadMsg({ type: "err", text: results.errors[0] });
     } else {
@@ -1112,33 +1128,42 @@ function TabBase() {
           </div>
         ) : (
           <div className="space-y-5">
-            {grouped.map(group => (
-              <div key={group.key}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide">{group.label}</span>
-                  <span className="text-xs text-gray-500">({group.docs.length})</span>
-                </div>
-                <div className="space-y-1.5">
-                  {group.docs.map(doc => (
-                    <div key={doc.id} className="flex items-center gap-3 py-2.5 px-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
-                      <FileText className="w-4 h-4 text-indigo-300 flex-shrink-0" strokeWidth={1.8} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {fmtSize(doc.size_bytes)} · {doc.chunk_count} trechos · {new Date(doc.created_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <button onClick={() => handleDelete(doc.id)} disabled={deleting === doc.id}
-                        className="p-1.5 text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 flex-shrink-0">
-                        {deleting === doc.id
-                          ? <Loader2 className="w-4 h-4 animate-spin" />
-                          : <Trash2 className="w-4 h-4" strokeWidth={1.8} />}
-                      </button>
+            {grouped.map(group => {
+              const isCollapsed = collapsed.has(group.key);
+              return (
+                <div key={group.key}>
+                  <button
+                    onClick={() => toggleCollapsed(group.key)}
+                    className="w-full flex items-center gap-2 mb-2 group/header"
+                  >
+                    <ChevronDown className={cn("w-3.5 h-3.5 text-gray-400 transition-transform flex-shrink-0", isCollapsed && "-rotate-90")} />
+                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-wide group-hover/header:text-indigo-700">{group.label}</span>
+                    <span className="text-xs text-gray-500">({group.docs.length})</span>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="space-y-1.5">
+                      {group.docs.map(doc => (
+                        <div key={doc.id} className="flex items-center gap-3 py-2.5 px-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors">
+                          <FileText className="w-4 h-4 text-indigo-300 flex-shrink-0" strokeWidth={1.8} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">{doc.name}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {fmtSize(doc.size_bytes)} · {doc.chunk_count} trechos · {new Date(doc.created_at).toLocaleDateString("pt-BR")}
+                            </p>
+                          </div>
+                          <button onClick={() => handleDelete(doc.id)} disabled={deleting === doc.id}
+                            className="p-1.5 text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 flex-shrink-0">
+                            {deleting === doc.id
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : <Trash2 className="w-4 h-4" strokeWidth={1.8} />}
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -1152,6 +1177,7 @@ const ALL_APPROACHES = [
   { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },
   { key: "JUNGIAN",              label: "Junguiana" },
   { key: "SOMATIC",              label: "Somática / Corporal" },
+  { key: "TANTRA",               label: "Sexualidade Humana e Tantra" },
   { key: "GESTALT",              label: "Gestalt-terapia" },
   { key: "PSYCHODRAMA",          label: "Psicodrama" },
   { key: "SYSTEMIC",             label: "Constelação Familiar" },
@@ -1204,7 +1230,7 @@ function TabTerapeutas() {
   async function load() {
     setLoading(true);
     const res = await fetch("/api/admin/therapists", {
-      headers: { "x-admin-email": user?.email ?? "" },
+      headers: await adminHeaders(),
     });
     if (res.ok) setList(await res.json());
     else setError("Erro ao carregar terapeutas.");
@@ -1217,7 +1243,7 @@ function TabTerapeutas() {
     setToggling(userId);
     const res = await fetch("/api/admin/therapists", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-email": user?.email ?? "" },
+      headers: await adminHeaders(),
       body: JSON.stringify({ userId, blocked }),
     });
     if (res.ok) setList(prev => prev.map(t => t.userId === userId ? { ...t, blocked } : t));
@@ -1295,6 +1321,7 @@ const APPROACH_KEYS = [
   { key: "COGNITIVE_BEHAVIORAL", label: "TCC" },
   { key: "JUNGIAN",              label: "Junguiana" },
   { key: "SOMATIC",              label: "Somática / Corporal" },
+  { key: "TANTRA",               label: "Sexualidade Humana e Tantra" },
   { key: "GESTALT",              label: "Gestalt-terapia" },
   { key: "PSYCHODRAMA",          label: "Psicodrama" },
   { key: "SYSTEMIC",             label: "Constelação Familiar" },
@@ -1339,7 +1366,7 @@ function TabPrompts() {
     try {
       const res = await fetch("/api/approach-prompts", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-email": user?.email ?? "" },
+        headers: await adminHeaders(),
         body: JSON.stringify({ approach: selected, prompt: draft }),
       });
       const data = await res.json();
@@ -1479,14 +1506,12 @@ function TabApiUsage() {
   const [savingPlan, setSavingPlan] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  function load() {
+  async function load() {
     setLoading(true);
+    const headers = await adminHeaders();
     Promise.all([
-      fetch("/api/admin/plan-limits", { cache: "no-store" }).then(r => r.json()),
-      fetch("/api/admin/usage-summary", {
-        cache: "no-store",
-        headers: { "x-admin-email": user?.email ?? "" },
-      }).then(r => r.json()),
+      fetch("/api/admin/plan-limits", { cache: "no-store", headers }).then(r => r.json()),
+      fetch("/api/admin/usage-summary", { cache: "no-store", headers }).then(r => r.json()),
     ]).then(([limitsData, usageData]) => {
       const rows: PlanLimitRow[] = limitsData.limits ?? [];
       setLimits(rows);
@@ -1505,7 +1530,7 @@ function TabApiUsage() {
     try {
       const res = await fetch("/api/admin/plan-limits", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-email": user?.email ?? "" },
+        headers: await adminHeaders(),
         body: JSON.stringify({ plan, monthlyTokenLimit: value }),
       });
       const data = await res.json();
@@ -1745,6 +1770,7 @@ const ALL_APPROACHES_SETTINGS = [
   { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
   { value: "JUNGIAN",              label: "Junguiana" },
   { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "TANTRA",               label: "Sexualidade Humana e Tantra" },
   { value: "GESTALT",              label: "Gestalt-terapia" },
   { value: "PSYCHODRAMA",          label: "Psicodrama" },
   { value: "SYSTEMIC",             label: "Constelação Familiar" },
@@ -1871,7 +1897,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl">
         {tabs.filter(t => !t.adminOnly || isAdmin).map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={cn(

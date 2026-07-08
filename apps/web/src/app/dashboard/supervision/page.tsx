@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { aiHeaders } from "@/lib/api-key";
 import {
   Plus, Send, Loader2, Brain, Heart, Layers, Users, Activity,
-  Circle, Compass, AlertCircle, Copy, Check, Mic, MicOff,
+  Circle, Compass, Flame, AlertCircle, Copy, Check, Mic, MicOff,
   ChevronDown, MessageSquare, Clock, Shield, FileText,
 } from "lucide-react";
 import {
@@ -59,11 +59,12 @@ const APPROACHES: Record<string, { label: string; badgeCls: string; iconBg: stri
   COGNITIVE_BEHAVIORAL: { label: "TCC",          badgeCls: "bg-blue-50 text-blue-700 border-blue-200",         iconBg: "bg-blue-100 text-blue-600",      Icon: Layers   },
   JUNGIAN:              { label: "Junguiana",    badgeCls: "bg-amber-50 text-amber-700 border-amber-200",      iconBg: "bg-amber-100 text-amber-600",    Icon: Compass  },
   SOMATIC:              { label: "Somática",     badgeCls: "bg-orange-50 text-orange-700 border-orange-200",   iconBg: "bg-orange-100 text-orange-600",  Icon: Activity },
+  TANTRA:               { label: "Sexualidade Humana e Tantra",       badgeCls: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200", iconBg: "bg-fuchsia-100 text-fuchsia-600", Icon: Flame    },
   GESTALT:              { label: "Gestalt",      badgeCls: "bg-teal-50 text-teal-700 border-teal-200",         iconBg: "bg-teal-100 text-teal-600",      Icon: Circle   },
   PSYCHODRAMA:          { label: "Psicodrama",   badgeCls: "bg-rose-50 text-rose-700 border-rose-200",         iconBg: "bg-rose-100 text-rose-600",      Icon: Users    },
   SYSTEMIC:             { label: "Sistêmica",    badgeCls: "bg-green-50 text-green-700 border-green-200",      iconBg: "bg-green-100 text-green-600",    Icon: Heart    },
 };
-const APPROACH_ORDER = ["PSYCHOANALYSIS","COGNITIVE_BEHAVIORAL","JUNGIAN","SOMATIC","GESTALT","PSYCHODRAMA","SYSTEMIC"];
+const APPROACH_ORDER = ["PSYCHOANALYSIS","COGNITIVE_BEHAVIORAL","JUNGIAN","SOMATIC","TANTRA","GESTALT","PSYCHODRAMA","SYSTEMIC"];
 
 const MOOD_OPTIONS = [
   { value: 1, emoji: "😟", label: "Muito difícil", cls: "border-red-300 bg-red-50 text-red-700" },
@@ -138,7 +139,7 @@ function MessageBubble({ message }: { message: Message }) {
 
 const APPROACH_LABELS: Record<string, string> = {
   PSYCHOANALYSIS: "Psicanálise Freudiana", COGNITIVE_BEHAVIORAL: "TCC",
-  JUNGIAN: "Junguiana", SOMATIC: "Somática / Corporal",
+  JUNGIAN: "Junguiana", SOMATIC: "Somática / Corporal", TANTRA: "Sexualidade Humana e Tantra",
   GESTALT: "Gestalt-terapia", PSYCHODRAMA: "Psicodrama", SYSTEMIC: "Constelação Familiar",
 };
 

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chunkText, embedTexts, saveDocument } from "@/lib/rag";
+import path from "path";
+import { createCanvas } from "@napi-rs/canvas";
+import { createWorker } from "tesseract.js";
+import { chunkText, embedTexts, saveDocument, hashContent, findDuplicateDocument } from "@/lib/rag";
+import { requireAdmin, AdminAuthError } from "@/lib/adminAuth";
 
 export const maxDuration = 300; // OCR pode demorar em livros grandes
-
-const ADMIN_EMAILS = ["carlos.magno@gmail.com", "betinha.potter@gmail.com", "elimarcia.philos@gmail.com"];
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -12,49 +14,72 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   return result.text?.trim() ?? "";
 }
 
-async function ocrPDFWithClaude(buffer: Buffer, anthropicKey: string): Promise<string> {
-  // Converte PDF para base64 e envia para Claude com visão
-  const base64 = buffer.toString("base64");
+const MIN_CHARS_PER_PAGE = 20; // abaixo disso, consideramos a página "sem texto extraído"
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": anthropicKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: "application/pdf",
-                data: base64,
-              },
-            },
-            {
-              type: "text",
-              text: "Extraia todo o texto deste documento PDF escaneado. Retorne apenas o texto extraído, sem comentários, formatações extras ou explicações. Preserve parágrafos e estrutura do texto original.",
-            },
-          ],
-        },
-      ],
-    }),
-  });
+// OCR local via Tesseract.js — sem filtro de conteúdo (não é IA generativa), ideal para
+// bases teóricas que tratam de sexualidade/corpo, onde OCR via LLM pode recusar páginas.
+async function ocrPDFWithTesseract(buffer: Buffer, wasmUrl: string): Promise<{ text: string; emptyPages: number[] }> {
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`OCR via Claude falhou (${response.status}): ${err}`);
+  const pdfDoc = await pdfjsLib.getDocument({
+    data: new Uint8Array(buffer),
+    useSystemFonts: true,
+    disableFontFace: true,
+    wasmUrl, // necessário para o decodificador JBIG2 (scans PB) — pdf.js busca via fetch(), não como arquivo local
+  }).promise;
+
+  console.log(`[RAG OCR] Tesseract: ${pdfDoc.numPages} páginas`);
+
+  const worker = await createWorker("por");
+  const parts: string[] = [];
+  const emptyPages: number[] = [];
+
+  try {
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const context = canvas.getContext("2d");
+
+      await page.render({
+        canvasContext: context as unknown as CanvasRenderingContext2D,
+        canvas: canvas as unknown as HTMLCanvasElement,
+        viewport,
+      }).promise;
+
+      const imageBuffer = canvas.toBuffer("image/png");
+      const { data } = await worker.recognize(imageBuffer);
+      const pageText = data.text?.trim() ?? "";
+      parts.push(pageText);
+
+      if (pageText.length < MIN_CHARS_PER_PAGE) {
+        emptyPages.push(i);
+        console.warn(`[RAG OCR] página ${i}/${pdfDoc.numPages} sem texto extraído (possível falha de decodificação da imagem)`);
+      } else {
+        console.log(`[RAG OCR] página ${i}/${pdfDoc.numPages} processada`);
+      }
+    }
+  } finally {
+    await worker.terminate();
   }
 
-  const data = await response.json();
-  return data.content?.[0]?.text?.trim() ?? "";
+  return { text: parts.join("\n\n"), emptyPages };
+}
+
+function formatPageRanges(pages: number[]): string {
+  if (pages.length === 0) return "";
+  const ranges: string[] = [];
+  let start = pages[0];
+  let prev = pages[0];
+  for (let i = 1; i <= pages.length; i++) {
+    const curr = pages[i];
+    if (curr !== prev + 1) {
+      ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+      start = curr;
+    }
+    prev = curr;
+  }
+  return ranges.join(", ");
 }
 
 export async function POST(req: NextRequest) {
@@ -67,7 +92,6 @@ export async function POST(req: NextRequest) {
     const formData  = await req.formData();
     const file      = formData.get("file") as File | null;
     const therapistId = formData.get("therapistId") as string | null;
-    const uploaderEmail = (formData.get("uploaderEmail") as string | null)?.toLowerCase().trim();
     const approach  = (formData.get("approach") as string | null) ?? "PSYCHOANALYSIS";
     const isGlobalReq = formData.get("isGlobal") === "true";
 
@@ -76,8 +100,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Apenas admins podem subir para a base global
-    if (isGlobalReq && !ADMIN_EMAILS.includes(uploaderEmail ?? "")) {
-      return NextResponse.json({ error: "Apenas administradores podem adicionar à base global." }, { status: 403 });
+    if (isGlobalReq) {
+      try {
+        await requireAdmin(req);
+      } catch (e) {
+        if (e instanceof AdminAuthError) return NextResponse.json({ error: "Apenas administradores podem adicionar à base global." }, { status: 403 });
+        throw e;
+      }
     }
 
     const allowedTypes = ["application/pdf", "text/plain"];
@@ -93,6 +122,7 @@ export async function POST(req: NextRequest) {
     // ── Extração de texto ──────────────────────────────────
     let text = "";
     let usedOCR = false;
+    let emptyPages: number[] = [];
 
     if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -100,16 +130,12 @@ export async function POST(req: NextRequest) {
       // Tenta extração direta primeiro (PDF digital)
       text = await extractTextFromPDF(buffer);
 
-      // Se não extraiu texto, é PDF escaneado — usa OCR via Claude
+      // Se não extraiu texto, é PDF escaneado — usa OCR local (Tesseract.js)
       if (!text || text.length < 100) {
-        const anthropicKey = process.env.ANTHROPIC_API_KEY;
-        if (!anthropicKey) {
-          return NextResponse.json(
-            { error: "PDF escaneado detectado mas ANTHROPIC_API_KEY não está configurada para OCR." },
-            { status: 422 }
-          );
-        }
-        text = await ocrPDFWithClaude(buffer, anthropicKey);
+        const wasmUrl = path.join(path.dirname(require.resolve("pdfjs-dist/package.json")), "wasm").replace(/\\/g, "/") + "/";
+        const ocrResult = await ocrPDFWithTesseract(buffer, wasmUrl);
+        text = ocrResult.text;
+        emptyPages = ocrResult.emptyPages;
         usedOCR = true;
       }
     } else {
@@ -118,6 +144,18 @@ export async function POST(req: NextRequest) {
 
     if (!text.trim()) {
       return NextResponse.json({ error: "Não foi possível extrair texto do arquivo." }, { status: 422 });
+    }
+
+    // ── Verificação de duplicata ─────────────────────────────
+    const contentHash = hashContent(text);
+    const isDuplicate = await findDuplicateDocument({
+      contentHash,
+      approach,
+      isGlobal: isGlobalReq,
+      therapistId,
+    });
+    if (isDuplicate) {
+      return NextResponse.json({ error: "Conteúdo já indexado." }, { status: 409 });
     }
 
     // ── Chunking ───────────────────────────────────────────
@@ -138,9 +176,16 @@ export async function POST(req: NextRequest) {
       embeddings,
       approach,
       isGlobal: isGlobalReq,
+      contentHash,
     });
 
-    return NextResponse.json({ documentId, chunkCount: chunks.length, usedOCR });
+    return NextResponse.json({
+      documentId,
+      chunkCount: chunks.length,
+      usedOCR,
+      emptyPageCount: emptyPages.length,
+      emptyPageRanges: formatPageRanges(emptyPages),
+    });
   } catch (error) {
     console.error("RAG upload error:", error);
     const message = error instanceof Error ? error.message : "Erro interno";

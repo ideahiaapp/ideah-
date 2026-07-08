@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listDocuments, listGlobalDocuments, deleteDocument, deleteGlobalDocument } from "@/lib/rag";
-
-const ADMIN_EMAILS = ["carlos.magno@gmail.com", "betinha.potter@gmail.com", "elimarcia.philos@gmail.com"];
+import { requireAdmin, AdminAuthError } from "@/lib/adminAuth";
 
 export async function GET(req: NextRequest) {
   try {
     const therapistId   = req.nextUrl.searchParams.get("therapistId");
     const globalOnly    = req.nextUrl.searchParams.get("global") === "true";
-    const adminEmail    = req.headers.get("x-admin-email")?.toLowerCase().trim();
 
     if (globalOnly) {
-      if (!ADMIN_EMAILS.includes(adminEmail ?? "")) {
-        return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+      try {
+        await requireAdmin(req);
+      } catch (e) {
+        if (e instanceof AdminAuthError) return NextResponse.json({ error: e.message }, { status: 403 });
+        throw e;
       }
       const docs = await listGlobalDocuments();
       return NextResponse.json({ documents: docs });
@@ -31,15 +32,17 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { documentId, therapistId, isGlobal } = await req.json();
-    const adminEmail = req.headers.get("x-admin-email")?.toLowerCase().trim();
 
     if (!documentId) {
       return NextResponse.json({ error: "documentId obrigatório." }, { status: 400 });
     }
 
     if (isGlobal) {
-      if (!ADMIN_EMAILS.includes(adminEmail ?? "")) {
-        return NextResponse.json({ error: "Apenas administradores podem remover documentos globais." }, { status: 403 });
+      try {
+        await requireAdmin(req);
+      } catch (e) {
+        if (e instanceof AdminAuthError) return NextResponse.json({ error: "Apenas administradores podem remover documentos globais." }, { status: 403 });
+        throw e;
       }
       await deleteGlobalDocument(documentId);
     } else {

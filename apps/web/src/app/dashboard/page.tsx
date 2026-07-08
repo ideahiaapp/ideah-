@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Users, MessageSquare, FileText, CalendarDays, TrendingUp,
   Clock, ArrowRight, Plus, Sparkles, CheckCircle2,
-  Brain, Activity, Zap, Circle, Compass, Layers, Heart, UserCheck, ClipboardList,
+  Brain, Activity, Zap, Circle, Compass, Layers, Heart, UserCheck, ClipboardList, Flame,
 } from "lucide-react";
 import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
@@ -19,14 +19,14 @@ import type { SupervisionWithClient } from "@/lib/db/supervisions";
 const APPROACH_ICONS: Record<string, React.ElementType> = {
   PSYCHOANALYSIS: Brain, COGNITIVE_BEHAVIORAL: Layers,
   JUNGIAN: Compass, HUMANISTIC: Heart,
-  SYSTEMIC: Users, SOMATIC: Activity,
+  SYSTEMIC: Users, SOMATIC: Activity, TANTRA: Flame,
   GESTALT: Circle, ACCEPTANCE_COMMITMENT: Zap,
 };
 
 const APPROACH_COLORS: Record<string, string> = {
   PSYCHOANALYSIS: "#C2542F", COGNITIVE_BEHAVIORAL: "#3B82F6",
   JUNGIAN: "#F59E0B", HUMANISTIC: "#22C55E",
-  SYSTEMIC: "#EC4899", SOMATIC: "#F97316",
+  SYSTEMIC: "#EC4899", SOMATIC: "#F97316", TANTRA: "#A855F7",
   GESTALT: "#14B8A6", ACCEPTANCE_COMMITMENT: "#6366F1",
 };
 

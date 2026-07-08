@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-const ADMIN_EMAILS = ["carlos.magno@gmail.com", "betinha.potter@gmail.com", "elimarcia.philos@gmail.com"];
+import { requireAdmin, AdminAuthError } from "@/lib/adminAuth";
 
 function serviceClient() {
   return createClient(
@@ -28,9 +27,11 @@ export async function GET(req: NextRequest) {
 // PUT /api/therapist-approaches — admin sets full list for a therapist
 // Body: { therapistId, approaches: string[] }
 export async function PUT(req: NextRequest) {
-  const adminEmail = req.headers.get("x-admin-email")?.toLowerCase().trim();
-  if (!ADMIN_EMAILS.includes(adminEmail ?? "")) {
-    return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+  try {
+    await requireAdmin(req);
+  } catch (e) {
+    if (e instanceof AdminAuthError) return NextResponse.json({ error: e.message }, { status: 403 });
+    throw e;
   }
 
   const { therapistId, approaches } = await req.json() as { therapistId: string; approaches: string[] };

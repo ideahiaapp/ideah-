@@ -121,7 +121,7 @@ export default function LoginPage() {
           {/* ── Botão Google ── */}
           <button
             type="button"
-            onClick={async () => { await loginWithGoogle(); router.push("/dashboard/home"); }}
+            onClick={() => { loginWithGoogle(); }}
             disabled={isLoading}
             className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100 transition-all text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mb-5"
           >

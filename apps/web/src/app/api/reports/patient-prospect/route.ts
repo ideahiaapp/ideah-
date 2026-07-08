@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { getAIOptions, chat } from "@/lib/ai-client";
-import { assertUnderUsageLimit, logAiUsage, UsageLimitError } from "@/lib/usage";
+import { assertUnderUsageLimit, assertUnderRateLimit, logAiUsage, UsageLimitError, RateLimitError } from "@/lib/usage";
 
 export const maxDuration = 30;
 
@@ -22,9 +22,12 @@ export async function POST(req: NextRequest) {
     }
 
     try {
+      await assertUnderRateLimit(therapistId);
       await assertUnderUsageLimit(therapistId);
     } catch (e) {
-      if (e instanceof UsageLimitError) return NextResponse.json({ error: e.message }, { status: 429 });
+      if (e instanceof RateLimitError || e instanceof UsageLimitError) {
+        return NextResponse.json({ error: e.message }, { status: 429 });
+      }
       throw e;
     }
 

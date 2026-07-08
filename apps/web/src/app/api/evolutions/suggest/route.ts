@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIOptions, chat } from "@/lib/ai-client";
-import { assertUnderUsageLimit, logAiUsage, UsageLimitError } from "@/lib/usage";
+import { assertUnderUsageLimit, assertUnderRateLimit, logAiUsage, UsageLimitError, RateLimitError } from "@/lib/usage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,9 +13,12 @@ export async function POST(req: NextRequest) {
 
     if (therapistId) {
       try {
+        await assertUnderRateLimit(therapistId);
         await assertUnderUsageLimit(therapistId);
       } catch (e) {
-        if (e instanceof UsageLimitError) return NextResponse.json({ error: e.message }, { status: 429 });
+        if (e instanceof RateLimitError || e instanceof UsageLimitError) {
+          return NextResponse.json({ error: e.message }, { status: 429 });
+        }
         throw e;
       }
     }
