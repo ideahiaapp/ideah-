@@ -6,7 +6,7 @@ import { getClinicSettings, saveClinicSettings } from "@/lib/clinic-settings";
 import {
   User, Lock, CreditCard, Key, Save, Loader2, CheckCircle2,
   Eye, EyeOff, Camera, ExternalLink, AlertTriangle, Sparkles,
-  ChevronDown, ShieldCheck, Zap, Crown, Check, Copy, DollarSign,
+  ChevronDown, ShieldCheck, Zap, Check, Copy, DollarSign,
   Scale, ShieldAlert, FileText, Info, BookOpen, Upload, Trash2,
   Users, ShieldOff, MessageSquare,
 } from "lucide-react";
@@ -424,24 +424,14 @@ function TabPlano() {
 
   const plans = [
     {
-      id: "trial",
-      name: "Trial",
-      price: { monthly: "Grátis", annual: "Grátis" },
-      description: "14 dias para explorar a plataforma",
-      features: ["Até 3 clientes", "10 supervisões IA", "Evoluções ilimitadas", "Acesso web"],
-      current: true,
-      cta: "Plano atual",
-      highlight: false,
-    },
-    {
       id: "pro",
       name: "Pro",
       price: { monthly: "R$ 49,90", annual: "R$ 39,90" },
       priceSub: { monthly: "/mês", annual: "/mês (cobrado anualmente)" },
       description: "Para terapeutas em plena atividade",
       features: ["Clientes ilimitados", "Supervisões IA ilimitadas", "8 abordagens teóricas", "Evoluções e prontuários", "Acesso web + mobile", "Exportar prontuários (PDF)"],
-      current: false,
-      cta: "Assinar Pro",
+      current: true,
+      cta: "Plano atual",
       highlight: true,
     },
     {
@@ -459,24 +449,6 @@ function TabPlano() {
 
   return (
     <div className="space-y-6">
-      {/* Status atual */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
-            <Crown className="w-5 h-5 text-amber-600" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-amber-800">Você está no Trial</p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              {"Trial ativo"}
-            </p>
-          </div>
-        </div>
-        <a href="#pro" className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
-          Ver planos
-        </a>
-      </div>
-
       {/* Toggle cobrança */}
       <div className="flex items-center justify-center gap-3">
         <span className={cn("text-sm font-medium", billingCycle === "monthly" ? "text-gray-900" : "text-gray-500")}>Mensal</span>

@@ -6,7 +6,7 @@ import { aiHeaders } from "@/lib/api-key";
 import {
   Plus, Send, Loader2, Brain, Heart, Layers, Users, Activity,
   Circle, Compass, Flame, AlertCircle, Copy, Check, Mic, MicOff,
-  ChevronDown, MessageSquare, Clock, Shield, FileText,
+  ChevronDown, MessageSquare, Clock, Shield, FileText, PlayCircle, StopCircle, X,
 } from "lucide-react";
 import {
   getClients, getSupervisionsByClient, createSupervision,
@@ -26,7 +26,6 @@ interface Message {
   timestamp: Date;
 }
 
-type Mode = "supervision" | "evolution";
 
 interface ClientAnamnese {
   name: string | null;
@@ -304,6 +303,7 @@ function EvolutionCard({ evolution }: { evolution: Evolution }) {
                 <span className="text-xs font-semibold text-emerald-700">Evolução registrada</span>
                 <span className="text-[10px] text-emerald-500">
                   {new Date(evolution.session_date + "T12:00:00").toLocaleDateString("pt-BR", { day:"2-digit", month:"short", year:"numeric" })}
+                  {evolution.session_time && ` · ${evolution.session_time.slice(0, 5)}`}
                 </span>
                 {mood && <span className="text-sm">{mood.emoji}</span>}
               </div>
@@ -370,122 +370,177 @@ function PastSupervisionCard({ supervision, onLoad }: { supervision: Supervision
   );
 }
 
-/* ─── Formulário de evolução inline ──────────────────── */
-function EvolutionForm({
-  client, user,
-  onSaved,
+/* ─── Modal: iniciar supervisão ───────────────────────── */
+function StartSupervisionModal({
+  clientName, onConfirm, onCancel,
 }: {
-  client: Client;
-  user: { id: string };
-  onSaved: (ev: Evolution) => void;
+  clientName: string;
+  onConfirm: (date: string, time: string, impressions: string) => void;
+  onCancel: () => void;
 }) {
-  const [form, setForm] = useState({
-    sessionDate: new Date().toISOString().split("T")[0],
-    mood: 0,
-    content: "",
-    hypothesis: "",
-    nextSessionPlan: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState<string | null>(null);
+  const now = new Date();
+  const [date, setDate] = useState(now.toISOString().split("T")[0]);
+  const [time, setTime] = useState(now.toTimeString().slice(0, 5));
+  const [impressions, setImpressions] = useState("");
 
-  const canSave = form.content.trim().length >= 20 && form.mood > 0;
-
-  function set(field: string, value: string | number) {
-    setForm(p => ({ ...p, [field]: value }));
-  }
-
-  async function handleSave() {
-    if (!canSave) return;
-    setSaving(true); setError(null);
-    try {
-      const ev = await createEvolution({
-        therapist_id:      user.id,
-        client_id:         client.id,
-        session_date:      form.sessionDate,
-        content:           form.content.trim(),
-        hypothesis:        form.hypothesis.trim() || null,
-        next_session_plan: form.nextSessionPlan.trim() || null,
-        mood:              form.mood || null,
-      });
-      setForm({ sessionDate: new Date().toISOString().split("T")[0], mood: 0, content: "", hypothesis: "", nextSessionPlan: "" });
-      onSaved(ev);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const canConfirm = impressions.trim().length > 0;
 
   return (
-    <div className="space-y-3 px-5 py-4 overflow-y-auto max-h-[calc(100vh-280px)]">
-      {/* Data + Mood */}
-      <div className="flex gap-3 items-start">
-        <div className="flex-shrink-0">
-          <label className="block text-[10px] font-semibold text-gray-500 mb-1">Data</label>
-          <input type="date" value={form.sessionDate} onChange={e => set("sessionDate", e.target.value)}
-            className="text-sm bg-white border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-start justify-between px-5 pt-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+              <PlayCircle className="w-5 h-5 text-brand-500" strokeWidth={1.8} />
+            </div>
+            <h2 className="text-sm font-bold text-gray-900">Iniciar supervisão</h2>
+          </div>
+          <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        <div className="flex-1">
-          <label className="block text-[10px] font-semibold text-gray-500 mb-1">Tom da sessão *</label>
-          <div className="flex gap-1.5 flex-wrap">
-            {MOOD_OPTIONS.map(m => (
-              <button key={m.value} type="button" onClick={() => set("mood", m.value)}
-                className={cn(
-                  "flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium border-2 transition-all",
-                  form.mood === m.value ? m.cls + " shadow-sm" : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                )}>
-                {m.emoji} <span className="hidden sm:inline">{m.label}</span>
-              </button>
-            ))}
+
+        <div className="px-5 pt-3 pb-1">
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Vamos evoluir <strong>{clientName}</strong> hoje? Me informe a data da sessão, o horário e quais as suas impressões para, juntos, fazer o estudo do caso.
+          </p>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-[10px] font-semibold text-gray-500 mb-1">Data da sessão</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800" />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[10px] font-semibold text-gray-500 mb-1">Horário</label>
+              <input type="time" value={time} onChange={e => setTime(e.target.value)}
+                className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-semibold text-gray-500 mb-1">Suas impressões</label>
+            <textarea
+              value={impressions} onChange={e => setImpressions(e.target.value)}
+              placeholder="O que trouxe da sessão, primeiras impressões, pontos de atenção..."
+              rows={4} autoFocus
+              className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none placeholder-gray-400"
+            />
           </div>
         </div>
+
+        <div className="flex items-center gap-2 px-5 pb-5">
+          <button onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors">
+            Cancelar
+          </button>
+          <button
+            onClick={() => canConfirm && onConfirm(date, time, impressions.trim())}
+            disabled={!canConfirm}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors",
+              canConfirm ? "bg-brand-500 hover:bg-brand-600 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            )}>
+            <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
+            Iniciar
+          </button>
+        </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Conteúdo */}
-      <div>
-        <label className="block text-[10px] font-semibold text-gray-500 mb-1">
-          O que aconteceu na sessão * <span className="font-normal text-gray-500">({form.content.length}/20 mín.)</span>
-        </label>
-        <textarea
-          value={form.content} onChange={e => set("content", e.target.value)}
-          placeholder="Temas trazidos, dinâmicas observadas, momentos significativos..."
-          rows={4}
-          className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none placeholder-gray-400"
-        />
+/* ─── Modal: confirmar finalização ───────────────────── */
+function ConfirmEndSupervisionModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <StopCircle className="w-5 h-5 text-amber-500" strokeWidth={1.8} />
+          </div>
+          <h2 className="text-sm font-bold text-gray-900">Deseja finalizar a supervisão?</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">A supervisão em andamento será encerrada.</p>
+        <div className="flex items-center gap-2">
+          <button onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors">
+            Continuar supervisão
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors">
+            Finalizar
+          </button>
+        </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Hipótese */}
-      <div>
-        <label className="block text-[10px] font-semibold text-gray-500 mb-1">Hipótese clínica</label>
-        <input value={form.hypothesis} onChange={e => set("hypothesis", e.target.value)}
-          placeholder="Sua interpretação clínica desta sessão..."
-          className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 placeholder-gray-400"
-        />
+/* ─── Modal: encerrar supervisão (hipótese + plano) ──── */
+function FinishSupervisionModal({
+  onConfirm, onCancel,
+}: {
+  onConfirm: (hypothesis: string, nextSessionPlan: string) => void;
+  onCancel: () => void;
+}) {
+  const [hypothesis, setHypothesis] = useState("");
+  const [nextSessionPlan, setNextSessionPlan] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-start justify-between px-5 pt-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-5 h-5 text-emerald-600" strokeWidth={1.8} />
+            </div>
+            <h2 className="text-sm font-bold text-gray-900">Encerrar supervisão</h2>
+          </div>
+          <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-5 pt-3 pb-1">
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Antes de finalizar, registre sua hipótese clínica e o plano para a próxima sessão.
+          </p>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          <div>
+            <label className="block text-[10px] font-semibold text-gray-500 mb-1">Hipótese clínica</label>
+            <input value={hypothesis} onChange={e => setHypothesis(e.target.value)} autoFocus
+              placeholder="Sua interpretação clínica desta sessão..."
+              className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 placeholder-gray-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-semibold text-gray-500 mb-1">Plano para próxima sessão</label>
+            <textarea value={nextSessionPlan} onChange={e => setNextSessionPlan(e.target.value)}
+              placeholder="Pontos a retomar, temas a explorar..."
+              rows={3}
+              className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none placeholder-gray-400"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-5 pb-5">
+          <button onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors">
+            Cancelar
+          </button>
+          <button onClick={() => onConfirm(hypothesis, nextSessionPlan)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">
+            <StopCircle className="w-4 h-4" strokeWidth={1.8} />
+            Finalizar e salvar
+          </button>
+        </div>
       </div>
-
-      {/* Próxima sessão */}
-      <div>
-        <label className="block text-[10px] font-semibold text-gray-500 mb-1">Plano para próxima sessão</label>
-        <textarea value={form.nextSessionPlan} onChange={e => set("nextSessionPlan", e.target.value)}
-          placeholder="Pontos a retomar, temas a explorar..."
-          rows={2}
-          className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none placeholder-gray-400"
-        />
-      </div>
-
-      {error && <p className="text-xs text-red-500">{error}</p>}
-
-      <button onClick={handleSave} disabled={!canSave || saving}
-        className={cn(
-          "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
-          canSave && !saving
-            ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
-            : "bg-gray-100 text-gray-500 cursor-not-allowed"
-        )}>
-        {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
-                : <><FileText className="w-4 h-4" /> Salvar evolução</>}
-      </button>
     </div>
   );
 }
@@ -524,10 +579,16 @@ export default function WorkspacePage() {
     }
   }, [messages, loading]);
 
-  const [mode, setMode] = useState<Mode>("supervision");
   const [clientIntention, setClientIntention] = useState<string | null>(null);
   const [clientAnamnese,  setClientAnamnese]  = useState<ClientAnamnese | null>(null);
   const [templateHtml,    setTemplateHtml]    = useState<string | null>(null);
+
+  const [supervisionActive, setSupervisionActive] = useState(false);
+  const [showStartModal,    setShowStartModal]    = useState(false);
+  const [showFinishModal,   setShowFinishModal]   = useState(false);
+  const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null);
+  const [afterFinishAction,  setAfterFinishAction]  = useState<(() => void) | null>(null);
+  const [sessionMeta, setSessionMeta] = useState<{ date: string; time: string; impressions: string } | null>(null);
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -631,7 +692,13 @@ export default function WorkspacePage() {
     return () => document.removeEventListener("mousedown", handle);
   }, []);
 
-  function selectClient(clientId: string) {
+  /* Se houver supervisão ativa, pede confirmação antes de executar a ação que sairia dela. */
+  function guardLeave(action: () => void) {
+    if (supervisionActive) { setPendingLeaveAction(() => action); return; }
+    action();
+  }
+
+  function selectClientImpl(clientId: string) {
     const client = clients.find(c => c.id === clientId);
     if (client && !client.anamnese_id) {
       alert("Para fazer a primeira supervisão é OBRIGATÓRIO o preenchimento da anamnese");
@@ -641,14 +708,18 @@ export default function WorkspacePage() {
     setActiveSessionId(null);
     setMessages([]);
     setError(null);
-    setMode("supervision");
+    setSupervisionActive(false);
+  }
+  function selectClient(clientId: string) {
+    if (clientId === selectedClientId) return;
+    guardLeave(() => selectClientImpl(clientId));
   }
 
-  async function loadSession(session: Supervision) {
+  async function loadSessionImpl(session: Supervision) {
     setActiveSessionId(session.id);
     setApproachKey(session.approach ?? "PSYCHOANALYSIS");
-    setMode("supervision");
     setError(null);
+    setSupervisionActive(false);
     try {
       const msgs = await getMessages(session.id);
       setMessages(msgs.map((m: SupervisionMessage) => ({
@@ -661,19 +732,97 @@ export default function WorkspacePage() {
     // Scroll to bottom
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   }
+  function loadSession(session: Supervision) {
+    guardLeave(() => loadSessionImpl(session));
+  }
 
-  function newSession() {
+  function newSessionImpl() {
     setActiveSessionId(null);
     setMessages([]);
     setError(null);
-    setMode("supervision");
+    setSupervisionActive(false);
   }
+  function newSession() {
+    guardLeave(newSessionImpl);
+  }
+
+  function handleStartSupervision() {
+    if (!selectedClient) return;
+    setShowStartModal(true);
+  }
+
+  function handleConfirmStartSupervision(date: string, time: string, impressions: string) {
+    setShowStartModal(false);
+    setSupervisionActive(true);
+    setSessionMeta({ date, time, impressions });
+    const text = `Sessão em ${new Date(date + "T12:00:00").toLocaleDateString("pt-BR")} às ${time}. Minhas impressões: ${impressions}`;
+    sendMessageText(text);
+  }
+
+  /* Clique direto no botão "Finalizar supervisão" — sem ação pendente após salvar */
+  function handleFinishSupervision() {
+    setAfterFinishAction(null);
+    setShowFinishModal(true);
+  }
+
+  /* Confirmação de "Deseja finalizar a supervisão?" ao tentar sair da tela —
+     abre o mesmo popup de encerramento, e roda a ação pendente depois de salvar. */
+  function handleConfirmLeave() {
+    const action = pendingLeaveAction;
+    setPendingLeaveAction(null);
+    setAfterFinishAction(() => action ?? undefined);
+    setShowFinishModal(true);
+  }
+
+  async function handleConfirmFinishSupervision(hypothesis: string, nextSessionPlan: string) {
+    setShowFinishModal(false);
+    setSupervisionActive(false);
+
+    if (selectedClient && user) {
+      const transcript = messages
+        .map(m => `${m.role === "user" ? "Terapeuta" : "IA"}: ${m.content}`)
+        .join("\n\n");
+      const impressionsHeader = sessionMeta?.impressions
+        ? `Impressões iniciais: ${sessionMeta.impressions}`
+        : "";
+      const content = [impressionsHeader, transcript].filter(Boolean).join("\n\n");
+
+      try {
+        const ev = await createEvolution({
+          therapist_id:      user.id,
+          client_id:         selectedClient.id,
+          session_date:      sessionMeta?.date ?? new Date().toISOString().split("T")[0],
+          session_time:      sessionMeta?.time ?? null,
+          content:           content || "Supervisão realizada.",
+          hypothesis:        hypothesis.trim() || null,
+          next_session_plan: nextSessionPlan.trim() || null,
+          mood:              null,
+        });
+        setEvolutions(prev => [ev, ...prev]);
+      } catch {
+        setError("Não foi possível salvar a evolução desta supervisão.");
+      }
+    }
+
+    setSessionMeta(null);
+    const action = afterFinishAction;
+    setAfterFinishAction(null);
+    action?.();
+  }
+
+  /* Avisa antes de fechar/recarregar a aba com supervisão em andamento */
+  useEffect(() => {
+    if (!supervisionActive) return;
+    function handler(e: BeforeUnloadEvent) { e.preventDefault(); e.returnValue = ""; }
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [supervisionActive]);
 
   /* ── Last evolution for AI context ── */
   const lastEvolution = evolutions[0] ?? null;
 
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
+  const sendMessageText = useCallback(async (rawText: string) => {
+    const text = rawText.trim();
     if (!text || loading || !selectedClientId || !user) return;
 
     if (!selectedClient?.anamnese_id) {
@@ -730,18 +879,14 @@ export default function WorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, messages, approachKey, selectedClient, selectedClientId, activeSessionId, user, clientIntention, clientAnamnese, lastEvolution]);
+  }, [loading, messages, approachKey, selectedClient, selectedClientId, activeSessionId, user, clientIntention, clientAnamnese, lastEvolution]);
+
+  const sendMessage = useCallback(() => sendMessageText(input), [sendMessageText, input]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   }
 
-  function handleEvolutionSaved(ev: Evolution) {
-    setEvolutions(prev => [ev, ...prev]);
-    setMode("supervision");
-    setActiveSessionId(null);
-    setMessages([]);
-  }
 
   return (
     <div className="flex h-full -m-6 overflow-hidden">
@@ -821,10 +966,19 @@ export default function WorkspacePage() {
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 border border-green-100 px-3 py-1.5 rounded-lg flex-shrink-0">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                Workspace ativo
-              </div>
+              {supervisionActive ? (
+                <button onClick={handleFinishSupervision}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors">
+                  <StopCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  Finalizar supervisão
+                </button>
+              ) : (
+                <button onClick={handleStartSupervision}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors">
+                  <PlayCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  Iniciar supervisão
+                </button>
+              )}
             </>
           ) : (
             <div className="flex items-center gap-2 text-gray-500">
@@ -921,35 +1075,7 @@ export default function WorkspacePage() {
         {selectedClient && (
           <div className="border-t border-gray-100 bg-white flex-shrink-0">
 
-            {/* Toggle de modo */}
-            <div className="flex border-b border-gray-100">
-              <button
-                onClick={() => setMode("supervision")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-colors",
-                  mode === "supervision"
-                    ? "text-brand-700 border-b-2 border-brand-500 bg-brand-50/50"
-                    : "text-gray-500 hover:text-gray-600"
-                )}>
-                <Brain className="w-3.5 h-3.5" strokeWidth={1.8} />
-                Supervisionar
-              </button>
-              <button
-                onClick={() => setMode("evolution")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-colors",
-                  mode === "evolution"
-                    ? "text-emerald-700 border-b-2 border-emerald-500 bg-emerald-50/50"
-                    : "text-gray-500 hover:text-gray-600"
-                )}>
-                <FileText className="w-3.5 h-3.5" strokeWidth={1.8} />
-                Registrar sessão
-              </button>
-            </div>
-
-            {/* Modo Supervisionar */}
-            {mode === "supervision" && (
-              <div className="px-5 py-4">
+            <div className="px-5 py-4">
                 <p className="text-[10px] text-gray-500 text-center mb-3">
                   Apoio ao raciocínio clínico — sem diagnósticos. O julgamento clínico é sempre do terapeuta.
                 </p>
@@ -1038,19 +1164,31 @@ export default function WorkspacePage() {
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Modo Evolução */}
-            {mode === "evolution" && (
-              <EvolutionForm
-                client={selectedClient}
-                user={user!}
-                onSaved={handleEvolutionSaved}
-              />
-            )}
           </div>
         )}
       </section>
+
+      {showStartModal && selectedClient && (
+        <StartSupervisionModal
+          clientName={selectedClient.name}
+          onConfirm={handleConfirmStartSupervision}
+          onCancel={() => setShowStartModal(false)}
+        />
+      )}
+
+      {pendingLeaveAction && (
+        <ConfirmEndSupervisionModal
+          onConfirm={handleConfirmLeave}
+          onCancel={() => setPendingLeaveAction(null)}
+        />
+      )}
+
+      {showFinishModal && (
+        <FinishSupervisionModal
+          onConfirm={handleConfirmFinishSupervision}
+          onCancel={() => { setShowFinishModal(false); setAfterFinishAction(null); }}
+        />
+      )}
     </div>
   );
 }

@@ -33,7 +33,7 @@ export function Sidebar() {
     <aside className="w-60 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
       {/* Logo */}
       <div className="px-5 py-6 border-b border-gray-100">
-        <Link href="/">
+        <Link href="/dashboard/home">
           <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={170} height={68} priority />
         </Link>
       </div>

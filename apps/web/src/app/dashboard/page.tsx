@@ -174,16 +174,6 @@ export default function DashboardPage() {
             {new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
           </p>
         </div>
-        <div className="hidden md:flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex-shrink-0">
-          <div>
-            <p className="text-xs font-semibold text-amber-800">Período de trial</p>
-            <p className="text-xs text-amber-600 mt-0.5">Explore todos os recursos</p>
-          </div>
-          <Link href="/dashboard/settings"
-            className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
-            Assinar agora
-          </Link>
-        </div>
       </div>
 
       {/* ── Stat cards ── */}

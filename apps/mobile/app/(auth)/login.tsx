@@ -36,7 +36,7 @@ export default function LoginScreen() {
     try {
       const redirectTo = Platform.OS === "web"
         ? `${window.location.origin}/callback`
-        : "ideah://callback";
+        : "paideia://callback";
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo, skipBrowserRedirect: true },
@@ -214,7 +214,7 @@ export default function LoginScreen() {
             <Link href="/(auth)/register" asChild>
               <TouchableOpacity style={styles.btnOutline} activeOpacity={0.8}>
                 <Text style={styles.btnOutlineText}>
-                  Criar conta grátis — 7 dias sem cobrança
+                  Criar conta
                 </Text>
               </TouchableOpacity>
             </Link>

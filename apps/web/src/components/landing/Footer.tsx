@@ -10,13 +10,13 @@ export function LandingFooter() {
           Pronto para conversar com a teoria?
         </h2>
         <p className="text-white mb-8 max-w-md mx-auto text-base">
-          7 dias grátis com acesso completo. Sem cartão de crédito.
+          Acesso completo às bases teóricas curadas por abordagem.
         </p>
         <Link
           href="/auth/register"
           className="inline-block bg-white text-brand-600 hover:bg-brand-50 font-bold px-10 py-4 rounded-xl text-base transition-colors shadow-lg"
         >
-          Começar grátis agora
+          Começar agora
         </Link>
       </div>
 

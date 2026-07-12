@@ -58,7 +58,7 @@ export function ForWhomSection() {
             href="/auth/register"
             className="inline-block bg-brand-500 hover:bg-brand-600 text-white font-semibold px-8 py-4 rounded-xl transition-colors"
           >
-            Começar grátis agora
+            Começar agora
           </Link>
         </div>
       </div>

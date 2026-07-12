@@ -115,6 +115,7 @@ export interface Database {
           therapist_id: string;
           client_id: string;
           session_date: string;
+          session_time: string | null;
           content: string;
           hypothesis: string | null;
           interventions: string | null;
@@ -131,6 +132,7 @@ export interface Database {
           therapist_id: string;
           client_id: string;
           session_date: string;
+          session_time?: string | null;
           content: string;
           hypothesis?: string | null;
           interventions?: string | null;
@@ -142,6 +144,7 @@ export interface Database {
         };
         Update: {
           session_date?: string;
+          session_time?: string | null;
           content?: string;
           hypothesis?: string | null;
           interventions?: string | null;

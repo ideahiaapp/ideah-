@@ -1,27 +1,27 @@
 {
   "expo": {
     "name": "Paideia",
-    "slug": "ideah",
+    "slug": "paideia",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/ideah-logo.png",
+    "icon": "./assets/paideia-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/ideah-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#924B92"
     },
-    "scheme": "ideah",
+    "scheme": "paideia",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "br.com.ideah.app"
+      "bundleIdentifier": "br.com.paideia.app"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/ideah-logo.png",
-        "backgroundColor": "#924B92"
+        "foregroundImage": "./assets/paideia-adaptive-icon.png",
+        "backgroundColor": "#c2542f"
       },
-      "package": "br.com.ideah.app"
+      "package": "br.com.paideia.app"
     },
     "plugins": [
       "expo-router",

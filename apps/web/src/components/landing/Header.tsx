@@ -19,7 +19,7 @@ export function LandingHeader() {
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex-shrink-0">
+        <Link href="/landing" className="flex-shrink-0">
           <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={120} height={48} priority />
         </Link>
 
@@ -48,7 +48,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2 rounded-xl transition-colors"
           >
-            Começar grátis
+            Começar agora
           </Link>
         </div>
 
@@ -83,7 +83,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 px-5 py-2.5 rounded-xl text-center"
           >
-            Começar grátis — 7 dias sem cobrança
+            Começar agora
           </Link>
         </div>
       )}

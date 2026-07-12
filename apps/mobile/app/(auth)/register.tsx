@@ -85,11 +85,6 @@ export default function RegisterScreen() {
             />
           </View>
 
-          {/* Trial badge */}
-          <View style={styles.trialBadge}>
-            <Text style={styles.trialText}>✨ 7 dias grátis · Sem cartão de crédito</Text>
-          </View>
-
           <Text style={styles.title}>Crie sua conta</Text>
           <Text style={styles.subtitle}>Comece agora sua supervisão clínica</Text>
 
@@ -194,7 +189,7 @@ export default function RegisterScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.btnText}>Criar conta grátis</Text>
+                <Text style={styles.btnText}>Criar conta</Text>
               )}
             </TouchableOpacity>
 
@@ -230,15 +225,6 @@ const styles = StyleSheet.create({
   scroll:         { flexGrow: 1, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 32 },
   logoContainer:  { alignItems: "center", marginBottom: 20 },
   logo:           { width: 180, height: 68 },
-  trialBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: Colors.brand[100],
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginBottom: 16,
-  },
-  trialText:      { fontSize: 12, color: Colors.brand[600], fontWeight: "600" },
   title:          { fontSize: 22, fontWeight: "700", color: Colors.ink, marginBottom: 4 },
   subtitle:       { fontSize: 14, color: Colors.gray[500], marginBottom: 24 },
   form:           { gap: 14 },

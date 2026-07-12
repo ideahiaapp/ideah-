@@ -42,7 +42,7 @@ export function HeroSection() {
             href="/auth/register"
             className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white font-semibold px-8 py-4 rounded-xl text-base transition-colors shadow-lg shadow-brand-200"
           >
-            Começar grátis — 7 dias sem cobrança
+            Começar agora
           </Link>
           <a
             href="#como-funciona"
