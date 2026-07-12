@@ -124,6 +124,8 @@ export interface Database {
           ai_hypothesis: string | null;
           session_number: number | null;
           cfp_confirmed: boolean;
+          approach: string | null;
+          duration_seconds: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -141,6 +143,8 @@ export interface Database {
           ai_hypothesis?: string | null;
           session_number?: number | null;
           cfp_confirmed?: boolean;
+          approach?: string | null;
+          duration_seconds?: number | null;
         };
         Update: {
           session_date?: string;
@@ -153,6 +157,8 @@ export interface Database {
           ai_hypothesis?: string | null;
           session_number?: number | null;
           cfp_confirmed?: boolean;
+          approach?: string | null;
+          duration_seconds?: number | null;
           updated_at?: string;
         };
       };

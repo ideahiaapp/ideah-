@@ -280,6 +280,16 @@ function AnamneseSummaryCard({ anamnese, templateHtml }: { anamnese: ClientAnamn
   );
 }
 
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const hh = String(h).padStart(2, "0");
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
+}
+
 /* ─── Card de evolução na thread ─────────────────────── */
 function EvolutionCard({ evolution }: { evolution: Evolution }) {
   const [expanded, setExpanded] = useState(false);
@@ -302,8 +312,10 @@ function EvolutionCard({ evolution }: { evolution: Evolution }) {
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-xs font-semibold text-emerald-700">Evolução registrada</span>
                 <span className="text-[10px] text-emerald-500">
-                  {new Date(evolution.session_date + "T12:00:00").toLocaleDateString("pt-BR", { day:"2-digit", month:"short", year:"numeric" })}
-                  {evolution.session_time && ` · ${evolution.session_time.slice(0, 5)}`}
+                  Data da sessão: {new Date(evolution.session_date + "T12:00:00").toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric" })}
+                  {evolution.session_time && ` às ${evolution.session_time.slice(0, 5)} h`}
+                  {evolution.duration_seconds != null &&
+                    `; Supervisionado em ${new Date(evolution.created_at).toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric" })} por ${formatDuration(evolution.duration_seconds)} horas`}
                 </span>
                 {mood && <span className="text-sm">{mood.emoji}</span>}
               </div>
@@ -313,6 +325,12 @@ function EvolutionCard({ evolution }: { evolution: Evolution }) {
           </div>
           {expanded && (
             <div className="border-t border-emerald-100 px-4 py-3 space-y-2 bg-white">
+              {evolution.approach && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Abordagem teórica utilizada</p>
+                  <p className="text-sm text-gray-700">{APPROACH_LABELS[evolution.approach] ?? evolution.approach}</p>
+                </div>
+              )}
               <div>
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">O que aconteceu</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{evolution.content}</p>
@@ -589,6 +607,8 @@ export default function WorkspacePage() {
   const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null);
   const [afterFinishAction,  setAfterFinishAction]  = useState<(() => void) | null>(null);
   const [sessionMeta, setSessionMeta] = useState<{ date: string; time: string; impressions: string } | null>(null);
+  const [sessionStartAt, setSessionStartAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -755,6 +775,8 @@ export default function WorkspacePage() {
     setShowStartModal(false);
     setSupervisionActive(true);
     setSessionMeta({ date, time, impressions });
+    setSessionStartAt(Date.now());
+    setElapsedSeconds(0);
     const text = `Sessão em ${new Date(date + "T12:00:00").toLocaleDateString("pt-BR")} às ${time}. Minhas impressões: ${impressions}`;
     sendMessageText(text);
   }
@@ -778,6 +800,10 @@ export default function WorkspacePage() {
     setShowFinishModal(false);
     setSupervisionActive(false);
 
+    const durationSeconds = sessionStartAt ? Math.round((Date.now() - sessionStartAt) / 1000) : null;
+    setSessionStartAt(null);
+    setElapsedSeconds(0);
+
     if (selectedClient && user) {
       const transcript = messages
         .map(m => `${m.role === "user" ? "Terapeuta" : "IA"}: ${m.content}`)
@@ -797,6 +823,8 @@ export default function WorkspacePage() {
           hypothesis:        hypothesis.trim() || null,
           next_session_plan: nextSessionPlan.trim() || null,
           mood:              null,
+          approach:          approachKey,
+          duration_seconds:  durationSeconds,
         });
         setEvolutions(prev => [ev, ...prev]);
       } catch {
@@ -817,6 +845,16 @@ export default function WorkspacePage() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [supervisionActive]);
+
+  /* Temporizador da supervisão em andamento */
+  useEffect(() => {
+    if (!supervisionActive || !sessionStartAt) return;
+    setElapsedSeconds(Math.floor((Date.now() - sessionStartAt) / 1000));
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - sessionStartAt) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [supervisionActive, sessionStartAt]);
 
   /* ── Last evolution for AI context ── */
   const lastEvolution = evolutions[0] ?? null;
@@ -967,11 +1005,17 @@ export default function WorkspacePage() {
                 </div>
               </div>
               {supervisionActive ? (
-                <button onClick={handleFinishSupervision}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors">
-                  <StopCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
-                  Finalizar supervisão
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg tabular-nums">
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                    {formatDuration(elapsedSeconds)}
+                  </span>
+                  <button onClick={handleFinishSupervision}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg transition-colors">
+                    <StopCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
+                    Finalizar supervisão
+                  </button>
+                </div>
               ) : (
                 <button onClick={handleStartSupervision}
                   className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors">
