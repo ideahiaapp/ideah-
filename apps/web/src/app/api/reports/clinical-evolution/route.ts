@@ -27,8 +27,8 @@ function periodToDate(period: string): string | null {
 export async function POST(req: NextRequest) {
   try {
     const { provider, apiKey } = getAIOptions(req);
-    const { clientId, therapistId, period } = await req.json() as {
-      clientId: string; therapistId: string; period: string;
+    const { clientId, therapistId, period, promptKey } = await req.json() as {
+      clientId: string; therapistId: string; period: string; promptKey?: string;
     };
 
     if (!clientId || !therapistId || !period) {
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       "6m": "últimos 6 meses", "1y": "último ano", "all": "todo o período de atendimento",
     };
 
-    const systemPrompt = `Você é um psicólogo supervisor clínico experiente, com amplo conhecimento em diversas abordagens psicoterapêuticas.
+    const DEFAULT_SYSTEM_PROMPT = `Você é um psicólogo supervisor clínico experiente, com amplo conhecimento em diversas abordagens psicoterapêuticas.
 Sua tarefa é gerar um relatório de evolução clínica detalhado e humanizado para apoiar o terapeuta na compreensão do processo terapêutico do cliente.
 O relatório deve ser escrito em português brasileiro, em linguagem clínica mas acessível, com sensibilidade e profundidade.
 Use markdown para estruturar o relatório. Inclua obrigatoriamente estas seções:
@@ -180,6 +180,15 @@ Use markdown para estruturar o relatório. Inclua obrigatoriamente estas seçõe
 
 ## Indicadores de Progresso
 (Avalie de 1-10: Engajamento, Insight, Regulação emocional, Funcionalidade)`;
+
+    // Prompt cadastrado pelo admin na aba "Evolução" de Prompts, com fallback para o padrão acima.
+    const { data: promptRow } = await db
+      .from("approach_prompts")
+      .select("prompt")
+      .eq("approach", promptKey || "EVOLUTION")
+      .maybeSingle() as { data: { prompt: string } | null };
+
+    const systemPrompt = promptRow?.prompt?.trim() || DEFAULT_SYSTEM_PROMPT;
 
     const userPrompt = `Cliente: ${client.name}
 Abordagem terapêutica: ${client.approach_label ?? "não especificada"}

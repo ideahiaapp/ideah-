@@ -28,11 +28,11 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 bg-white border-r border-gray-100 flex flex-col flex-shrink-0">
+    <aside className="w-60 bg-brand-500 border-r border-black/10 flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="px-5 py-6 border-b border-gray-100">
+      <div className="px-5 py-6 border-b border-white/15">
         <Link href="/dashboard/home">
-          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={170} height={68} priority />
+          <Image src="/logoPaideia.png" alt="Paideia" width={170} height={85} className="rounded-lg" priority />
         </Link>
       </div>
 
@@ -47,11 +47,11 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
                 active
-                  ? "bg-brand-50 text-brand-600"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-white/15 text-white"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
               )}
             >
-              <Icon className={cn("w-4.5 h-4.5", active ? "text-brand-500" : "text-gray-400")} strokeWidth={1.8} />
+              <Icon className={cn("w-4.5 h-4.5", active ? "text-white" : "text-white/60")} strokeWidth={1.8} />
               {label}
             </Link>
           );
@@ -59,19 +59,19 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 pb-4 space-y-0.5 border-t border-gray-100 pt-3">
+      <div className="px-3 pb-4 space-y-0.5 border-t border-white/15 pt-3">
         <Link
           href="/dashboard/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
         >
-          <Settings className="w-4 h-4 text-gray-400" strokeWidth={1.8} />
+          <Settings className="w-4 h-4 text-white/60" strokeWidth={1.8} />
           Configurações
         </Link>
         <Link
           href="/auth/login"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
         >
-          <LogOut className="w-4 h-4 text-gray-400" strokeWidth={1.8} />
+          <LogOut className="w-4 h-4 text-white/60" strokeWidth={1.8} />
           Sair
         </Link>
       </div>

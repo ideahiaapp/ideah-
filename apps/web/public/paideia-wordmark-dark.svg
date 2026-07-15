@@ -1,7 +1,17 @@
-<svg width="525" height="150" viewBox="0 0 350 100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="350" height="100" rx="16" fill="#1a1a1a"/>
-  <rect x="30" y="20" width="60" height="60" rx="14" fill="#c2542f"/>
-  <path d="M44 44 Q70 28 70 48 Q70 64 52 64 L52 56" fill="none" stroke="white" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="52" cy="73" r="3.5" fill="white"/>
-  <text x="105" y="58" font-family="Helvetica, Arial, sans-serif" font-size="32" font-weight="500" fill="white">Paideia</text>
+<svg width="430" height="100" viewBox="0 0 860 200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="860" height="200" rx="24" fill="#1a1a1a"/>
+  <g fill="none" stroke="#FDF6EF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 170 L40 30"/>
+    <path d="M40 30 L108 62 L40 94"/>
+    <path d="M162 170 L206 30 L236 30 L280 170"/>
+    <path d="M190 108 L252 108"/>
+    <path d="M325 170 L325 30"/>
+    <path d="M380 170 L380 30 L440 30 L472 100 L440 170 L380 170"/>
+    <path d="M515 30 L607 30"/>
+    <path d="M537 100 L585 100"/>
+    <path d="M515 170 L607 170"/>
+    <path d="M655 170 L655 30"/>
+    <path d="M702 170 L748 30 L780 30 L822 170"/>
+    <path d="M730 108 L794 108"/>
+  </g>
 </svg>

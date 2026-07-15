@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Award, ChevronDown, Loader2, AlertTriangle, Clock, FileText } from "lucide-react";
+import { Award, ChevronDown, Loader2, AlertTriangle, Clock, FileText, Sparkles } from "lucide-react";
 import { adminHeaders } from "@/lib/supabase";
+import { aiHeaders } from "@/lib/api-key";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -18,11 +19,6 @@ const PERIOD_OPTIONS = [
   { value: "3m", label: "3 meses" },
   { value: "6m", label: "6 meses" },
   { value: "1y", label: "1 ano" },
-];
-
-const REPORT_TYPE_OPTIONS = [
-  { value: "sintetico",  label: "Sintético" },
-  { value: "detalhado",  label: "Detalhado" },
 ];
 
 type Therapist = { userId: string; email: string; name: string };
@@ -42,7 +38,33 @@ type CertificateReport = {
   totalSeconds: number;
   totalSessions: number;
   evolutions?: DetailedEvolution[];
+  certificateText?: string;
 };
+
+function CertificateMarkdown({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
+      {lines.map((line, i) => {
+        if (line.startsWith("# "))   return <h1  key={i} className="text-xl font-bold text-gray-900 mt-2">{line.slice(2)}</h1>;
+        if (line.startsWith("## "))  return <h2  key={i} className="text-base font-bold text-gray-800 mt-5 pb-1 border-b border-gray-100">{line.slice(3)}</h2>;
+        if (line.startsWith("### ")) return <h3  key={i} className="text-sm font-semibold text-gray-700 mt-3">{line.slice(4)}</h3>;
+        if (line.startsWith("- ") || line.startsWith("• ")) {
+          return <li key={i} className="ml-4 list-disc">{line.slice(2)}</li>;
+        }
+        if (line.trim() === "") return <div key={i} className="h-1" />;
+        const parts = line.split(/\*\*(.*?)\*\*/g);
+        return (
+          <p key={i}>
+            {parts.map((part, j) =>
+              j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 function formatDuration(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -89,7 +111,6 @@ export default function CertificatePage() {
 
   const [therapistId, setTherapistId] = useState("");
   const [period,      setPeriod]      = useState("");
-  const [reportType,  setReportType]  = useState("");
 
   const [report,  setReport]  = useState<CertificateReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -114,14 +135,14 @@ export default function CertificatePage() {
     );
   }, [isAdmin, user]);
 
-  const canGenerate = !!therapistId && !!period && !!reportType;
+  const canGenerate = !!therapistId && !!period;
 
   async function handleGenerate() {
     if (!canGenerate) return;
     setLoading(true); setError(null); setReport(null);
     try {
-      const headers = await adminHeaders();
-      const params = new URLSearchParams({ therapistId, period, reportType });
+      const headers = { ...(await adminHeaders()), ...(await aiHeaders()) };
+      const params = new URLSearchParams({ therapistId, period, reportType: "detalhado" });
       const res = await fetch(`/api/certificate?${params}`, { headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao gerar certificado.");
@@ -147,7 +168,7 @@ export default function CertificatePage() {
 
       {/* Filtros */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SelectField
             label="Terapeuta"
             value={therapistId}
@@ -161,13 +182,6 @@ export default function CertificatePage() {
             onChange={setPeriod}
             placeholder="Selecionar..."
             options={PERIOD_OPTIONS}
-          />
-          <SelectField
-            label="Tipo de relatório"
-            value={reportType}
-            onChange={setReportType}
-            placeholder="Selecionar..."
-            options={REPORT_TYPE_OPTIONS}
           />
         </div>
 
@@ -203,6 +217,18 @@ export default function CertificatePage() {
               Período: {fmtDate(report.period.start)} a {fmtDate(report.period.end)}
             </p>
           </div>
+
+          {/* Certificado gerado por IA */}
+          {report.certificateText && (
+            <div className="border-b border-gray-100 pb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-brand-500" />
+                <p className="text-sm font-bold text-gray-800">Certificado</p>
+                <span className="text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100 font-medium">IA</span>
+              </div>
+              <CertificateMarkdown text={report.certificateText} />
+            </div>
+          )}
 
           {/* Síntese */}
           <div>

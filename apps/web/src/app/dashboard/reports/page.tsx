@@ -38,10 +38,11 @@ const MOOD_EMOJI = ["", "😟", "😕", "😐", "🙂", "😊"];
 
 type Tab       = "geral" | "clientes" | "relatorios";
 type DrillType = "sessions" | "clients" | "hours" | "evolutions";
-type ReportSubTab = "evolucao";
+type ReportSubTab = "evolucao" | "relatorio_evolucoes";
 
-const REPORT_SUB_TABS: { id: ReportSubTab; label: string }[] = [
-  { id: "evolucao", label: "Evolução" },
+const REPORT_SUB_TABS: { id: ReportSubTab; label: string; promptKey: string }[] = [
+  { id: "evolucao",             label: "Evolução",                promptKey: "EVOLUTION" },
+  { id: "relatorio_evolucoes",  label: "Relatório de Evoluções",   promptKey: "EVOLUTION_REPORT" },
 ];
 
 type MonthData = {
@@ -481,7 +482,7 @@ function EvolutionMarkdownReport({ text }: { text: string }) {
   );
 }
 
-function EvolutionReportPanel({ clients }: { clients: Client[] }) {
+function EvolutionReportPanel({ clients, promptKey }: { clients: Client[]; promptKey: string }) {
   const { user } = useAuthStore();
   const [clientId, setClientId] = useState("");
   const [period,   setPeriod]   = useState("3m");
@@ -499,7 +500,7 @@ function EvolutionReportPanel({ clients }: { clients: Client[] }) {
       const res = await fetch("/api/reports/clinical-evolution", {
         method:  "POST",
         headers: await aiHeaders(),
-        body:    JSON.stringify({ clientId, therapistId: user.id, period }),
+        body:    JSON.stringify({ clientId, therapistId: user.id, period, promptKey }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao gerar relatório");
@@ -1133,7 +1134,10 @@ export default function ReportsPage() {
               </button>
             ))}
           </div>
-          {reportSubTab === "evolucao" && <EvolutionReportPanel clients={clients} />}
+          {(() => {
+            const active = REPORT_SUB_TABS.find(t => t.id === reportSubTab)!;
+            return <EvolutionReportPanel key={active.id} clients={clients} promptKey={active.promptKey} />;
+          })()}
         </div>
       )}
 
