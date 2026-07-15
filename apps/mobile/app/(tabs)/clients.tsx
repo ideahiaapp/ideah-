@@ -101,7 +101,7 @@ export default function ClientsScreen() {
     <SafeAreaView style={s.safe}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.title}>Pacientes</Text>
+        <Text style={s.title}>Clientes</Text>
         <Text style={s.count}>{clients.length} total</Text>
       </View>
 
@@ -112,7 +112,7 @@ export default function ClientsScreen() {
           style={s.searchInput}
           value={search}
           onChangeText={setSearch}
-          placeholder="Buscar paciente..."
+          placeholder="Buscar cliente..."
           placeholderTextColor={Colors.gray[400]}
         />
       </View>
@@ -126,7 +126,7 @@ export default function ClientsScreen() {
           renderItem={renderClient}
           contentContainerStyle={s.list}
           ListEmptyComponent={
-            <Text style={s.emptyText}>Nenhum paciente encontrado.</Text>
+            <Text style={s.emptyText}>Nenhum cliente encontrado.</Text>
           }
         />
       )}

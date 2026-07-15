@@ -59,7 +59,7 @@ export default function ScheduleScreen() {
         </View>
         <View style={s.cardBody}>
           <View style={s.cardTop}>
-            <Text style={s.clientName} numberOfLines={1}>{item.client?.name ?? "Paciente"}</Text>
+            <Text style={s.clientName} numberOfLines={1}>{item.client?.name ?? "Cliente"}</Text>
             <View style={[s.badge, { backgroundColor: st.bg }]}>
               <Text style={[s.badgeText, { color: st.color }]}>{st.label}</Text>
             </View>

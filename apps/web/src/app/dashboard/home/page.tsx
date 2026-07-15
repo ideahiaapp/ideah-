@@ -14,11 +14,27 @@ export default function HomePage() {
   const firstName = user?.name?.split(" ")[0] ?? "terapeuta";
 
   const [clients, setClients] = useState<Client[]>([]);
+  const [city, setCity] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getClients(user.id).then(setClients).catch(() => {});
   }, [user]);
+
+  useEffect(() => {
+    fetch("/api/geo")
+      .then(r => r.json())
+      .then(d => setCity(d.city ?? null))
+      .catch(() => setCity(null));
+  }, []);
+
+  const now = new Date();
+  const weekday = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(now);
+  const day     = now.getDate();
+  const month   = new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(now);
+  const year    = now.getFullYear();
+  const rawDateLine = [city, weekday, `${day} de ${month} de ${year}`].filter(Boolean).join(", ");
+  const dateLine = rawDateLine.charAt(0).toUpperCase() + rawDateLine.slice(1);
 
   const activeClients = clients
     .filter(c => c.status === "ACTIVE")
@@ -28,28 +44,15 @@ export default function HomePage() {
   return (
     <div className="-m-6 min-h-[calc(100vh-4rem)] bg-brand-50/60 px-10 py-10 space-y-10">
       <div>
-        <p className="text-gray-600 text-sm">{greeting},</p>
+        <div className="flex items-start justify-between gap-4">
+          <p className="text-gray-600 text-sm">{greeting},</p>
+          <p className="text-gray-500 text-sm text-right">{dateLine}</p>
+        </div>
         <h1 className="font-serif text-5xl text-ink mt-1">{firstName}</h1>
         <p className="text-gray-600 mt-4">Qual caso você quer acompanhar agora?</p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
-          <div className="w-11 h-11 rounded-xl bg-brand-100 flex items-center justify-center mb-4">
-            <Users className="w-5 h-5 text-brand-600" strokeWidth={1.8} />
-          </div>
-          <h2 className="font-serif text-xl text-ink">Meus clientes</h2>
-          <p className="text-sm text-gray-500 mt-1.5 flex-1">
-            Acesse seus pacientes e continue uma evolução clínica.
-          </p>
-          <Link
-            href="/dashboard/clients"
-            className="mt-5 inline-flex items-center justify-center bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-fit"
-          >
-            Ver clientes
-          </Link>
-        </div>
-
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
           <div className="w-11 h-11 rounded-xl bg-brand-500 flex items-center justify-center mb-4">
             <MessageSquare className="w-5 h-5 text-white" strokeWidth={1.8} />
@@ -63,6 +66,22 @@ export default function HomePage() {
             className="mt-5 inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-fit"
           >
             Supervisionar
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
+          <div className="w-11 h-11 rounded-xl bg-brand-100 flex items-center justify-center mb-4">
+            <Users className="w-5 h-5 text-brand-600" strokeWidth={1.8} />
+          </div>
+          <h2 className="font-serif text-xl text-ink">Novo Cliente</h2>
+          <p className="text-sm text-gray-500 mt-1.5 flex-1">
+            Cadastre um novo cliente para começar o acompanhamento.
+          </p>
+          <Link
+            href="/dashboard/clients/new"
+            className="mt-5 inline-flex items-center justify-center bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-fit"
+          >
+            Novo cliente
           </Link>
         </div>
       </div>

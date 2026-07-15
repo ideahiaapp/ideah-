@@ -161,8 +161,8 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
           <p className="text-sm font-semibold text-brand-900">Enviar anamnese</p>
           <p className="text-xs text-brand-600 mt-0.5">
             {mode === "new"
-              ? "Novo paciente — o preenchimento é o pré-cadastro. Ao receber, você ativa como cliente."
-              : "Paciente já cadastrado — os dados de cadastro já vêm preenchidos no link."}
+              ? "Novo cliente — o preenchimento é o pré-cadastro. Ao receber, você ativa como cliente."
+              : "Cliente já cadastrado — os dados de cadastro já vêm preenchidos no link."}
           </p>
         </div>
       </div>
@@ -175,7 +175,7 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
             mode === "new" ? "bg-brand-500 text-white" : "text-brand-600 hover:bg-brand-50"
           )}
         >
-          Novo paciente (pré-cadastro)
+          Novo cliente (pré-cadastro)
         </button>
         <button
           onClick={() => switchMode("existing")}
@@ -184,7 +184,7 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
             mode === "existing" ? "bg-brand-500 text-white" : "text-brand-600 hover:bg-brand-50"
           )}
         >
-          Paciente já cadastrado
+          Cliente já cadastrado
         </button>
       </div>
 
@@ -221,10 +221,10 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
             <select
               value={selectedId}
               onChange={e => { setSelectedId(e.target.value); setEmailOpen(false); setEmailSent(false); setEmailError(null); }}
-              aria-label="Selecionar paciente"
+              aria-label="Selecionar cliente"
               className="w-full appearance-none pr-9 px-4 py-2.5 text-sm bg-white border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
             >
-              <option value="">Selecionar paciente...</option>
+              <option value="">Selecionar cliente...</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -271,10 +271,10 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
           <Mail className="w-4 h-4 text-brand-300 flex-shrink-0" />
           <input
             type="email"
-            aria-label="E-mail do paciente"
+            aria-label="E-mail do cliente"
             value={newEmail}
             onChange={e => setNewEmail(e.target.value)}
-            placeholder="email@dopaciente.com"
+            placeholder="email@docliente.com"
             className="flex-1 text-sm bg-transparent focus:outline-none text-gray-800 placeholder-gray-400"
             autoFocus
           />
@@ -511,7 +511,7 @@ function ClientTable({ clients, emptyMessage }: { clients: Client[]; emptyMessag
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="hidden md:grid grid-cols-[2fr_1.2fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-gray-50 bg-gray-50/60">
-        {["Paciente", "Abordagem", "Sessões", "Última sessão", ""].map(h => (
+        {["Cliente", "Abordagem", "Sessões", "Última sessão", ""].map(h => (
           <p key={h} className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</p>
         ))}
       </div>
@@ -568,7 +568,7 @@ function ClientsPageInner() {
 
   const TABS = [
     { id: "sem-anamnese" as TabId, label: "Sem anamnese",        icon: ClipboardList,  count: semAnamnese.length,       badge: semAnamnese.length > 0 ? "bg-amber-500" : undefined },
-    { id: "ativos"       as TabId, label: "Pacientes ativos",    icon: UserCheck,      count: comAnamnese.length,       badge: undefined },
+    { id: "ativos"       as TabId, label: "Clientes ativos",    icon: UserCheck,      count: comAnamnese.length,       badge: undefined },
     { id: "aguardando"   as TabId, label: "Aguardando aprovação", icon: ClipboardCheck, count: pendingAnamneses.length,  badge: pendingAnamneses.length > 0 ? "bg-amber-500" : undefined },
   ];
 
@@ -593,7 +593,7 @@ function ClientsPageInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink">Clientes</h1>
-          <p className="text-gray-500 text-sm mt-1">Gerencie seus pacientes e prontuários</p>
+          <p className="text-gray-500 text-sm mt-1">Gerencie seus clientes e prontuários</p>
         </div>
         <Link
           href="/dashboard/clients/new"
@@ -660,13 +660,13 @@ function ClientsPageInner() {
             semAnamnese.length === 0 ? (
               <>
                 <ClipboardList className="w-10 h-10 text-green-300 mx-auto mb-3" strokeWidth={1.5} />
-                <p className="text-gray-500 font-medium">Todos os pacientes ativos têm anamnese</p>
+                <p className="text-gray-500 font-medium">Todos os clientes ativos têm anamnese</p>
                 <p className="text-gray-400 text-sm mt-1">Nenhuma anamnese pendente de preenchimento.</p>
               </>
             ) : (
               <>
                 <UserX className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">Nenhum paciente encontrado</p>
+                <p className="text-gray-500 font-medium">Nenhum cliente encontrado</p>
                 <button onClick={() => setSearch("")} className="mt-3 text-sm text-brand-500 underline">Limpar busca</button>
               </>
             )
@@ -682,7 +682,7 @@ function ClientsPageInner() {
             </div>
             <h2 className="text-gray-700 font-bold text-lg mb-2">Nenhum cliente cadastrado ainda</h2>
             <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed mb-6">
-              Comece cadastrando seu primeiro paciente. O prontuário, as evoluções e as supervisões ficam todos aqui.
+              Comece cadastrando seu primeiro cliente. O prontuário, as evoluções e as supervisões ficam todos aqui.
             </p>
             <Link href="/dashboard/clients/new"
               className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm">
@@ -696,7 +696,7 @@ function ClientsPageInner() {
             emptyMessage={
               <>
                 <UserX className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">Nenhum paciente encontrado</p>
+                <p className="text-gray-500 font-medium">Nenhum cliente encontrado</p>
                 <button onClick={() => setSearch("")} className="mt-3 text-sm text-brand-500 underline">Limpar busca</button>
               </>
             }

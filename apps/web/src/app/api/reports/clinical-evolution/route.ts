@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     if (!evolutions || evolutions.length === 0) {
       return NextResponse.json(
-        { error: "Nenhuma evolução registrada para este paciente no período selecionado." },
+        { error: "Nenhuma evolução registrada para este cliente no período selecionado." },
         { status: 422 }
       );
     }
@@ -151,26 +151,26 @@ export async function POST(req: NextRequest) {
     };
 
     const systemPrompt = `Você é um psicólogo supervisor clínico experiente, com amplo conhecimento em diversas abordagens psicoterapêuticas.
-Sua tarefa é gerar um relatório de evolução clínica detalhado e humanizado para apoiar o terapeuta na compreensão do processo terapêutico do paciente.
+Sua tarefa é gerar um relatório de evolução clínica detalhado e humanizado para apoiar o terapeuta na compreensão do processo terapêutico do cliente.
 O relatório deve ser escrito em português brasileiro, em linguagem clínica mas acessível, com sensibilidade e profundidade.
 Use markdown para estruturar o relatório. Inclua obrigatoriamente estas seções:
 
-# Relatório de Evolução Clínica — [Nome do Paciente]
+# Relatório de Evolução Clínica — [Nome do Cliente]
 
 ## Síntese do Período
 (Visão geral do processo terapêutico no período analisado, 3-5 frases)
 
 ## Evolução Observada
-(Como o paciente evoluiu ao longo das sessões? O que mudou?)
+(Como o cliente evoluiu ao longo das sessões? O que mudou?)
 
 ## Temas e Padrões Recorrentes
 (Quais temas, emoções ou padrões comportamentais apareceram com mais frequência?)
 
 ## Hipóteses Clínicas
-(Hipóteses sobre a dinâmica psíquica ou funcionamento do paciente)
+(Hipóteses sobre a dinâmica psíquica ou funcionamento do cliente)
 
 ## Conquistas e Recursos
-(O que de positivo emergiu no processo? Quais recursos o paciente demonstrou?)
+(O que de positivo emergiu no processo? Quais recursos o cliente demonstrou?)
 
 ## Pontos de Atenção
 (O que ainda precisa de trabalho? Resistências, padrões que persistem?)
@@ -181,7 +181,7 @@ Use markdown para estruturar o relatório. Inclua obrigatoriamente estas seçõe
 ## Indicadores de Progresso
 (Avalie de 1-10: Engajamento, Insight, Regulação emocional, Funcionalidade)`;
 
-    const userPrompt = `Paciente: ${client.name}
+    const userPrompt = `Cliente: ${client.name}
 Abordagem terapêutica: ${client.approach_label ?? "não especificada"}
 Demanda principal: ${client.main_demand ?? "não registrada"}
 Ocupação: ${client.occupation ?? "não informada"}

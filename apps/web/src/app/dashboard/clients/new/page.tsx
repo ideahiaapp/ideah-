@@ -26,7 +26,7 @@ const ALL_APPROACHES = [
 
 const FREQUENCIES = ["Semanal","Quinzenal","Mensal","Sob demanda"];
 const DURATIONS   = ["45","50","60","90"];
-const REFERRALS   = ["Busca própria","Indicação de paciente","Indicação de médico/psiquiatra","Plataforma online","Redes sociais","Outro"];
+const REFERRALS   = ["Busca própria","Indicação de cliente","Indicação de médico/psiquiatra","Plataforma online","Redes sociais","Outro"];
 
 export default function NewClientPage() {
   const router     = useRouter();
@@ -126,7 +126,7 @@ export default function NewClientPage() {
       <Section icon={User} title="Dados pessoais">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <VoiceInput label="Nome completo" required value={form.name} onChange={v => set("name", v)} placeholder="Nome do paciente" />
+            <VoiceInput label="Nome completo" required value={form.name} onChange={v => set("name", v)} placeholder="Nome do cliente" />
           </div>
           <Field label="Data de nascimento">
             <input type="date" value={form.birthDate} onChange={e => set("birthDate", e.target.value)} className={inputCls} />

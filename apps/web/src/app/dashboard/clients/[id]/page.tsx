@@ -243,10 +243,6 @@ export default function ClientDetailPage() {
               <span className="font-semibold text-gray-800">{formatDate(new Date(client.next_session))}</span>
             </div>
             <div className="flex gap-2">
-              <Link href={`/dashboard/evolutions/new?clientId=${client.id}`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-semibold text-gray-700 transition-colors">
-                <Plus className="w-3.5 h-3.5" /> Nova evolução
-              </Link>
               <Link href={`/dashboard/supervision?client=${client.id}`}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 border border-brand-200 text-xs font-semibold text-brand-700 transition-colors">
                 <Sparkles className="w-3.5 h-3.5" /> Supervisionar
@@ -332,7 +328,7 @@ export default function ClientDetailPage() {
             )
           ) : (
             <>
-              <ProntuarioSection title="Dados preenchidos pelo paciente" icon={ClipboardList}>
+              <ProntuarioSection title="Dados preenchidos pelo cliente" icon={ClipboardList}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <AnamneseField label="Nome" value={anamnese.name} />
                   <AnamneseField label="E-mail" value={anamnese.email} />
@@ -409,9 +405,9 @@ export default function ClientDetailPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">{evolutions.length} evoluções registradas</p>
-            <Link href={`/dashboard/evolutions/new?clientId=${client.id}`}
+            <Link href={`/dashboard/supervision?client=${client.id}`}
               className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 hover:text-brand-700">
-              <Plus className="w-3.5 h-3.5" /> Nova evolução
+              <Sparkles className="w-3.5 h-3.5" /> Supervisionar
             </Link>
           </div>
           {evolutions.length === 0 ? (

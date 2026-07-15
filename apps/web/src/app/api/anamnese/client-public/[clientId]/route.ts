@@ -44,7 +44,7 @@ export async function GET(
   }
 }
 
-// PUT /api/anamnese/client-public/[clientId] — paciente preenche/atualiza a própria anamnese
+// PUT /api/anamnese/client-public/[clientId] — cliente preenche/atualiza a própria anamnese
 export async function PUT(
   req: NextRequest,
   { params }: { params: { clientId: string } }
@@ -66,7 +66,7 @@ export async function PUT(
       return NextResponse.json({ error: "Link inválido." }, { status: 404 });
     }
 
-    // Atualiza dados pessoais no cadastro do cliente, caso o paciente tenha corrigido algo
+    // Atualiza dados pessoais no cadastro do cliente, caso o cliente tenha corrigido algo
     await supabase
       .from("clients")
       .update({

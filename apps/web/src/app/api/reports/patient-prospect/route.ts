@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       }> | null };
 
     if (!evolutions || evolutions.length === 0) {
-      return NextResponse.json({ error: "Nenhuma evolução registrada para este paciente." }, { status: 422 });
+      return NextResponse.json({ error: "Nenhuma evolução registrada para este cliente." }, { status: 422 });
     }
 
     // Monta contexto das evoluções
@@ -78,13 +78,13 @@ export async function POST(req: NextRequest) {
     const firstDate = evolutions[0].session_date;
     const lastDate  = evolutions[evolutions.length - 1].session_date;
 
-    const systemPrompt = `Você é um supervisor clínico experiente auxiliando um psicoterapeuta a avaliar o progresso de seus pacientes.
+    const systemPrompt = `Você é um supervisor clínico experiente auxiliando um psicoterapeuta a avaliar o progresso de seus clientes.
 Analise as evoluções de sessão fornecidas e gere um prospecto clínico objetivo e humanizado.
 Responda APENAS com um JSON válido, sem markdown, no seguinte formato:
 {
   "verdict": "evoluiu" | "estável" | "regrediu",
   "score": <número de 1 a 10 representando o progresso geral>,
-  "summary": "<parágrafo conciso de 3-5 frases descrevendo o arco terapêutico do paciente>",
+  "summary": "<parágrafo conciso de 3-5 frases descrevendo o arco terapêutico do cliente>",
   "mood_trend": "crescente" | "estável" | "decrescente",
   "key_themes": ["<tema 1>", "<tema 2>", "<tema 3>"],
   "strengths": "<pontos de evolução positiva observados>",
@@ -92,7 +92,7 @@ Responda APENAS com um JSON válido, sem markdown, no seguinte formato:
   "recommendation": "<sugestão clínica para as próximas sessões>"
 }`;
 
-    const userPrompt = `Paciente: ${client.name}
+    const userPrompt = `Cliente: ${client.name}
 Abordagem: ${client.approach_label ?? "não especificada"}
 Demanda principal: ${client.main_demand ?? "não registrada"}
 Período: ${firstDate} a ${lastDate}

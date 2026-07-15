@@ -9,16 +9,19 @@ function serviceClient() {
   );
 }
 
-// GET /api/admin/therapists — lista todos
+// GET /api/admin/therapists — lista todos (admins também são terapeutas e devem aparecer)
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
     const supabaseAdmin = serviceClient();
 
-    const { data: profiles, error } = await supabaseAdmin
-      .from("therapist_profiles")
-      .select("user_id, email, blocked, created_at")
-      .order("created_at", { ascending: false });
+    const [{ data: profiles, error }, { data: adminRows }] = await Promise.all([
+      supabaseAdmin
+        .from("therapist_profiles")
+        .select("user_id, email, blocked, created_at")
+        .order("created_at", { ascending: false }),
+      supabaseAdmin.from("admins").select("email"),
+    ]);
 
     if (error) throw error;
 
@@ -33,6 +36,24 @@ export async function GET(req: NextRequest) {
       blocked:   p.blocked,
       createdAt: p.created_at,
     }));
+
+    // Admins também são terapeutas — inclui os que não têm therapist_profiles
+    // (ex.: conta criada direto na tabela admins, sem passar pelo cadastro normal).
+    const listedEmails = new Set(result.map(t => t.email?.toLowerCase().trim()));
+    for (const row of adminRows ?? []) {
+      const adminEmail = row.email?.toLowerCase().trim();
+      if (!adminEmail || listedEmails.has(adminEmail)) continue;
+      const adminUser = users.find(u => u.email?.toLowerCase().trim() === adminEmail);
+      if (!adminUser) continue;
+      result.unshift({
+        userId:    adminUser.id,
+        email:     adminUser.email ?? adminEmail,
+        name:      adminUser.user_metadata?.name ?? adminUser.email?.split("@")[0] ?? "—",
+        blocked:   false,
+        createdAt: adminUser.created_at,
+      });
+      listedEmails.add(adminEmail);
+    }
 
     return NextResponse.json(result);
   } catch (e) {

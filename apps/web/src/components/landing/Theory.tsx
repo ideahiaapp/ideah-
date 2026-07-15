@@ -70,7 +70,7 @@ export function TheorySection() {
             <div className="flex justify-end">
               <div className="bg-white/20 rounded-2xl rounded-tr-sm px-4 py-3 max-w-sm">
                 <p className="text-white text-sm leading-relaxed">
-                  Minha paciente perdeu a mãe há 3 meses e diz que "não chora porque não adianta". Como entender isso?
+                  Minha cliente perdeu a mãe há 3 meses e diz que "não chora porque não adianta". Como entender isso?
                 </p>
               </div>
             </div>

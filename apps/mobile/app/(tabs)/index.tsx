@@ -28,7 +28,7 @@ export default function HomeScreen() {
       ]);
 
       setKpis([
-        { label: "Pacientes", value: String(totalClients ?? 0), icon: "people", color: Colors.brand[500] },
+        { label: "Clientes", value: String(totalClients ?? 0), icon: "people", color: Colors.brand[500] },
         { label: "Ativos", value: String(activeSessions ?? 0), icon: "checkmark-circle", color: Colors.green },
         { label: "Evoluções", value: String(totalEvolutions ?? 0), icon: "document-text", color: "#3B82F6" },
       ]);
@@ -100,11 +100,11 @@ export default function HomeScreen() {
               ))}
             </View>
 
-            {/* Pacientes recentes */}
-            <Text style={s.sectionTitle}>Pacientes recentes</Text>
+            {/* Clientes recentes */}
+            <Text style={s.sectionTitle}>Clientes recentes</Text>
             <View style={s.card}>
               {recentClients.length === 0 ? (
-                <Text style={s.emptyText}>Nenhum paciente cadastrado ainda.</Text>
+                <Text style={s.emptyText}>Nenhum cliente cadastrado ainda.</Text>
               ) : (
                 recentClients.map((c, i) => (
                   <TouchableOpacity

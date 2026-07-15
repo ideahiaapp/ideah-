@@ -109,7 +109,7 @@ Leve em conta todo esse material ao formular hipóteses e intervenções.`
 
 REFERENCIAL TEÓRICO ATIVO NESTA MENSAGEM: ${approach}. Toda a sua resposta deve ser fundamentada EXCLUSIVAMENTE nesta abordagem. Se o terapeuta mudar a abordagem em próximas mensagens, você deve adotar o novo referencial imediatamente.
 
-Contexto desta supervisão: O terapeuta está trazendo material clínico referente ao cliente "${clientName || "paciente"}".
+Contexto desta supervisão: O terapeuta está trazendo material clínico referente ao cliente "${clientName || "cliente"}".
 Responda de forma estruturada quando apropriado, usando:
 - **Negrito** para conceitos-chave
 - > Citações para referências teóricas relevantes

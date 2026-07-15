@@ -838,7 +838,7 @@ function TabEtica() {
             {
               id: "sigilo" as const,
               title: "Sigilo e proteção de dados",
-              desc: "Comprometo-me a não inserir dados que identifiquem diretamente o(a) paciente nas interações com a IA. Usarei pseudonimização sempre que possível.",
+              desc: "Comprometo-me a não inserir dados que identifiquem diretamente o(a) cliente nas interações com a IA. Usarei pseudonimização sempre que possível.",
             },
             {
               id: "lgpd" as const,
@@ -1297,6 +1297,9 @@ const APPROACH_KEYS = [
   { key: "GESTALT",              label: "Gestalt-terapia" },
   { key: "PSYCHODRAMA",          label: "Psicodrama" },
   { key: "SYSTEMIC",             label: "Constelação Familiar" },
+  { key: "EVOLUTION",            label: "Evolução" },
+  { key: "CERTIFICATE",          label: "Certificado" },
+  { key: "EVOLUTION_REPORT",     label: "Relatório de evoluções" },
 ];
 
 type PromptEntry = { approach: string; prompt: string; updated_at?: string };
@@ -1769,7 +1772,7 @@ function TabAnamnese() {
         <h2 className="text-base font-bold text-gray-800">Formulários de Anamnese</h2>
         <p className="text-sm text-gray-500 mt-1">
           Cada abordagem terapêutica pode ter um formulário de anamnese específico.
-          Os formulários cadastrados são apresentados ao paciente ao preencher a anamnese.
+          Os formulários cadastrados são apresentados ao cliente ao preencher a anamnese.
         </p>
       </div>
 

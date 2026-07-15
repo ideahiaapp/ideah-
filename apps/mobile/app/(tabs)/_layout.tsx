@@ -35,7 +35,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="clients"
         options={{
-          title: "Pacientes",
+          title: "Clientes",
           tabBarIcon: ({ focused }) => tabIcon(focused, "people", "people-outline"),
         }}
       />

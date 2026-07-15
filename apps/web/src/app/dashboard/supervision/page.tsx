@@ -6,7 +6,7 @@ import { aiHeaders } from "@/lib/api-key";
 import {
   Plus, Send, Loader2, Brain, Heart, Layers, Users, Activity,
   Circle, Compass, Flame, AlertCircle, Copy, Check, Mic, MicOff,
-  ChevronDown, MessageSquare, Clock, Shield, FileText, PlayCircle, StopCircle, X,
+  ChevronDown, MessageSquare, Clock, Shield, FileText, PlayCircle, StopCircle, PauseCircle, X,
 } from "lucide-react";
 import {
   getClients, getSupervisionsByClient, createSupervision,
@@ -602,13 +602,16 @@ export default function WorkspacePage() {
   const [templateHtml,    setTemplateHtml]    = useState<string | null>(null);
 
   const [supervisionActive, setSupervisionActive] = useState(false);
+  const [supervisionPaused, setSupervisionPaused] = useState(false);
   const [showStartModal,    setShowStartModal]    = useState(false);
   const [showFinishModal,   setShowFinishModal]   = useState(false);
   const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null);
   const [afterFinishAction,  setAfterFinishAction]  = useState<(() => void) | null>(null);
   const [sessionMeta, setSessionMeta] = useState<{ date: string; time: string; impressions: string } | null>(null);
-  const [sessionStartAt, setSessionStartAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  /* Texto só pode ser escrito com a supervisão ativa e não pausada */
+  const canWrite = supervisionActive && !supervisionPaused;
 
   const bottomRef   = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -729,6 +732,7 @@ export default function WorkspacePage() {
     setMessages([]);
     setError(null);
     setSupervisionActive(false);
+    setSupervisionPaused(false);
   }
   function selectClient(clientId: string) {
     if (clientId === selectedClientId) return;
@@ -740,6 +744,7 @@ export default function WorkspacePage() {
     setApproachKey(session.approach ?? "PSYCHOANALYSIS");
     setError(null);
     setSupervisionActive(false);
+    setSupervisionPaused(false);
     try {
       const msgs = await getMessages(session.id);
       setMessages(msgs.map((m: SupervisionMessage) => ({
@@ -761,6 +766,7 @@ export default function WorkspacePage() {
     setMessages([]);
     setError(null);
     setSupervisionActive(false);
+    setSupervisionPaused(false);
   }
   function newSession() {
     guardLeave(newSessionImpl);
@@ -774,8 +780,8 @@ export default function WorkspacePage() {
   function handleConfirmStartSupervision(date: string, time: string, impressions: string) {
     setShowStartModal(false);
     setSupervisionActive(true);
+    setSupervisionPaused(false);
     setSessionMeta({ date, time, impressions });
-    setSessionStartAt(Date.now());
     setElapsedSeconds(0);
     const text = `Sessão em ${new Date(date + "T12:00:00").toLocaleDateString("pt-BR")} às ${time}. Minhas impressões: ${impressions}`;
     sendMessageText(text);
@@ -785,6 +791,14 @@ export default function WorkspacePage() {
   function handleFinishSupervision() {
     setAfterFinishAction(null);
     setShowFinishModal(true);
+  }
+
+  /* Pausa: timer para, nenhuma pergunta de encerramento, nenhuma interação com a IA */
+  function handlePauseSupervision() {
+    setSupervisionPaused(true);
+  }
+  function handleResumeSupervision() {
+    setSupervisionPaused(false);
   }
 
   /* Confirmação de "Deseja finalizar a supervisão?" ao tentar sair da tela —
@@ -799,9 +813,9 @@ export default function WorkspacePage() {
   async function handleConfirmFinishSupervision(hypothesis: string, nextSessionPlan: string) {
     setShowFinishModal(false);
     setSupervisionActive(false);
+    setSupervisionPaused(false);
 
-    const durationSeconds = sessionStartAt ? Math.round((Date.now() - sessionStartAt) / 1000) : null;
-    setSessionStartAt(null);
+    const durationSeconds = elapsedSeconds;
     setElapsedSeconds(0);
 
     if (selectedClient && user) {
@@ -846,15 +860,14 @@ export default function WorkspacePage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [supervisionActive]);
 
-  /* Temporizador da supervisão em andamento */
+  /* Temporizador da supervisão em andamento — pausa sem avançar o tempo */
   useEffect(() => {
-    if (!supervisionActive || !sessionStartAt) return;
-    setElapsedSeconds(Math.floor((Date.now() - sessionStartAt) / 1000));
+    if (!supervisionActive || supervisionPaused) return;
     const interval = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - sessionStartAt) / 1000));
+      setElapsedSeconds(s => s + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [supervisionActive, sessionStartAt]);
+  }, [supervisionActive, supervisionPaused]);
 
   /* ── Last evolution for AI context ── */
   const lastEvolution = evolutions[0] ?? null;
@@ -895,7 +908,7 @@ export default function WorkspacePage() {
         body: JSON.stringify({
           messages: history,
           approach: approachKey,           // sempre enviado com a seleção atual
-          clientName: selectedClient?.name ?? "paciente",
+          clientName: selectedClient?.name ?? "cliente",
           therapistId: user.id,
           clientIntention,
           clientAnamnese: isFirstSupervision ? clientAnamnese : null,
@@ -931,7 +944,7 @@ export default function WorkspacePage() {
       <h1 className="sr-only">Supervisão e Evolução</h1>
 
       {/* ══ SIDEBAR ══ */}
-      <aside aria-label="Lista de pacientes" className="w-[248px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
+      <aside aria-label="Lista de clientes" className="w-[248px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
         <div className="p-3 border-b border-gray-100">
           <button onClick={newSession} disabled={!selectedClientId}
             className={cn(
@@ -944,7 +957,7 @@ export default function WorkspacePage() {
         </div>
 
         <div className="overflow-y-auto flex-1 pb-3">
-          <p className="text-[10.5px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-4 pb-2">Pacientes</p>
+          <p className="text-[10.5px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-4 pb-2">Clientes</p>
           {clients.filter(c => c.status !== "WAITLIST").map(client => {
             const isSelected = selectedClientId === client.id;
             const evCount    = isSelected ? evolutions.length : 0;
@@ -1004,30 +1017,11 @@ export default function WorkspacePage() {
                   </span>
                 </div>
               </div>
-              {supervisionActive ? (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg tabular-nums">
-                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                    {formatDuration(elapsedSeconds)}
-                  </span>
-                  <button onClick={handleFinishSupervision}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg transition-colors">
-                    <StopCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
-                    Finalizar supervisão
-                  </button>
-                </div>
-              ) : (
-                <button onClick={handleStartSupervision}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors">
-                  <PlayCircle className="w-3.5 h-3.5" strokeWidth={1.8} />
-                  Iniciar supervisão
-                </button>
-              )}
             </>
           ) : (
             <div className="flex items-center gap-2 text-gray-500">
               <MessageSquare className="w-5 h-5" strokeWidth={1.5} />
-              <p className="text-sm">Selecione um paciente para iniciar</p>
+              <p className="text-sm">Selecione um cliente para iniciar</p>
             </div>
           )}
         </div>
@@ -1047,7 +1041,7 @@ export default function WorkspacePage() {
               <div>
                 <h2 className="text-base font-bold text-gray-700">Supervisão & Evolução</h2>
                 <p className="text-sm text-gray-500 mt-1 max-w-xs leading-relaxed">
-                  Selecione um paciente para acessar o workspace clínico integrado.
+                  Selecione um cliente para acessar o workspace clínico integrado.
                 </p>
               </div>
             </div>
@@ -1120,12 +1114,58 @@ export default function WorkspacePage() {
           <div className="border-t border-gray-100 bg-white flex-shrink-0">
 
             <div className="px-5 py-4">
+                {/* Controle da supervisão — bem visível, acima da caixa de diálogo */}
+                <div className="flex items-center justify-center mb-3">
+                  {supervisionActive && supervisionPaused ? (
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1.5 rounded-lg tabular-nums">
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                        {formatDuration(elapsedSeconds)}
+                      </span>
+                      <button onClick={handleResumeSupervision}
+                        className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+                        <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
+                        Retomar supervisão
+                      </button>
+                    </div>
+                  ) : supervisionActive ? (
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg tabular-nums">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                        {formatDuration(elapsedSeconds)}
+                      </span>
+                      <button onClick={handlePauseSupervision}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-white border border-amber-200 hover:bg-amber-50 px-3.5 py-2 rounded-xl transition-colors">
+                        <PauseCircle className="w-4 h-4" strokeWidth={1.8} />
+                        Pausar
+                      </button>
+                      <button onClick={handleFinishSupervision}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl transition-colors shadow-sm">
+                        <StopCircle className="w-4 h-4" strokeWidth={1.8} />
+                        Finalizar supervisão
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={handleStartSupervision}
+                      className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+                      <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
+                      Iniciar supervisão
+                    </button>
+                  )}
+                </div>
+
                 <p className="text-[10px] text-gray-500 text-center mb-3">
-                  Apoio ao raciocínio clínico — sem diagnósticos. O julgamento clínico é sempre do terapeuta.
+                  {supervisionActive && supervisionPaused
+                    ? "Supervisão pausada. Retome para continuar escrevendo."
+                    : supervisionActive
+                    ? "Apoio ao raciocínio clínico — sem diagnósticos. O julgamento clínico é sempre do terapeuta."
+                    : "Inicie a supervisão para liberar o campo de escrita."}
                 </p>
                 <div className={cn(
                   "border rounded-2xl transition-all overflow-visible",
-                  isRecording
+                  !canWrite
+                    ? "bg-gray-100 border-gray-200 opacity-60"
+                    : isRecording
                     ? "bg-red-50/40 border-red-300 ring-2 ring-red-100"
                     : "bg-gray-50 border-gray-200 focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-100"
                 )}>
@@ -1135,10 +1175,11 @@ export default function WorkspacePage() {
                     onChange={e => !isRecording && setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     readOnly={isRecording}
-                    placeholder={isRecording ? "Ouvindo…" : "Traga o recorte do caso — o que apareceu na sessão…"}
+                    disabled={!canWrite}
+                    placeholder={!canWrite ? (supervisionPaused ? "Supervisão pausada…" : "Inicie a supervisão para escrever…") : isRecording ? "Ouvindo…" : "Traga o recorte do caso — o que apareceu na sessão…"}
                     rows={1}
                     className={cn(
-                      "w-full bg-transparent px-4 pt-3 pb-2 text-sm text-gray-800 placeholder-gray-400 resize-none focus:outline-none",
+                      "w-full bg-transparent px-4 pt-3 pb-2 text-sm text-gray-800 placeholder-gray-400 resize-none focus:outline-none disabled:cursor-not-allowed",
                       isRecording && "italic text-gray-600"
                     )}
                     style={{ maxHeight: 120 }}
@@ -1157,7 +1198,8 @@ export default function WorkspacePage() {
                     <div className="relative" ref={lensRef}>
                       <button
                         onClick={() => setLensMenuOpen(v => !v)}
-                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border bg-brand-50 border-brand-200 text-brand-700 hover:bg-brand-100 transition-colors">
+                        disabled={!canWrite}
+                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border bg-brand-50 border-brand-200 text-brand-700 hover:bg-brand-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                         <ApproachIcon className="w-3.5 h-3.5" strokeWidth={1.8} />
                         {approachInfo.label}
                         <ChevronDown className="w-3 h-3 opacity-60" />
@@ -1185,9 +1227,9 @@ export default function WorkspacePage() {
 
                     <div className="flex items-center gap-1.5">
                       {voiceState !== "unsupported" && (
-                        <button type="button" onClick={toggleVoice}
+                        <button type="button" onClick={toggleVoice} disabled={!canWrite}
                           className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center transition-all border",
+                            "w-8 h-8 rounded-lg flex items-center justify-center transition-all border disabled:opacity-40 disabled:cursor-not-allowed",
                             isRecording
                               ? "bg-red-500 border-red-500 text-white animate-pulse"
                               : "bg-white border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-500"
@@ -1195,10 +1237,10 @@ export default function WorkspacePage() {
                           {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                         </button>
                       )}
-                      <button onClick={sendMessage} disabled={!input.trim() || loading}
+                      <button onClick={sendMessage} disabled={!canWrite || !input.trim() || loading}
                         className={cn(
                           "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                          input.trim() && !loading
+                          canWrite && input.trim() && !loading
                             ? "bg-brand-500 hover:bg-brand-600 text-white"
                             : "bg-gray-100 text-gray-300 cursor-not-allowed"
                         )}>

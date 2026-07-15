@@ -4,14 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
   Users,
   MessageSquare,
-  BarChart2,
+  Briefcase,
   Settings,
   LogOut,
   CalendarDays,
-  ScrollText,
   Home,
   Award,
 } from "lucide-react";
@@ -20,11 +18,9 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/dashboard/home",        icon: Home,            label: "Home" },
   { href: "/dashboard/supervision", icon: MessageSquare,   label: "Supervisão" },
-  { href: "/dashboard/evolution",   icon: ScrollText,      label: "Evolução" },
   { href: "/dashboard/clients",     icon: Users,           label: "Clientes" },
   { href: "/dashboard/schedule",    icon: CalendarDays,    label: "Agenda" },
-  { href: "/dashboard",             icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/dashboard/reports",     icon: BarChart2,       label: "Relatórios" },
+  { href: "/dashboard/reports",     icon: Briefcase,       label: "Meu escritório" },
   { href: "/dashboard/certificate", icon: Award,           label: "Certificado" },
 ];
 

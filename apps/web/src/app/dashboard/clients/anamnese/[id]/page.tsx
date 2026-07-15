@@ -230,7 +230,7 @@ export default function AnamneseReviewPage() {
       </div>
 
       {/* Dados da anamnese — leitura */}
-      <Section icon={ClipboardList} title="Dados preenchidos pelo paciente" accent="bg-amber-50/60">
+      <Section icon={ClipboardList} title="Dados preenchidos pelo cliente" accent="bg-amber-50/60">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ReadOnly label="Nome" value={anamnese?.name} />
           <ReadOnly label="E-mail" value={anamnese?.email} />
@@ -336,7 +336,7 @@ export default function AnamneseReviewPage() {
         <Field label="Demanda principal">
           <textarea rows={3} value={form.mainDemand}
             onChange={e => set("mainDemand", e.target.value)}
-            placeholder="Contextualize a demanda clínica do paciente..."
+            placeholder="Contextualize a demanda clínica do cliente..."
             className={inputCls + " resize-none"} />
         </Field>
         <Field label="Observações clínicas iniciais">

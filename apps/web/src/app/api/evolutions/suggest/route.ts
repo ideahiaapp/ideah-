@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const systemPrompt = `Você é um supervisor clínico experiente. Com base no relato de sessão fornecido pelo terapeuta, gere uma hipótese clínica concisa e fundamentada teoricamente.
 
 Abordagem de referência: ${approach || "não especificada"}.
-Cliente: ${clientName || "paciente"}.
+Cliente: ${clientName || "cliente"}.
 
 Responda em formato JSON com exatamente esta estrutura:
 {

@@ -71,7 +71,7 @@ export default function SupervisionScreen() {
           body: JSON.stringify({
             messages: newMessages,
             approach,
-            clientName: selected?.name ?? "paciente",
+            clientName: selected?.name ?? "cliente",
             therapistId: user?.id,
           }),
         }
@@ -107,12 +107,12 @@ export default function SupervisionScreen() {
           </View>
         </View>
 
-        {/* Seletor de paciente */}
+        {/* Seletor de cliente */}
         <View style={s.pickerWrapper}>
           <TouchableOpacity style={s.selector} onPress={() => setShowPicker(!showPicker)}>
             <Ionicons name="person" size={15} color={Colors.gray[400]} />
             <Text style={selected ? s.selectorText : s.selectorPlaceholder} numberOfLines={1}>
-              {selected?.name ?? "Selecionar paciente (opcional)"}
+              {selected?.name ?? "Selecionar cliente (opcional)"}
             </Text>
             <Ionicons name={showPicker ? "chevron-up" : "chevron-down"} size={15} color={Colors.gray[400]} />
           </TouchableOpacity>
@@ -122,7 +122,7 @@ export default function SupervisionScreen() {
                 style={s.pickerItem}
                 onPress={() => { setSelected(null); setShowPicker(false); }}
               >
-                <Text style={[s.pickerItemText, { color: Colors.gray[400] }]}>Sem paciente específico</Text>
+                <Text style={[s.pickerItemText, { color: Colors.gray[400] }]}>Sem cliente específico</Text>
                 {!selected && <Ionicons name="checkmark" size={14} color={Colors.brand[500]} />}
               </TouchableOpacity>
               {clients.map(c => (
@@ -183,12 +183,12 @@ export default function SupervisionScreen() {
               </View>
               <Text style={s.emptyTitle}>Supervisão clínica</Text>
               <Text style={s.emptyText}>
-                Descreva o caso, dúvida clínica ou situação que quer supervisionar. Você pode selecionar um paciente para contextualizar.
+                Descreva o caso, dúvida clínica ou situação que quer supervisionar. Você pode selecionar um cliente para contextualizar.
               </Text>
               <View style={s.suggestions}>
                 {[
                   "Como abordar resistência à mudança?",
-                  "Paciente apresenta dissociação na sessão",
+                  "Cliente apresenta dissociação na sessão",
                   "Dificuldade com vínculo terapêutico",
                 ].map(s => (
                   <TouchableOpacity key={s} style={s2.suggestionBtn} onPress={() => setInput(s)}>

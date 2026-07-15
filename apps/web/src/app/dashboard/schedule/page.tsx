@@ -317,15 +317,15 @@ function SessionModal({
   ) + (isView ? session!.duration : form.duration));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
-      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={isView && session ? `Sessão de ${session.clientName}` : "Nova sessão"} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden focus:outline-none">
+      <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={isView && session ? `Sessão de ${session.clientName}` : "Nova sessão"} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden focus:outline-none max-h-[90vh] my-auto flex flex-col">
         {/* Header */}
         <div
-          className="px-6 py-4 flex items-center justify-between"
+          className="px-6 py-4 flex items-center justify-between flex-shrink-0"
           style={{ backgroundColor: isView && session ? session.color + "18" : "#FDF1ED" }}
         >
           <div className="flex items-center gap-3">
@@ -357,7 +357,7 @@ function SessionModal({
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           {/* ── Modo visualização ── */}
           {isView && session && (
             <>
@@ -508,7 +508,7 @@ function SessionModal({
                 </a>
               ) : (
                 <p className="text-[11px] text-gray-400 text-center">
-                  Cadastre o telefone do paciente para enviar o agendamento via WhatsApp.
+                  Cadastre o telefone do cliente para enviar o agendamento via WhatsApp.
                 </p>
               )}
             </>
@@ -520,7 +520,7 @@ function SessionModal({
               {/* Cliente */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Paciente <span className="text-red-400">*</span>
+                  Cliente <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <select
@@ -528,7 +528,7 @@ function SessionModal({
                     onChange={e => setForm(p => ({ ...p, clientId: e.target.value }))}
                     className="w-full appearance-none px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
                   >
-                    <option value="">Selecionar paciente...</option>
+                    <option value="">Selecionar cliente...</option>
                     {clients.filter(c => c.status !== "WAITLIST").map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -746,7 +746,7 @@ function SessionModal({
                     </a>
                   ) : (
                     <p className="text-[11px] text-gray-400 text-center">
-                      Cadastre o telefone do paciente para enviar o agendamento via WhatsApp.
+                      Cadastre o telefone do cliente para enviar o agendamento via WhatsApp.
                     </p>
                   )}
 

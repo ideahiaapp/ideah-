@@ -4,17 +4,18 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   BarChart2, Users, FileText, Brain, TrendingUp, TrendingDown,
-  CalendarDays, Clock, Sparkles, ArrowUpRight, Minus, X,
+  CalendarDays, Clock, Sparkles, ArrowUpRight, ArrowRight, Minus, X, Plus,
   ChevronRight, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
-  Download, ScrollText,
+  Download, ScrollText, ClipboardList, UserCheck, MessageSquare,
 } from "lucide-react";
 import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
 import { aiHeaders } from "@/lib/api-key";
 import { getClinicSettings } from "@/lib/clinic-settings";
 import { useAuthStore } from "@/store/auth.store";
-import { cn } from "@/lib/utils";
-import type { Client, Supervision } from "@/lib/database.types";
+import { cn, formatRelative } from "@/lib/utils";
+import type { Client } from "@/lib/database.types";
 import type { EvolutionWithClient } from "@/lib/db/evolutions";
+import type { SupervisionWithClient } from "@/lib/db/supervisions";
 
 /* ─── Paleta ─────────────────────────────────────────────────────── */
 const APPROACH_COLORS: Record<string, string> = {
@@ -35,8 +36,13 @@ const MOOD_COLOR = ["", "#EF4444", "#F97316", "#EAB308", "#22C55E", "#10B981"];
 const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Excelente"];
 const MOOD_EMOJI = ["", "😟", "😕", "😐", "🙂", "😊"];
 
-type Tab       = "geral" | "clientes";
+type Tab       = "geral" | "clientes" | "relatorios";
 type DrillType = "sessions" | "clients" | "hours" | "evolutions";
+type ReportSubTab = "evolucao";
+
+const REPORT_SUB_TABS: { id: ReportSubTab; label: string }[] = [
+  { id: "evolucao", label: "Evolução" },
+];
 
 type MonthData = {
   label: string; full: string;
@@ -191,7 +197,7 @@ function DrillClients({ onClose, clients, evolutions, supervisions }: {
   onClose: () => void;
   clients: Client[];
   evolutions: EvolutionWithClient[];
-  supervisions: Supervision[];
+  supervisions: SupervisionWithClient[];
 }) {
   const activeClients = clients.filter(c => c.status === "ACTIVE");
   return (
@@ -303,7 +309,7 @@ function DrillHours({ onClose, clients, months }: {
       </div>
 
       <div className="px-6 pt-5 pb-6">
-        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Por paciente</p>
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Por cliente</p>
         <div className="space-y-3">
           {perClient.map(c => (
             <div key={c.id}>
@@ -360,14 +366,14 @@ function DrillEvolutions({ onClose, evolutions }: {
       title={selected ? `Evoluções — ${selected.clientName}` : "Evoluções registradas"}
       subtitle={selected
         ? `${selected.evolutions.length} registros`
-        : `${evolutions.length} evoluções em ${clientsWithEvolutions.length} pacientes`}
+        : `${evolutions.length} evoluções em ${clientsWithEvolutions.length} clientes`}
       onClose={onClose}
     >
       {selected && (
         <div className="px-6 pt-4 pb-0">
           <button onClick={() => setSelectedClientId(null)}
             className="flex items-center gap-1.5 text-xs text-brand-600 font-medium hover:text-brand-700">
-            ← Todos os pacientes
+            ← Todos os clientes
           </button>
         </div>
       )}
@@ -441,15 +447,216 @@ function DrillEvolutions({ onClose, evolutions }: {
   );
 }
 
+/* ═══ Aba: Relatórios › Evolução ═══════════════════════════════════ */
+const EVOLUTION_PERIOD_OPTIONS = [
+  { value: "1m",  label: "Último mês" },
+  { value: "3m",  label: "Últimos 3 meses" },
+  { value: "6m",  label: "Últimos 6 meses" },
+  { value: "1y",  label: "Último ano" },
+  { value: "all", label: "Todo o período de atendimento" },
+];
+
+function EvolutionMarkdownReport({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
+      {lines.map((line, i) => {
+        if (line.startsWith("# "))   return <h1  key={i} className="text-xl font-bold text-gray-900 mt-2">{line.slice(2)}</h1>;
+        if (line.startsWith("## "))  return <h2  key={i} className="text-base font-bold text-gray-800 mt-5 pb-1 border-b border-gray-100">{line.slice(3)}</h2>;
+        if (line.startsWith("### ")) return <h3  key={i} className="text-sm font-semibold text-gray-700 mt-3">{line.slice(4)}</h3>;
+        if (line.startsWith("- ") || line.startsWith("• ")) {
+          return <li key={i} className="ml-4 list-disc">{line.slice(2)}</li>;
+        }
+        if (line.trim() === "") return <div key={i} className="h-1" />;
+        const parts = line.split(/\*\*(.*?)\*\*/g);
+        return (
+          <p key={i}>
+            {parts.map((part, j) =>
+              j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function EvolutionReportPanel({ clients }: { clients: Client[] }) {
+  const { user } = useAuthStore();
+  const [clientId, setClientId] = useState("");
+  const [period,   setPeriod]   = useState("3m");
+  const [generating, setGenerating] = useState(false);
+  const [report,   setReport]   = useState<{ report: string; clientName: string; sessionCount: number; period: string; dateRange: string } | null>(null);
+  const [error,    setError]    = useState<string | null>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function generate() {
+    if (!clientId || !user?.id) return;
+    setGenerating(true);
+    setReport(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/reports/clinical-evolution", {
+        method:  "POST",
+        headers: await aiHeaders(),
+        body:    JSON.stringify({ clientId, therapistId: user.id, period }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao gerar relatório");
+      setReport(data);
+      setTimeout(() => reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro desconhecido");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  const activeClients = clients.filter(c => c.status === "ACTIVE");
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <ScrollText className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+          <h2 className="text-sm font-semibold text-gray-800">Gerar relatório de evolução clínica</h2>
+          <span className="ml-auto text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100 font-medium">IA</span>
+        </div>
+        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+          Selecione um cliente e o período desejado. A IA analisará todas as evoluções e supervisões registradas e gerará um relatório clínico detalhado.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Cliente</label>
+            <div className="relative">
+              <select
+                value={clientId}
+                onChange={e => { setClientId(e.target.value); setReport(null); setError(null); }}
+                aria-label="Cliente"
+                className="w-full appearance-none px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
+              >
+                <option value="">Selecionar cliente...</option>
+                {activeClients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Período de análise</label>
+            <div className="relative">
+              <select
+                value={period}
+                onChange={e => { setPeriod(e.target.value); setReport(null); setError(null); }}
+                aria-label="Período de análise"
+                className="w-full appearance-none px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 pr-9 text-gray-800"
+              >
+                {EVOLUTION_PERIOD_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={generate}
+          disabled={!clientId || generating}
+          className={cn(
+            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all",
+            clientId && !generating
+              ? "bg-brand-500 hover:bg-brand-600 text-white shadow-sm"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          )}
+        >
+          {generating
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> Gerando relatório...</>
+            : <><Sparkles className="w-4 h-4" /> Gerar relatório</>}
+        </button>
+
+        {error && (
+          <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
+      </div>
+
+      {generating && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4 animate-pulse">
+          <div className="h-6 bg-gray-100 rounded-lg w-2/3" />
+          <div className="h-3 bg-gray-100 rounded w-1/3" />
+          <div className="space-y-2 pt-4">
+            {[100, 80, 90, 70, 85, 75].map((w, i) => (
+              <div key={i} className="h-3 bg-gray-100 rounded" style={{ width: `${w}%` }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {report && (
+        <div ref={reportRef} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <div>
+              <div className="flex items-center gap-2">
+                <ScrollText className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+                <p className="text-sm font-bold text-gray-800">{report.clientName}</p>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {report.period} · {report.sessionCount} sessões analisadas · {report.dateRange}
+              </p>
+            </div>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Imprimir / PDF
+            </button>
+          </div>
+
+          <div className="px-6 py-5">
+            <EvolutionMarkdownReport text={report.report} />
+          </div>
+
+          <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-[10px] text-gray-500">
+              Relatório gerado por IA com base nos registros clínicos. Não substitui avaliação clínica profissional.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!report && !generating && !error && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-16 text-center">
+          <ScrollText className="w-10 h-10 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
+          <p className="text-sm font-medium text-gray-500">Nenhum relatório gerado</p>
+          <p className="text-xs text-gray-500 mt-1">Selecione um cliente e o período para gerar o relatório de evolução clínica.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Página principal ───────────────────────────────────────────── */
 export default function ReportsPage() {
   const { user } = useAuthStore();
+  const hour      = new Date().getHours();
+  const greeting  = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const firstName = user?.name?.split(" ")[0] ?? "terapeuta";
+
   const [tab, setTab]           = useState<Tab>("geral");
+  const [reportSubTab, setReportSubTab] = useState<ReportSubTab>("evolucao");
   const [drillDown, setDrillDown] = useState<DrillType | null>(null);
 
   const [clients,     setClients]     = useState<Client[]>([]);
   const [evolutions,  setEvolutions]  = useState<EvolutionWithClient[]>([]);
-  const [supervisions, setSupervisions] = useState<Supervision[]>([]);
+  const [supervisions, setSupervisions] = useState<SupervisionWithClient[]>([]);
+  const [pendingAnamneseApproval, setPendingAnamneseApproval] = useState(0);
   const [loading,     setLoading]     = useState(true);
 
   useEffect(() => {
@@ -463,7 +670,37 @@ export default function ReportsPage() {
       setEvolutions(e);
       setSupervisions(s);
     }).finally(() => setLoading(false));
+    fetch(`/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
+      .then(r => r.json())
+      .then(d => setPendingAnamneseApproval((d.anamneses ?? []).length))
+      .catch(() => {});
   }, [user?.id]);
+
+  const pendingAnamnese = useMemo(() => clients.filter(c => c.status === "ACTIVE" && !c.anamnese_id).length, [clients]);
+
+  const recentActivity = useMemo(() => {
+    const evs = evolutions.slice(0, 6).map(e => ({
+      id: e.id, type: "evolution" as const,
+      label: `Evolução de ${e.clients?.name ?? "cliente"}`,
+      sub:   e.hypothesis ?? undefined,
+      date:  new Date(e.session_date),
+      color: e.clients?.color ?? "#C2542F",
+      initials: e.clients?.initials ?? "?",
+      href:  `/dashboard/evolutions/${e.id}`,
+    }));
+    const sups = supervisions.slice(0, 6).map(s => ({
+      id: s.id, type: "supervision" as const,
+      label: s.title,
+      sub:   s.clients?.name ?? undefined,
+      date:  new Date(s.updated_at),
+      color: "#C2542F",
+      initials: "IA",
+      href:  `/dashboard/supervision`,
+    }));
+    return [...evs, ...sups]
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 6);
+  }, [evolutions, supervisions]);
 
   function toggleDrill(type: DrillType) {
     setDrillDown(prev => prev === type ? null : type);
@@ -547,8 +784,9 @@ export default function ReportsPage() {
   const evolutionTrend = CURRENT_MONTH.evolutions >= PREV_MONTH.evolutions ? "up" : "down" as const;
 
   const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-    { id: "geral",    label: "Visão Geral",  icon: BarChart2 },
-    { id: "clientes", label: "Clientes",     icon: Users },
+    { id: "geral",      label: "Visão Geral",  icon: BarChart2 },
+    { id: "clientes",   label: "Clientes",     icon: Users },
+    { id: "relatorios", label: "Relatórios",   icon: ScrollText },
   ];
 
   if (loading) return (
@@ -563,12 +801,29 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink">Relatórios</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Análise da sua prática clínica</p>
+          <h1 className="text-xl font-bold text-ink">{greeting}, {firstName}</h1>
+          <p className="text-gray-500 text-sm mt-0.5 capitalize">
+            {new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
+          </p>
         </div>
         <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
           Dados dos últimos 6 meses
         </span>
+      </div>
+
+      {/* Ações rápidas */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {[
+          { label: "Nova supervisão", href: "/dashboard/supervision",      icon: Sparkles,     color: "bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-200" },
+          { label: "Novo cliente",    href: "/dashboard/clients/new",      icon: Users,        color: "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200" },
+          { label: "Abrir agenda",    href: "/dashboard/schedule",         icon: CalendarDays, color: "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200" },
+        ].map(a => (
+          <Link key={a.href} href={a.href}
+            className={cn("flex items-center gap-2.5 px-4 py-3 rounded-xl font-semibold text-sm transition-colors", a.color)}>
+            <Plus className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+            {a.label}
+          </Link>
+        ))}
       </div>
 
       {/* Tabs */}
@@ -604,6 +859,14 @@ export default function ReportsPage() {
               sub={`${CURRENT_MONTH.evolutions} este mês`} color="bg-green-50 text-green-500"
               trend={evolutionTrend} trendLabel={`${CURRENT_MONTH.evolutions} este mês`}
               onClick={() => toggleDrill("evolutions")} active={drillDown === "evolutions"} />
+            <KpiCard icon={ClipboardList} label="Anamnese pendente" value={pendingAnamnese}
+              sub={pendingAnamnese === 0 ? "todos preenchidos" : "clientes sem anamnese"}
+              color="bg-amber-50 text-amber-500" />
+            <KpiCard icon={UserCheck} label="Aguardando aprovação" value={pendingAnamneseApproval}
+              sub={pendingAnamneseApproval === 0 ? "nenhuma pendente" : "anamneses para revisar"}
+              color="bg-orange-50 text-orange-500" />
+            <KpiCard icon={MessageSquare} label="Supervisões" value={supervisions.length}
+              sub="sessões dialógicas" color="bg-blue-50 text-blue-500" />
           </div>
 
           {!drillDown && (
@@ -619,6 +882,26 @@ export default function ReportsPage() {
                 <span className="text-xs text-gray-500">últimos 6 meses</span>
               </div>
               <BarChart data={MONTHS} valueKey="sessions" color="#C2542F" />
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">Total semestre</p>
+                  <p className="text-lg font-bold text-gray-800 mt-0.5">{totalSessions}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">Média mensal</p>
+                  <p className="text-lg font-bold text-gray-800 mt-0.5">{(totalSessions / 6).toFixed(0)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">Clientes cobertos</p>
+                  <p className="text-lg font-bold text-gray-800 mt-0.5">
+                    {new Set(evolutions.map(e => e.client_id)).size}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">Horas clínicas</p>
+                  <p className="text-lg font-bold text-gray-800 mt-0.5">{totalHours}h</p>
+                </div>
+              </div>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h2 className="text-sm font-semibold text-gray-800 mb-4">Clientes por abordagem</h2>
@@ -645,6 +928,105 @@ export default function ReportsPage() {
               ) : (
                 <p className="text-sm text-gray-500 text-center py-8">Nenhum cliente ativo</p>
               )}
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Clientes ativos */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+                  <h2 className="font-semibold text-gray-800 text-sm">Clientes ativos</h2>
+                </div>
+                <Link href="/dashboard/clients" className="text-xs text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1">
+                  Ver todos <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+              {clients.filter(c => c.status === "ACTIVE").length === 0 ? (
+                <div className="px-5 py-10 text-center">
+                  <CheckCircle2 className="w-8 h-8 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
+                  <p className="text-sm text-gray-500">Nenhum cliente ativo ainda</p>
+                  <Link href="/dashboard/clients/new"
+                    className="mt-3 inline-flex items-center gap-1 text-xs text-brand-500 font-medium hover:underline">
+                    <Plus className="w-3.5 h-3.5" /> Cadastrar cliente
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {clients.filter(c => c.status === "ACTIVE").slice(0, 5).map(c => (
+                    <Link key={c.id} href={`/dashboard/clients/${c.id}`}
+                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                        style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3" /> {c.total_sessions} sessões · {c.approach_label}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Atividade recente */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+                  <h2 className="font-semibold text-gray-800 text-sm">Atividade recente</h2>
+                </div>
+              </div>
+              {recentActivity.length === 0 ? (
+                <div className="px-5 py-10 text-center">
+                  <Activity className="w-8 h-8 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
+                  <p className="text-sm text-gray-500">Nenhuma atividade ainda</p>
+                  <p className="text-xs text-gray-400 mt-1">Suas evoluções e supervisões aparecerão aqui</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {recentActivity.map(item => (
+                    <Link key={item.id + item.type} href={item.href}
+                      className="flex items-start gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+                      {item.type === "supervision" ? (
+                        <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Sparkles className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5"
+                          style={{ backgroundColor: item.color }}>{item.initials}</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{item.label}</p>
+                        {item.sub && <p className="text-xs text-gray-500 truncate mt-0.5">{item.sub}</p>}
+                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                          <span className={cn(
+                            "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                            item.type === "supervision" ? "bg-brand-50 text-brand-600" : "bg-green-50 text-green-600"
+                          )}>
+                            {item.type === "supervision" ? "Supervisão" : "Evolução"}
+                          </span>
+                          <span className="text-gray-300">·</span>
+                          {formatRelative(item.date)}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0 mt-1" />
+                    </Link>
+                  ))}
+                </div>
+              )}
+              <div className="px-5 py-3 border-t border-gray-50 flex gap-4">
+                <Link href="/dashboard/evolutions"
+                  className="text-xs text-gray-400 hover:text-brand-500 font-medium flex items-center gap-1">
+                  <FileText className="w-3 h-3" /> Ver evoluções
+                </Link>
+                <Link href="/dashboard/supervision"
+                  className="text-xs text-gray-400 hover:text-brand-500 font-medium flex items-center gap-1">
+                  <MessageSquare className="w-3 h-3" /> Ver supervisões
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -734,6 +1116,24 @@ export default function ReportsPage() {
             <p className="text-xs text-gray-500 mb-4">Captação no semestre</p>
             <BarChart data={MONTHS} valueKey="newClients" color="#C2542F" height={80} />
           </div>
+        </div>
+      )}
+
+      {/* ══ TAB: RELATÓRIOS ══ */}
+      {tab === "relatorios" && (
+        <div className="space-y-6">
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+            {REPORT_SUB_TABS.map(t => (
+              <button key={t.id} onClick={() => setReportSubTab(t.id)}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                  reportSubTab === t.id ? "bg-white shadow-sm text-gray-900" : "text-gray-600 hover:text-gray-800"
+                )}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {reportSubTab === "evolucao" && <EvolutionReportPanel clients={clients} />}
         </div>
       )}
 

@@ -89,13 +89,13 @@ export default function ReportsScreen() {
             <Text style={s.cardTitle}>Prospecto de Evolução</Text>
           </View>
           <Text style={s.cardDesc}>
-            Análise clínica com IA baseada nas evoluções registradas do paciente.
+            Análise clínica com IA baseada nas evoluções registradas do cliente.
           </Text>
 
-          {/* Seletor de paciente */}
+          {/* Seletor de cliente */}
           <TouchableOpacity style={s.selector} onPress={() => setShowPicker(!showPicker)}>
             <Text style={selected ? s.selectorText : s.selectorPlaceholder}>
-              {selected?.name ?? "Selecionar paciente..."}
+              {selected?.name ?? "Selecionar cliente..."}
             </Text>
             <Ionicons name={showPicker ? "chevron-up" : "chevron-down"} size={16} color={Colors.gray[400]} />
           </TouchableOpacity>

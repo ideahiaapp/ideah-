@@ -7,7 +7,7 @@ const IS_LIST = [
 const IS_NOT_LIST = [
   "Ferramenta de diagnóstico ou rotulação.",
   "Substituto da tua escuta clínica e do teu juízo profissional.",
-  "Chatbot para pacientes.",
+  "Chatbot para clientes.",
 ];
 
 export function WhatIsSection() {

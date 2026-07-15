@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, FileText, Clock, ChevronRight, Sparkles, Loader2 } from "lucide-react";
+import { Search, FileText, Clock, ChevronRight, Sparkles, Loader2 } from "lucide-react";
 import { getEvolutions } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 import { formatDate } from "@/lib/utils";
@@ -64,10 +64,10 @@ export default function EvolutionsPage() {
           <h1 className="text-2xl font-bold text-ink">Evoluções</h1>
           <p className="text-gray-500 text-sm mt-1">Registros clínicos pós-sessão com suporte de IA</p>
         </div>
-        <Link href="/dashboard/evolutions/new"
+        <Link href="/dashboard/supervision"
           className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm">
-          <Plus className="w-4 h-4" strokeWidth={2.5} />
-          Nova evolução
+          <Sparkles className="w-4 h-4" strokeWidth={2.5} />
+          Supervisionar
         </Link>
       </div>
 
@@ -101,10 +101,10 @@ export default function EvolutionsPage() {
                 <FileText className="w-7 h-7 text-brand-300" strokeWidth={1.5} />
               </div>
               <p className="text-gray-700 font-bold mb-1">Nenhuma evolução registrada</p>
-              <p className="text-gray-400 text-sm mb-6">Após suas sessões, registre evoluções aqui com apoio da IA.</p>
-              <Link href="/dashboard/evolutions/new"
+              <p className="text-gray-400 text-sm mb-6">Evoluções são registradas automaticamente ao finalizar uma supervisão.</p>
+              <Link href="/dashboard/supervision"
                 className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-sm">
-                <Plus className="w-4 h-4" strokeWidth={2.5} /> Primeiro registro
+                <Sparkles className="w-4 h-4" strokeWidth={2.5} /> Iniciar supervisão
               </Link>
             </div>
           ) : (
