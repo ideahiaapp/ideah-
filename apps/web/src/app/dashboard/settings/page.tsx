@@ -1300,6 +1300,10 @@ const APPROACH_KEYS = [
   { key: "EVOLUTION",            label: "Evolução" },
   { key: "CERTIFICATE",          label: "Certificado" },
   { key: "EVOLUTION_REPORT",     label: "Relatório de evoluções" },
+  { key: "DOC_DECLARACAO_COMPARECIMENTO", label: "Declaração de comparecimento" },
+  { key: "DOC_RELATORIO_ACOMPANHAMENTO",  label: "Relatório de acompanhamento psicológico" },
+  { key: "DOC_ATESTADO_PSICOLOGICO",      label: "Atestado psicológico" },
+  { key: "DOC_ENCAMINHAMENTO",            label: "Encaminhamento" },
 ];
 
 type PromptEntry = { approach: string; prompt: string; updated_at?: string };
