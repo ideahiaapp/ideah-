@@ -1,59 +1,37 @@
-const STEPS = [
-  {
-    number: "01",
-    title: "Escolha sua abordagem",
-    description:
-      "Psicanálise, psicologia corporal, psicossomática, cognitivo-comportamental, e outras. A teoria é o ponto de partida.",
-    icon: "🧭",
-  },
-  {
-    number: "02",
-    title: "Converse com a teoria",
-    description:
-      "Levante questões acerca do seu cliente e do que ele te traz na sessão, converse sobre hipóteses e recursos clínicos com citação quando pertinente.",
-    icon: "💬",
-  },
-  {
-    number: "03",
-    title: "Registre a evolução viva",
-    description:
-      "Possibilidades e próximos focos — não apenas relato. Hipóteses abertas que acompanham o processo clínico.",
-    icon: "📝",
-  },
-  {
-    number: "04",
-    title: "Tudo no app ou browser",
-    description:
-      "Escolha a plataforma, o cliente, evolua a partir do relato da sessão, acesse o histórico, dashboard, anexos, pagamento e agendamento — sem sair do celular.",
-    icon: "📱",
-  },
+const FLOW = [
+  "Caso Clínico",
+  "Supervisão Clínica",
+  "Reflexão Dialógica",
+  "Evolução Clínica",
+  "Aprendizagem",
+  "Programa de Formação Clínica Continuada",
+  "Certificação",
 ];
 
 export function HowItWorksSection() {
   return (
-    <section id="como-funciona" className="py-24 bg-white">
-      <div className="max-w-6xl mx-auto px-6">
+    <section id="como-funciona" className="py-24 md:py-32 bg-white">
+      <div className="max-w-3xl mx-auto px-6">
         <div className="text-center mb-16">
           <span className="text-brand-500 text-sm font-semibold uppercase tracking-widest">Passo a passo</span>
-          <h2 className="text-3xl md:text-4xl font-bold text-ink mt-3">Como funciona?</h2>
+          <h2 className="font-serif text-3xl md:text-4xl text-ink mt-3">Como funciona</h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {STEPS.map((step, i) => (
-            <div key={i} className="relative group">
-              {/* Linha conectora (exceto último) */}
-              {i < STEPS.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-[calc(100%_-_16px)] w-8 h-0.5 bg-brand-200 z-10" />
-              )}
-
-              <div className="bg-brand-50 rounded-2xl p-6 h-full hover:bg-brand-100 transition-colors">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{step.icon}</span>
-                  <span className="text-brand-600 font-bold text-lg">{step.number}</span>
-                </div>
-                <h3 className="font-bold text-ink text-base mb-2">{step.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{step.description}</p>
+        <div className="flex flex-col items-center">
+          {FLOW.map((step, i) => (
+            <div key={step} className="flex flex-col items-center w-full">
+              <div
+                className={
+                  i === FLOW.length - 1
+                    ? "bg-brand-500 text-white rounded-2xl px-6 py-4 text-center font-semibold text-sm md:text-base max-w-md w-full shadow-sm"
+                    : "bg-sand-50 border border-sand-200 rounded-2xl px-6 py-4 text-center font-medium text-ink text-sm md:text-base max-w-md w-full"
+                }
+              >
+                {step}
               </div>
+              {i < FLOW.length - 1 && (
+                <div className="w-px h-8 bg-brand-200" aria-hidden />
+              )}
             </div>
           ))}
         </div>

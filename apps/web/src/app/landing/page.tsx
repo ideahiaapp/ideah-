@@ -8,6 +8,7 @@ import { FeaturesSection } from "@/components/landing/Features";
 import { EthicsSection } from "@/components/landing/Ethics";
 import { PricingSection } from "@/components/landing/Pricing";
 import { FaqSection } from "@/components/landing/Faq";
+import { TestimonialsSection } from "@/components/landing/Testimonials";
 import { LandingFooter } from "@/components/landing/Footer";
 
 export default function LandingPage() {
@@ -15,13 +16,14 @@ export default function LandingPage() {
     <main className="min-h-screen bg-white font-sans">
       <LandingHeader />
       <HeroSection />
-      <HowItWorksSection />
       <WhatIsSection />
+      <FeaturesSection />
+      <HowItWorksSection />
       <ForWhomSection />
       <TheorySection />
-      <FeaturesSection />
-      <EthicsSection />
       <PricingSection />
+      <TestimonialsSection />
+      <EthicsSection />
       <FaqSection />
       <LandingFooter />
     </main>

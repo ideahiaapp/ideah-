@@ -7,9 +7,9 @@ import { Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
   { label: "Como funciona", href: "#como-funciona" },
-  { label: "Para quem", href: "#para-quem" },
-  { label: "Ética e CFP", href: "#etica" },
-  { label: "Preços", href: "#precos" },
+  { label: "Benefícios", href: "#beneficios" },
+  { label: "O Programa", href: "#programa" },
+  { label: "Dúvidas", href: "#faq" },
 ];
 
 export function LandingHeader() {
@@ -20,7 +20,7 @@ export function LandingHeader() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/landing" className="flex-shrink-0">
-          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={120} height={48} priority />
+          <Image src="/logoPaideia.png" alt="Paideia" width={130} height={65} className="rounded-md" priority />
         </Link>
 
         {/* Nav desktop */}
@@ -48,7 +48,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2 rounded-xl transition-colors"
           >
-            Começar agora
+            Conhecer o Programa
           </Link>
         </div>
 
@@ -83,7 +83,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 px-5 py-2.5 rounded-xl text-center"
           >
-            Começar agora
+            Conhecer o Programa
           </Link>
         </div>
       )}

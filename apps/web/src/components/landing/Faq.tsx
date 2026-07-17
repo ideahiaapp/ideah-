@@ -5,20 +5,20 @@ import { ChevronDown } from "lucide-react";
 
 const FAQS = [
   {
-    q: "O Paideia faz diagnóstico?",
-    a: "Não. É um supervisor dialógico. Traz perguntas, hipóteses abertas e recursos — a decisão é sempre sua.",
+    q: "O Paideia substitui minha supervisão com outro profissional?",
+    a: "Não. É um espaço complementar de supervisão e reflexão contínua. A responsabilidade técnica e o juízo clínico continuam sendo sempre seus.",
   },
   {
-    q: "Como a ferramenta lida com ética e CFP?",
-    a: "Respeitamos a orientação do CFP: supervisão humana, sem diagnóstico, base curada e controle do registro pelo profissional.",
+    q: "Como funciona a Formação Clínica Continuada?",
+    a: "A cada supervisão realizada, o Paideia organiza o conteúdo estudado e acumula horas dentro da abordagem escolhida, reconhecidas por meio de certificação.",
   },
   {
-    q: "E a LGPD?",
-    a: "Você escolhe o que registrar e exportar. Recomendamos pseudonimização quando cabível.",
+    q: "Preciso escolher uma abordagem específica?",
+    a: "Sim. O programa é organizado por abordagem teórica, para manter a coerência e a profundidade da sua formação.",
   },
   {
-    q: "Funciona só com uma abordagem?",
-    a: "Você escolhe a abordagem ativa. Comparações com outras só ocorrem se você optar por isso (e sempre de forma descritiva).",
+    q: "Meus dados e os dos meus clientes estão protegidos?",
+    a: "Sim. Você controla o que é registrado e exportado, em conformidade com a LGPD.",
   },
 ];
 
@@ -47,16 +47,16 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export function FaqSection() {
   return (
-    <section className="py-24 bg-white">
+    <section id="faq" className="py-24 md:py-32 bg-white">
       <div className="max-w-2xl mx-auto px-6">
         <div className="text-center mb-12">
           <span className="text-brand-500 text-sm font-semibold uppercase tracking-widest">Dúvidas</span>
-          <h2 className="text-3xl font-bold text-ink mt-3">Perguntas frequentes</h2>
+          <h2 className="font-serif text-3xl text-ink mt-3">Perguntas frequentes</h2>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6">
-          {FAQS.map((faq, i) => (
-            <FaqItem key={i} q={faq.q} a={faq.a} />
+          {FAQS.map((faq) => (
+            <FaqItem key={faq.q} q={faq.q} a={faq.a} />
           ))}
         </div>
       </div>

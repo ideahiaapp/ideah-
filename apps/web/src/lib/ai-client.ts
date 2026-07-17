@@ -130,13 +130,18 @@ export async function chat(options: {
   }
 
   // Anthropic (padrão)
-  const client = new Anthropic({ apiKey });
-  const response = await client.messages.create({
-    model: options.model ?? "claude-opus-4-5",
-    max_tokens: maxTokens,
-    system,
-    messages,
-  });
+  const client = new Anthropic({ apiKey, maxRetries: 5 });
+  let response;
+  try {
+    response = await client.messages.create({
+      model: options.model ?? "claude-opus-4-5",
+      max_tokens: maxTokens,
+      system,
+      messages,
+    });
+  } catch (err) {
+    throw new Error(friendlyAnthropicError(err));
+  }
 
   const content = response.content[0];
   if (content.type !== "text") throw new Error("Resposta inesperada da API");
@@ -145,4 +150,25 @@ export async function chat(options: {
     inputTokens:  response.usage.input_tokens,
     outputTokens: response.usage.output_tokens,
   };
+}
+
+/** Traduz erros da API da Anthropic em mensagens amigáveis para o usuário final. */
+function friendlyAnthropicError(err: unknown): string {
+  if (err instanceof Anthropic.APIError) {
+    const errorType = (err.error as { error?: { type?: string } } | undefined)?.error?.type;
+
+    if (err.status === 529 || errorType === "overloaded_error") {
+      return "O serviço de IA está temporariamente sobrecarregado. Aguarde alguns instantes e tente novamente.";
+    }
+    if (err.status === 429) {
+      return "Muitas solicitações em um curto período. Aguarde um instante e tente novamente.";
+    }
+    if (err.status === 401 || err.status === 403) {
+      return "Chave de API inválida ou sem permissão. Verifique em Configurações → API Key.";
+    }
+    if (err.status && err.status >= 500) {
+      return "O serviço de IA está temporariamente indisponível. Tente novamente em instantes.";
+    }
+  }
+  return err instanceof Error ? err.message : "Erro ao comunicar com o serviço de IA.";
 }

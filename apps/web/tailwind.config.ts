@@ -18,6 +18,16 @@ export default {
           900: "#41190D",
         },
         ink: "#2D2D2D",
+        sand: {
+          50:  "#FBF8F3",
+          100: "#F5EEE0",
+          200: "#EADFC7",
+          300: "#DCC8A0",
+        },
+        deep: {
+          600: "#1E3A5C",
+          700: "#16304C",
+        },
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
