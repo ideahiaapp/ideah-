@@ -166,7 +166,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={[
                   styles.input,
-                  confirm && confirm !== password && { borderColor: Colors.red },
+                  !!confirm && confirm !== password && { borderColor: Colors.red },
                 ]}
                 value={confirm}
                 onChangeText={setConfirm}

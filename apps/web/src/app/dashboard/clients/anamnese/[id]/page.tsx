@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { createClient, generateInitials, generateColor } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
+import { TextareaWithMic } from "@/components/ui/VoiceField";
 
 /* ── Tipos ── */
 interface Anamnese {
@@ -334,14 +335,14 @@ export default function AnamneseReviewPage() {
 
       <Section icon={FileText} title="Prontuário inicial">
         <Field label="Demanda principal">
-          <textarea rows={3} value={form.mainDemand}
-            onChange={e => set("mainDemand", e.target.value)}
+          <TextareaWithMic rows={3} value={form.mainDemand}
+            onValueChange={v => set("mainDemand", v)}
             placeholder="Contextualize a demanda clínica do cliente..."
             className={inputCls + " resize-none"} />
         </Field>
         <Field label="Observações clínicas iniciais">
-          <textarea rows={3} value={form.notes}
-            onChange={e => set("notes", e.target.value)}
+          <TextareaWithMic rows={3} value={form.notes}
+            onValueChange={v => set("notes", v)}
             placeholder="Impressões da triagem, hipóteses iniciais..."
             className={inputCls + " resize-none"} />
         </Field>

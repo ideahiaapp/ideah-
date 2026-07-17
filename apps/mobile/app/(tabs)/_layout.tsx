@@ -5,9 +5,13 @@ import { Colors } from "@/constants/colors";
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
 function tabIcon(focused: boolean, icon: IoniconsName, iconOutline: IoniconsName) {
-  return <Ionicons name={focused ? icon : iconOutline} size={24} color={focused ? Colors.brand[500] : Colors.gray[400]} />;
+  return <Ionicons name={focused ? icon : iconOutline} size={22} color={focused ? Colors.brand[500] : Colors.gray[400]} />;
 }
 
+/**
+ * Barra de abas inferior para navegação rápida, complementar ao menu
+ * hambúrguer disponível em cada tela (ver components/HamburgerMenu.tsx).
+ */
 export default function TabsLayout() {
   return (
     <Tabs
@@ -22,7 +26,7 @@ export default function TabsLayout() {
           paddingTop: 6,
           height: 64,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
       }}
     >
       <Tabs.Screen
@@ -49,8 +53,15 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="reports"
         options={{
-          title: "Relatórios",
-          tabBarIcon: ({ focused }) => tabIcon(focused, "bar-chart", "bar-chart-outline"),
+          title: "Escritório",
+          tabBarIcon: ({ focused }) => tabIcon(focused, "briefcase", "briefcase-outline"),
+        }}
+      />
+      <Tabs.Screen
+        name="certificate"
+        options={{
+          title: "Certificado",
+          tabBarIcon: ({ focused }) => tabIcon(focused, "ribbon", "ribbon-outline"),
         }}
       />
       <Tabs.Screen

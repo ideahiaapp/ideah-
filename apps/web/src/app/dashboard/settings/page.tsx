@@ -13,7 +13,7 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { adminHeaders } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
+import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
 
 type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas" | "prompts" | "minhasbases" | "anamnese" | "usoapi";
 
@@ -1422,9 +1422,9 @@ function TabPrompts() {
                   : <span className="text-xs text-gray-500">Usando prompt padrão do sistema</span>
                 }
               </div>
-              <textarea
+              <TextareaWithMic
                 value={draft}
-                onChange={e => setDraft(e.target.value)}
+                onValueChange={setDraft}
                 rows={20}
                 placeholder="Cole aqui o prompt personalizado para esta abordagem. Deixe vazio para usar o prompt padrão do sistema."
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"

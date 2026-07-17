@@ -12,7 +12,7 @@ import {
 import { getClient, updateClient } from "@/lib/db";
 import { cn, maskCpf, maskPhone } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
-import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
+import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
 import type { Client } from "@/lib/database.types";
 
 const CONDITIONS = [
@@ -392,19 +392,19 @@ export default function EditClientPage() {
               <input value={anamneseForm.oil_allergy} onChange={e => setAF("oil_allergy", e.target.value)} className={inputCls} />
             </Field>
             <Field label="Medicamentos em uso">
-              <textarea rows={2} value={anamneseForm.medication} onChange={e => setAF("medication", e.target.value)} className={inputCls + " resize-none"} />
+              <TextareaWithMic rows={2} value={anamneseForm.medication} onValueChange={v => setAF("medication", v)} className={inputCls + " resize-none"} />
             </Field>
             <Field label="Estado emocional atual">
-              <textarea rows={3} value={anamneseForm.emotional_state} onChange={e => setAF("emotional_state", e.target.value)} className={inputCls + " resize-none"} />
+              <TextareaWithMic rows={3} value={anamneseForm.emotional_state} onValueChange={v => setAF("emotional_state", v)} className={inputCls + " resize-none"} />
             </Field>
             <Field label="Dor no corpo">
-              <textarea rows={2} value={anamneseForm.body_pain} onChange={e => setAF("body_pain", e.target.value)} className={inputCls + " resize-none"} />
+              <TextareaWithMic rows={2} value={anamneseForm.body_pain} onValueChange={v => setAF("body_pain", v)} className={inputCls + " resize-none"} />
             </Field>
             <Field label="Intenção com a sessão / processo">
-              <textarea rows={3} value={anamneseForm.intention} onChange={e => setAF("intention", e.target.value)} className={inputCls + " resize-none"} />
+              <TextareaWithMic rows={3} value={anamneseForm.intention} onValueChange={v => setAF("intention", v)} className={inputCls + " resize-none"} />
             </Field>
             <Field label="Incômodo na vida sexual">
-              <textarea rows={2} value={anamneseForm.sexual_discomfort} onChange={e => setAF("sexual_discomfort", e.target.value)} className={inputCls + " resize-none"} />
+              <TextareaWithMic rows={2} value={anamneseForm.sexual_discomfort} onValueChange={v => setAF("sexual_discomfort", v)} className={inputCls + " resize-none"} />
             </Field>
           </div>
         )}

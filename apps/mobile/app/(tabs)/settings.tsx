@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import { useAuthStore } from "@/store/auth.store";
 import { Colors } from "@/constants/colors";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 
 const API_KEY_STORE = "ideah_anthropic_api_key";
 
@@ -43,7 +44,10 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={s.title}>Configurações</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20 }}>
+          <HamburgerMenu />
+          <Text style={[s.title, { marginBottom: 0 }]}>Configurações</Text>
+        </View>
 
         {/* Perfil */}
         <View style={s.card}>

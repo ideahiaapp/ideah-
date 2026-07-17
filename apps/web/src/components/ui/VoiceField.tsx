@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import type { TextareaHTMLAttributes, InputHTMLAttributes } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -210,6 +211,97 @@ export function VoiceInput({
         )}
       </div>
       {hint && <p className="text-xs text-gray-500 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+/* ── Substituto direto para <textarea> cru, com microfone flutuante ──
+   Mesmas props de uma textarea normal (value/onChange/className/rows/placeholder…),
+   só troca onChange por onValueChange(string) para simplificar o append da fala. */
+interface TextareaWithMicProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange"> {
+  value: string;
+  onValueChange: (value: string) => void;
+}
+
+export function TextareaWithMic({ value, onValueChange, className, ...rest }: TextareaWithMicProps) {
+  const { state, interimText, toggle } = useVoiceInput({
+    onFinal: (text) => onValueChange(value ? `${value.trimEnd()} ${text}` : text),
+  });
+
+  const isRecording = state === "recording";
+
+  return (
+    <div className="relative">
+      <textarea
+        {...rest}
+        value={isRecording && interimText ? `${value} ${interimText}` : value}
+        onChange={e => !isRecording && onValueChange(e.target.value)}
+        readOnly={isRecording}
+        className={cn(className, "pr-10", isRecording && "bg-red-50/30 italic text-gray-600")}
+      />
+      {state !== "unsupported" && (
+        <button
+          type="button"
+          onClick={toggle}
+          title={isRecording ? "Parar gravação" : "Falar para transcrever"}
+          className={cn(
+            "absolute right-2 top-2 p-1.5 rounded-lg transition-all border",
+            isRecording
+              ? "bg-red-500 border-red-500 text-white shadow-sm animate-pulse"
+              : "bg-white border-gray-200 text-gray-400 hover:border-brand-300 hover:text-brand-500 hover:bg-brand-50"
+          )}
+        >
+          {isRecording
+            ? <MicOff className="w-3.5 h-3.5" />
+            : <Mic    className="w-3.5 h-3.5" />
+          }
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ── Substituto direto para <input type="text"> cru, com microfone embutido ── */
+interface InputWithMicProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
+  value: string;
+  onValueChange: (value: string) => void;
+}
+
+export function InputWithMic({ value, onValueChange, className, ...rest }: InputWithMicProps) {
+  const { state, interimText, toggle } = useVoiceInput({
+    onFinal: (text) => onValueChange(value ? `${value.trimEnd()} ${text}` : text),
+  });
+
+  const isRecording = state === "recording";
+
+  return (
+    <div className="relative">
+      <input
+        {...rest}
+        type="text"
+        value={isRecording && interimText ? `${value} ${interimText}` : value}
+        onChange={e => !isRecording && onValueChange(e.target.value)}
+        readOnly={isRecording}
+        className={cn(className, "pr-10", isRecording && "bg-red-50/30 italic text-gray-600")}
+      />
+      {state !== "unsupported" && (
+        <button
+          type="button"
+          onClick={toggle}
+          title={isRecording ? "Parar gravação" : "Falar para transcrever"}
+          className={cn(
+            "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all border",
+            isRecording
+              ? "bg-red-500 border-red-500 text-white shadow-sm animate-pulse"
+              : "bg-white border-gray-200 text-gray-400 hover:border-brand-300 hover:text-brand-500 hover:bg-brand-50"
+          )}
+        >
+          {isRecording
+            ? <MicOff className="w-3.5 h-3.5" />
+            : <Mic    className="w-3.5 h-3.5" />
+          }
+        </button>
+      )}
     </div>
   );
 }

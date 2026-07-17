@@ -6,6 +6,7 @@ import { cn, maskCpf, maskPhone } from "@/lib/utils";
 import { CheckCircle2, AlertTriangle, Loader2, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
+import { TextareaWithMic } from "@/components/ui/VoiceField";
 
 type Therapist = { id: string; name: string; email: string };
 
@@ -277,19 +278,19 @@ export default function AnamnesePage() {
             /* Fallback: campos somáticos hardcoded quando não há template */
             <Section title="Informações clínicas">
               <Field label="Estado emocional" required>
-                <textarea value={form.emotional_state} onChange={e => set("emotional_state", e.target.value)}
+                <TextareaWithMic value={form.emotional_state} onValueChange={v => set("emotional_state", v)}
                   className={inputCls + " resize-none"} rows={3} placeholder="Como está se sentindo emocionalmente" />
               </Field>
               <Field label="Dor no corpo" required>
-                <textarea value={form.body_pain} onChange={e => set("body_pain", e.target.value)}
+                <TextareaWithMic value={form.body_pain} onValueChange={v => set("body_pain", v)}
                   className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Intenção com a sessão" required>
-                <textarea value={form.intention} onChange={e => set("intention", e.target.value)}
+                <TextareaWithMic value={form.intention} onValueChange={v => set("intention", v)}
                   className={inputCls + " resize-none"} rows={3} placeholder="O que busca alcançar/superar?" />
               </Field>
               <Field label="Incômodo na vida sexual" required>
-                <textarea value={form.sexual_discomfort} onChange={e => set("sexual_discomfort", e.target.value)}
+                <TextareaWithMic value={form.sexual_discomfort} onValueChange={v => set("sexual_discomfort", v)}
                   className={inputCls + " resize-none"} rows={2} placeholder="Compartilhe ou escreva 'Não'" />
               </Field>
             </Section>
@@ -341,23 +342,23 @@ export default function AnamnesePage() {
                   className={inputCls} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Medicamentos em uso?" required>
-                <textarea value={form.medication} onChange={e => set("medication", e.target.value)}
+                <TextareaWithMic value={form.medication} onValueChange={v => set("medication", v)}
                   className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Estado emocional" required>
-                <textarea value={form.emotional_state} onChange={e => set("emotional_state", e.target.value)}
+                <TextareaWithMic value={form.emotional_state} onValueChange={v => set("emotional_state", v)}
                   className={inputCls + " resize-none"} rows={3} placeholder="Como está se sentindo emocionalmente" />
               </Field>
               <Field label="Dor no corpo" required>
-                <textarea value={form.body_pain} onChange={e => set("body_pain", e.target.value)}
+                <TextareaWithMic value={form.body_pain} onValueChange={v => set("body_pain", v)}
                   className={inputCls + " resize-none"} rows={2} placeholder="Descreva ou escreva 'Não'" />
               </Field>
               <Field label="Intenção com a sessão" required>
-                <textarea value={form.intention} onChange={e => set("intention", e.target.value)}
+                <TextareaWithMic value={form.intention} onValueChange={v => set("intention", v)}
                   className={inputCls + " resize-none"} rows={3} placeholder="O que busca alcançar/superar?" />
               </Field>
               <Field label="Incômodo na vida sexual" required>
-                <textarea value={form.sexual_discomfort} onChange={e => set("sexual_discomfort", e.target.value)}
+                <TextareaWithMic value={form.sexual_discomfort} onValueChange={v => set("sexual_discomfort", v)}
                   className={inputCls + " resize-none"} rows={2} placeholder="Compartilhe ou escreva 'Não'" />
               </Field>
             </Section>

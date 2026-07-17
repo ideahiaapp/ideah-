@@ -14,6 +14,7 @@ import { formatDate, cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client, Evolution, Supervision } from "@/lib/database.types";
 import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
+import { TextareaWithMic } from "@/components/ui/VoiceField";
 
 type Tab = "prontuario" | "anamnese" | "evolucoes" | "supervisoes";
 
@@ -578,22 +579,22 @@ function AnamneseFormCard({ client, form, setField, toggleCondition, saving, err
           <input value={form.oil_allergy} onChange={e => setField("oil_allergy", e.target.value as never)} className={inputCls} />
         </FormField>
         <FormField label="Medicamentos em uso">
-          <textarea rows={2} value={form.medication} onChange={e => setField("medication", e.target.value as never)} className={inputCls + " resize-none"} />
+          <TextareaWithMic rows={2} value={form.medication} onValueChange={v => setField("medication", v as never)} className={inputCls + " resize-none"} />
         </FormField>
       </ProntuarioSection>
 
       <ProntuarioSection title="Estado emocional e intenção" icon={Target}>
         <FormField label="Estado emocional atual">
-          <textarea rows={3} value={form.emotional_state} onChange={e => setField("emotional_state", e.target.value as never)} className={inputCls + " resize-none"} />
+          <TextareaWithMic rows={3} value={form.emotional_state} onValueChange={v => setField("emotional_state", v as never)} className={inputCls + " resize-none"} />
         </FormField>
         <FormField label="Dor no corpo">
-          <textarea rows={2} value={form.body_pain} onChange={e => setField("body_pain", e.target.value as never)} className={inputCls + " resize-none"} />
+          <TextareaWithMic rows={2} value={form.body_pain} onValueChange={v => setField("body_pain", v as never)} className={inputCls + " resize-none"} />
         </FormField>
         <FormField label="Intenção com a sessão / processo">
-          <textarea rows={3} value={form.intention} onChange={e => setField("intention", e.target.value as never)} className={inputCls + " resize-none"} />
+          <TextareaWithMic rows={3} value={form.intention} onValueChange={v => setField("intention", v as never)} className={inputCls + " resize-none"} />
         </FormField>
         <FormField label="Incômodo na vida sexual">
-          <textarea rows={2} value={form.sexual_discomfort} onChange={e => setField("sexual_discomfort", e.target.value as never)} className={inputCls + " resize-none"} />
+          <TextareaWithMic rows={2} value={form.sexual_discomfort} onValueChange={v => setField("sexual_discomfort", v as never)} className={inputCls + " resize-none"} />
         </FormField>
       </ProntuarioSection>
 

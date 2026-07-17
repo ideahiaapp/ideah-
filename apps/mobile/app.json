@@ -26,7 +26,14 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-image-picker"
+      "expo-image-picker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "O Paideia usa o microfone para transcrever sua fala nos campos de texto.",
+          "speechRecognitionPermission": "O Paideia usa reconhecimento de voz para transcrever sua fala nos campos de texto."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
+import { TextareaWithMic, InputWithMic } from "@/components/ui/VoiceField";
 import type { Client, Supervision, SupervisionMessage, Evolution } from "@/lib/database.types";
 
 /* ─── Tipos ─────────────────────────────────────────── */
@@ -440,8 +441,8 @@ function StartSupervisionModal({
 
           <div>
             <label className="block text-[10px] font-semibold text-gray-500 mb-1">Suas impressões</label>
-            <textarea
-              value={impressions} onChange={e => setImpressions(e.target.value)}
+            <TextareaWithMic
+              value={impressions} onValueChange={setImpressions}
               placeholder="O que trouxe da sessão, primeiras impressões, pontos de atenção..."
               rows={4} autoFocus
               className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none placeholder-gray-400"
@@ -531,7 +532,7 @@ function FinishSupervisionModal({
         <div className="px-5 py-4 space-y-3">
           <div>
             <label className="block text-[10px] font-semibold text-gray-500 mb-1">Hipótese clínica</label>
-            <input value={hypothesis} onChange={e => setHypothesis(e.target.value)} autoFocus
+            <InputWithMic value={hypothesis} onValueChange={setHypothesis} autoFocus
               placeholder="Sua interpretação clínica desta sessão..."
               className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 placeholder-gray-400"
             />
@@ -539,7 +540,7 @@ function FinishSupervisionModal({
 
           <div>
             <label className="block text-[10px] font-semibold text-gray-500 mb-1">Plano para próxima sessão</label>
-            <textarea value={nextSessionPlan} onChange={e => setNextSessionPlan(e.target.value)}
+            <TextareaWithMic value={nextSessionPlan} onValueChange={setNextSessionPlan}
               placeholder="Pontos a retomar, temas a explorar..."
               rows={3}
               className="w-full text-sm bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none placeholder-gray-400"

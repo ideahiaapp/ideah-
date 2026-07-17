@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 
 type Client = {
   id: string; name: string; email: string | null; phone: string | null;
@@ -101,7 +102,10 @@ export default function ClientsScreen() {
     <SafeAreaView style={s.safe}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.title}>Clientes</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <HamburgerMenu />
+          <Text style={s.title}>Clientes</Text>
+        </View>
         <Text style={s.count}>{clients.length} total</Text>
       </View>
 

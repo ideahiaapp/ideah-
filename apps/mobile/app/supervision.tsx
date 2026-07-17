@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform,
+  TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,6 +9,7 @@ import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
+import { VoiceTextInput } from "@/components/VoiceTextInput";
 
 type Client = { id: string; name: string };
 type Message = { role: "user" | "assistant"; content: string };
@@ -24,6 +25,13 @@ const APPROACHES = [
   { key: "SYSTEMIC",           label: "Constelação Familiar" },
 ];
 
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 export default function SupervisionScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -37,6 +45,22 @@ export default function SupervisionScreen() {
   const [messages, setMessages]     = useState<Message[]>([]);
   const [input, setInput]           = useState("");
   const [loading, setLoading]       = useState(false);
+
+  // ── Supervisão: iniciar/pausar/retomar/finalizar ──
+  const [supervisionId, setSupervisionId]     = useState<string | null>(null);
+  const [supervisionActive, setSupervisionActive] = useState(false);
+  const [supervisionPaused, setSupervisionPaused] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds]   = useState(0);
+  const [showStartModal, setShowStartModal]   = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [sessionDate, setSessionDate]         = useState("");
+  const [sessionTime, setSessionTime]         = useState("");
+  const [impressions, setImpressions]         = useState("");
+  const [hypothesis, setHypothesis]           = useState("");
+  const [nextSessionPlan, setNextSessionPlan] = useState("");
+  const [saving, setSaving]                   = useState(false);
+
+  const canWrite = supervisionActive && !supervisionPaused;
 
   useEffect(() => {
     if (!user) return;
@@ -53,14 +77,102 @@ export default function SupervisionScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   }, [messages]);
 
-  async function send() {
-    const text = input.trim();
-    if (!text || loading) return;
+  // Timer — só avança enquanto ativo e não pausado
+  useEffect(() => {
+    if (!supervisionActive || supervisionPaused) return;
+    const interval = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [supervisionActive, supervisionPaused]);
+
+  function openStartModal() {
+    if (!selected) return;
+    const now = new Date();
+    setSessionDate(now.toISOString().split("T")[0]);
+    setSessionTime(now.toTimeString().slice(0, 5));
+    setImpressions("");
+    setShowStartModal(true);
+  }
+
+  async function confirmStart() {
+    if (!selected || !user) return;
+    setShowStartModal(false);
+
+    try {
+      const { data: session, error } = await supabase
+        .from("supervisions")
+        .insert({ therapist_id: user.id, client_id: selected.id, title: `Supervisão de ${selected.name}`, approach })
+        .select()
+        .single();
+      if (error) throw error;
+      setSupervisionId(session.id);
+    } catch {
+      // segue mesmo se não conseguir criar o registro da sessão — o chat ainda funciona
+    }
+
+    setSupervisionActive(true);
+    setSupervisionPaused(false);
+    setElapsedSeconds(0);
+
+    const text = `Sessão em ${sessionDate} às ${sessionTime}. Minhas impressões: ${impressions}`;
+    await sendMessageText(text);
+  }
+
+  function pauseSupervision() {
+    setSupervisionPaused(true);
+  }
+  function resumeSupervision() {
+    setSupervisionPaused(false);
+  }
+
+  function openFinishModal() {
+    setHypothesis("");
+    setNextSessionPlan("");
+    setShowFinishModal(true);
+  }
+
+  async function confirmFinish() {
+    setShowFinishModal(false);
+    setSaving(true);
+    setSupervisionActive(false);
+    setSupervisionPaused(false);
+
+    if (selected && user) {
+      const transcript = messages.map(m => `${m.role === "user" ? "Terapeuta" : "IA"}: ${m.content}`).join("\n\n");
+      const content = [impressions ? `Impressões iniciais: ${impressions}` : "", transcript].filter(Boolean).join("\n\n");
+
+      try {
+        await supabase.from("evolutions").insert({
+          therapist_id: user.id,
+          client_id: selected.id,
+          session_date: sessionDate || new Date().toISOString().split("T")[0],
+          session_time: sessionTime || null,
+          content: content || "Supervisão realizada.",
+          hypothesis: hypothesis.trim() || null,
+          next_session_plan: nextSessionPlan.trim() || null,
+          mood: null,
+          approach,
+          duration_seconds: elapsedSeconds,
+        });
+      } catch {
+        // se falhar o registro da evolução, ainda assim encerra a sessão localmente
+      }
+    }
+
+    setSaving(false);
+    setElapsedSeconds(0);
+    setSupervisionId(null);
+  }
+
+  async function sendMessageText(text: string) {
+    if (!text.trim() || loading) return;
 
     const newMessages: Message[] = [...messages, { role: "user", content: text }];
     setMessages(newMessages);
-    setInput("");
     setLoading(true);
+
+    if (supervisionId) {
+      supabase.from("supervision_messages").insert({ supervision_id: supervisionId, role: "user", content: text }).then(() => {});
+    }
 
     try {
       const res = await fetch(
@@ -79,6 +191,9 @@ export default function SupervisionScreen() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erro na supervisão");
       setMessages(prev => [...prev, { role: "assistant", content: json.content }]);
+      if (supervisionId) {
+        supabase.from("supervision_messages").insert({ supervision_id: supervisionId, role: "assistant", content: json.content }).then(() => {});
+      }
     } catch (e: unknown) {
       setMessages(prev => [
         ...prev,
@@ -87,6 +202,13 @@ export default function SupervisionScreen() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function send() {
+    const text = input.trim();
+    if (!text) return;
+    setInput("");
+    await sendMessageText(text);
   }
 
   return (
@@ -109,22 +231,15 @@ export default function SupervisionScreen() {
 
         {/* Seletor de cliente */}
         <View style={s.pickerWrapper}>
-          <TouchableOpacity style={s.selector} onPress={() => setShowPicker(!showPicker)}>
+          <TouchableOpacity style={s.selector} onPress={() => setShowPicker(!showPicker)} disabled={supervisionActive}>
             <Ionicons name="person" size={15} color={Colors.gray[400]} />
             <Text style={selected ? s.selectorText : s.selectorPlaceholder} numberOfLines={1}>
-              {selected?.name ?? "Selecionar cliente (opcional)"}
+              {selected?.name ?? "Selecionar cliente"}
             </Text>
-            <Ionicons name={showPicker ? "chevron-up" : "chevron-down"} size={15} color={Colors.gray[400]} />
+            {!supervisionActive && <Ionicons name={showPicker ? "chevron-up" : "chevron-down"} size={15} color={Colors.gray[400]} />}
           </TouchableOpacity>
-          {showPicker && (
+          {showPicker && !supervisionActive && (
             <View style={s.pickerList}>
-              <TouchableOpacity
-                style={s.pickerItem}
-                onPress={() => { setSelected(null); setShowPicker(false); }}
-              >
-                <Text style={[s.pickerItemText, { color: Colors.gray[400] }]}>Sem cliente específico</Text>
-                {!selected && <Ionicons name="checkmark" size={14} color={Colors.brand[500]} />}
-              </TouchableOpacity>
               {clients.map(c => (
                 <TouchableOpacity
                   key={c.id}
@@ -143,14 +258,14 @@ export default function SupervisionScreen() {
 
         {/* Abordagem */}
         <View style={s.pickerWrapper}>
-          <TouchableOpacity style={s.selector} onPress={() => setShowApproach(!showApproach)}>
+          <TouchableOpacity style={s.selector} onPress={() => setShowApproach(!showApproach)} disabled={supervisionActive}>
             <Ionicons name="school" size={15} color={Colors.gray[400]} />
             <Text style={s.selectorText} numberOfLines={1}>
               {APPROACHES.find(a => a.key === approach)?.label}
             </Text>
-            <Ionicons name={showApproach ? "chevron-up" : "chevron-down"} size={15} color={Colors.gray[400]} />
+            {!supervisionActive && <Ionicons name={showApproach ? "chevron-up" : "chevron-down"} size={15} color={Colors.gray[400]} />}
           </TouchableOpacity>
-          {showApproach && (
+          {showApproach && !supervisionActive && (
             <View style={s.pickerList}>
               {APPROACHES.map(a => (
                 <TouchableOpacity
@@ -165,6 +280,42 @@ export default function SupervisionScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          )}
+        </View>
+
+        {/* Controle da supervisão */}
+        <View style={s.controlBar}>
+          {supervisionActive ? (
+            <>
+              <View style={s.timerBadge}>
+                <View style={[s.timerDot, supervisionPaused ? { backgroundColor: Colors.gray[400] } : null]} />
+                <Text style={s.timerText}>{formatDuration(elapsedSeconds)}</Text>
+              </View>
+              {supervisionPaused ? (
+                <TouchableOpacity style={s.controlBtnPrimary} onPress={resumeSupervision} activeOpacity={0.8}>
+                  <Ionicons name="play" size={15} color="#fff" />
+                  <Text style={s.controlBtnPrimaryText}>Retomar</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={s.controlBtnOutline} onPress={pauseSupervision} activeOpacity={0.8}>
+                  <Ionicons name="pause" size={15} color={Colors.brand[700]} />
+                  <Text style={s.controlBtnOutlineText}>Pausar</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={s.controlBtnFinish} onPress={openFinishModal} activeOpacity={0.8} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <><Ionicons name="stop" size={15} color="#fff" /><Text style={s.controlBtnPrimaryText}>Finalizar</Text></>}
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              style={[s.controlBtnStart, !selected && s.btnDisabled]}
+              onPress={openStartModal}
+              disabled={!selected}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="play-circle" size={16} color="#fff" />
+              <Text style={s.controlBtnPrimaryText}>Iniciar supervisão</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -183,19 +334,10 @@ export default function SupervisionScreen() {
               </View>
               <Text style={s.emptyTitle}>Supervisão clínica</Text>
               <Text style={s.emptyText}>
-                Descreva o caso, dúvida clínica ou situação que quer supervisionar. Você pode selecionar um cliente para contextualizar.
+                {selected
+                  ? "Toque em \"Iniciar supervisão\" para começar. Você poderá pausar e retomar quando precisar."
+                  : "Selecione um cliente para iniciar a supervisão."}
               </Text>
-              <View style={s.suggestions}>
-                {[
-                  "Como abordar resistência à mudança?",
-                  "Cliente apresenta dissociação na sessão",
-                  "Dificuldade com vínculo terapêutico",
-                ].map(s => (
-                  <TouchableOpacity key={s} style={s2.suggestionBtn} onPress={() => setInput(s)}>
-                    <Text style={s2.suggestionText}>{s}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
             </View>
           )}
 
@@ -224,26 +366,101 @@ export default function SupervisionScreen() {
 
         {/* Input */}
         <View style={s.inputRow}>
-          <TextInput
-            style={s.input}
+          <VoiceTextInput
+            style={[s.input, !canWrite && s.inputDisabled]}
             value={input}
-            onChangeText={setInput}
-            placeholder="Descreva o caso ou dúvida clínica..."
+            onValueChange={setInput}
+            placeholder={canWrite ? "Descreva o caso ou dúvida clínica..." : supervisionPaused ? "Supervisão pausada…" : "Inicie a supervisão para escrever…"}
             placeholderTextColor={Colors.gray[400]}
             multiline
             maxLength={1000}
+            editable={canWrite}
             onSubmitEditing={send}
           />
           <TouchableOpacity
-            style={[s.sendBtn, (!input.trim() || loading) && s.sendBtnDisabled]}
+            style={[s.sendBtn, (!canWrite || !input.trim() || loading) && s.sendBtnDisabled]}
             onPress={send}
-            disabled={!input.trim() || loading}
+            disabled={!canWrite || !input.trim() || loading}
             activeOpacity={0.8}
           >
             <Ionicons name="send" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Modal: iniciar supervisão */}
+      <Modal visible={showStartModal} transparent animationType="fade" onRequestClose={() => setShowStartModal(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>Vamos evoluir {selected?.name ?? "o cliente"} hoje?</Text>
+            <Text style={s.modalSub}>Informe a data, o horário e suas impressões iniciais.</Text>
+
+            <Text style={s.fieldLabel}>Data da sessão</Text>
+            <TextInput style={s.fieldInput} value={sessionDate} onChangeText={setSessionDate} placeholder="AAAA-MM-DD" placeholderTextColor={Colors.gray[400]} />
+
+            <Text style={s.fieldLabel}>Horário</Text>
+            <TextInput style={s.fieldInput} value={sessionTime} onChangeText={setSessionTime} placeholder="HH:MM" placeholderTextColor={Colors.gray[400]} />
+
+            <Text style={s.fieldLabel}>Impressões iniciais</Text>
+            <VoiceTextInput
+              style={[s.fieldInput, s.fieldTextarea]}
+              value={impressions}
+              onValueChange={setImpressions}
+              placeholder="O que apareceu na sessão?"
+              placeholderTextColor={Colors.gray[400]}
+              multiline
+            />
+
+            <View style={s.modalActions}>
+              <TouchableOpacity style={s.modalCancel} onPress={() => setShowStartModal(false)}>
+                <Text style={s.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.modalConfirm} onPress={confirmStart}>
+                <Text style={s.modalConfirmText}>Iniciar supervisão</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal: finalizar supervisão */}
+      <Modal visible={showFinishModal} transparent animationType="fade" onRequestClose={() => setShowFinishModal(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>Finalizar supervisão</Text>
+            <Text style={s.modalSub}>Registre a hipótese clínica e o plano para a próxima sessão.</Text>
+
+            <Text style={s.fieldLabel}>Hipótese clínica</Text>
+            <VoiceTextInput
+              style={[s.fieldInput, s.fieldTextarea]}
+              value={hypothesis}
+              onValueChange={setHypothesis}
+              placeholder="Hipótese levantada nesta sessão"
+              placeholderTextColor={Colors.gray[400]}
+              multiline
+            />
+
+            <Text style={s.fieldLabel}>Plano para próxima sessão</Text>
+            <VoiceTextInput
+              style={[s.fieldInput, s.fieldTextarea]}
+              value={nextSessionPlan}
+              onValueChange={setNextSessionPlan}
+              placeholder="Próximos focos"
+              placeholderTextColor={Colors.gray[400]}
+              multiline
+            />
+
+            <View style={s.modalActions}>
+              <TouchableOpacity style={s.modalCancel} onPress={() => setShowFinishModal(false)}>
+                <Text style={s.modalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.modalConfirm} onPress={confirmFinish}>
+                <Text style={s.modalConfirmText}>Salvar e finalizar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -264,13 +481,23 @@ const s = StyleSheet.create({
   pickerItem:      { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
   pickerItemActive: { backgroundColor: Colors.brand[50] },
   pickerItemText:  { fontSize: 13, color: Colors.ink },
+  controlBar:      { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
+  timerBadge:      { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#FEF3C7", borderWidth: 1, borderColor: "#FDE68A", paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10 },
+  timerDot:        { width: 6, height: 6, borderRadius: 3, backgroundColor: "#D97706" },
+  timerText:       { fontSize: 12, fontWeight: "700", color: "#92400E", fontVariant: ["tabular-nums"] },
+  controlBtnStart: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: Colors.brand[500], borderRadius: 10, paddingVertical: 10 },
+  controlBtnPrimary: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: Colors.brand[500], borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  controlBtnPrimaryText: { color: Colors.white, fontSize: 12, fontWeight: "700" },
+  controlBtnOutline: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.brand[200], borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  controlBtnOutlineText: { color: Colors.brand[700], fontSize: 12, fontWeight: "700" },
+  controlBtnFinish: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#D97706", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginLeft: "auto" },
+  btnDisabled:     { opacity: 0.5 },
   chat:            { flex: 1 },
   chatContent:     { padding: 16, gap: 12, flexGrow: 1 },
   emptyState:      { flex: 1, alignItems: "center", paddingTop: 32, gap: 12 },
   emptyIcon:       { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.brand[50], alignItems: "center", justifyContent: "center" },
   emptyTitle:      { fontSize: 18, fontWeight: "700", color: Colors.ink },
   emptyText:       { fontSize: 13, color: Colors.gray[500], textAlign: "center", lineHeight: 20, paddingHorizontal: 16 },
-  suggestions:     { gap: 8, width: "100%", marginTop: 8 },
   bubble:          { maxWidth: "85%", borderRadius: 16, padding: 12, flexDirection: "row", gap: 8, alignItems: "flex-start" },
   bubbleUser:      { backgroundColor: Colors.brand[500], alignSelf: "flex-end", borderBottomRightRadius: 4 },
   bubbleAssistant: { backgroundColor: Colors.white, alignSelf: "flex-start", borderBottomLeftRadius: 4, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
@@ -280,11 +507,20 @@ const s = StyleSheet.create({
   bubbleTextAssistant: { color: Colors.ink },
   inputRow:        { flexDirection: "row", alignItems: "flex-end", gap: 10, padding: 12, backgroundColor: Colors.white, borderTopWidth: 1, borderTopColor: Colors.gray[100] },
   input:           { flex: 1, borderWidth: 1, borderColor: Colors.gray[200], borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, color: Colors.ink, backgroundColor: Colors.gray[50], maxHeight: 100 },
+  inputDisabled:   { backgroundColor: Colors.gray[100], color: Colors.gray[400] },
   sendBtn:         { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.brand[500], alignItems: "center", justifyContent: "center" },
   sendBtnDisabled: { opacity: 0.4 },
-});
-
-const s2 = StyleSheet.create({
-  suggestionBtn:  { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.gray[200], borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, alignSelf: "flex-start" },
-  suggestionText: { fontSize: 12, color: Colors.gray[600] },
+  // Modais
+  modalOverlay:    { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 20 },
+  modalCard:       { backgroundColor: Colors.white, borderRadius: 20, padding: 22 },
+  modalTitle:      { fontSize: 17, fontWeight: "700", color: Colors.ink, marginBottom: 4 },
+  modalSub:        { fontSize: 13, color: Colors.gray[500], marginBottom: 16, lineHeight: 18 },
+  fieldLabel:      { fontSize: 12, fontWeight: "600", color: Colors.gray[600], marginBottom: 6, marginTop: 4 },
+  fieldInput:      { borderWidth: 1, borderColor: Colors.gray[200], borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13, color: Colors.ink, marginBottom: 4 },
+  fieldTextarea:   { minHeight: 70, textAlignVertical: "top" },
+  modalActions:    { flexDirection: "row", gap: 10, marginTop: 16 },
+  modalCancel:     { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: Colors.gray[200] },
+  modalCancelText: { fontSize: 13, fontWeight: "600", color: Colors.gray[600] },
+  modalConfirm:    { flex: 1.4, alignItems: "center", justifyContent: "center", paddingVertical: 12, borderRadius: 10, backgroundColor: Colors.brand[500] },
+  modalConfirmText: { fontSize: 13, fontWeight: "700", color: Colors.white },
 });

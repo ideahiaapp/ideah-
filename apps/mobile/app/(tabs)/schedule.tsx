@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 
 type Session = {
   id: string; date: string; start_time: string; duration: number;
@@ -81,7 +82,10 @@ export default function ScheduleScreen() {
   return (
     <SafeAreaView style={s.safe}>
       <View style={s.header}>
-        <Text style={s.title}>Agenda</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <HamburgerMenu />
+          <Text style={s.title}>Agenda</Text>
+        </View>
       </View>
 
       {/* Filtro */}
