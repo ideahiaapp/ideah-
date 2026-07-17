@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
+import { aiHeaders } from "@/lib/ai-headers";
 import { Colors } from "@/constants/colors";
 import { VoiceTextInput } from "@/components/VoiceTextInput";
 
@@ -179,7 +180,7 @@ export default function SupervisionScreen() {
         `${process.env.EXPO_PUBLIC_WEB_URL}/api/supervision/chat`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: await aiHeaders(),
           body: JSON.stringify({
             messages: newMessages,
             approach,
@@ -216,7 +217,7 @@ export default function SupervisionScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         {/* Header */}
         <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))} style={s.backBtn}>
             <Ionicons name="arrow-back" size={22} color={Colors.ink} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>

@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as SecureStore from "expo-secure-store";
 import { useAuthStore } from "@/store/auth.store";
 import { Colors } from "@/constants/colors";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
+import { secureStorage } from "@/lib/secure-storage";
+import { confirmAsync } from "@/lib/confirm";
 
 const API_KEY_STORE = "ideah_anthropic_api_key";
 
@@ -15,28 +16,27 @@ export default function SettingsScreen() {
   const [showKey, setShowKey]   = useState(false);
   const [keySaved, setKeySaved] = useState(false);
 
+  useEffect(() => {
+    secureStorage.getItem(API_KEY_STORE).then(v => { if (v) setApiKey(v); });
+  }, []);
+
   async function saveApiKey() {
     if (!apiKey.trim()) { Alert.alert("Atenção", "Digite uma API Key válida."); return; }
-    await SecureStore.setItemAsync(API_KEY_STORE, apiKey.trim());
+    await secureStorage.setItem(API_KEY_STORE, apiKey.trim());
     setKeySaved(true);
     setTimeout(() => setKeySaved(false), 2000);
   }
 
   async function removeApiKey() {
-    Alert.alert("Remover API Key", "Tem certeza?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Remover", style: "destructive", onPress: async () => {
-        await SecureStore.deleteItemAsync(API_KEY_STORE);
-        setApiKey("");
-      }},
-    ]);
+    const ok = await confirmAsync("Remover API Key", "Tem certeza?", "Remover");
+    if (!ok) return;
+    await secureStorage.removeItem(API_KEY_STORE);
+    setApiKey("");
   }
 
-  function confirmLogout() {
-    Alert.alert("Sair", "Deseja sair da sua conta?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Sair", style: "destructive", onPress: logout },
-    ]);
+  async function confirmLogout() {
+    const ok = await confirmAsync("Sair", "Deseja sair da sua conta?", "Sair");
+    if (ok) logout();
   }
 
   const firstName = user?.name?.split(" ")[0] ?? "Terapeuta";

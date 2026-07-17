@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Alert, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { useAuthStore } from "@/store/auth.store";
 import { Colors } from "@/constants/colors";
+import { confirmAsync } from "@/lib/confirm";
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -40,11 +41,9 @@ export function HamburgerMenu() {
     hide(() => router.push(href as never));
   }
 
-  function confirmLogout() {
-    Alert.alert("Sair", "Deseja sair da sua conta?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Sair", style: "destructive", onPress: () => hide(() => logout()) },
-    ]);
+  async function confirmLogout() {
+    const ok = await confirmAsync("Sair", "Deseja sair da sua conta?", "Sair");
+    if (ok) hide(() => logout());
   }
 
   const firstName = user?.name?.split(" ")[0] ?? "Terapeuta";

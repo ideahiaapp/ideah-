@@ -1,11 +1,11 @@
-import * as SecureStore from "expo-secure-store";
 import { supabase } from "./supabase";
+import { secureStorage } from "./secure-storage";
 
 const API_KEY_STORE = "ideah_anthropic_api_key";
 
 /** Monta os headers para chamadas às rotas de IA do backend web, incluindo a API key salva localmente. */
 export async function aiHeaders(): Promise<Record<string, string>> {
-  const apiKey = (await SecureStore.getItemAsync(API_KEY_STORE)) ?? "";
+  const apiKey = (await secureStorage.getItem(API_KEY_STORE)) ?? "";
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (apiKey) {
     headers["x-ai-key"] = apiKey;
