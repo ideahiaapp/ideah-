@@ -10,3 +10,37 @@
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
+
+/* Impressão isolada de um elemento dentro do app (ex.: o certificado):
+   - .print-hide some (chrome do app: sidebar, topbar, filtros, botões);
+   - o app-shell (sidebar fixa + área com scroll) é neutralizado, senão o
+     conteúdo fica cortado na altura da tela em vez de fluir pela página inteira. */
+@media print {
+  .print-hide {
+    display: none !important;
+  }
+  .dashboard-shell,
+  .dashboard-shell * {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  #certificate-print-area {
+    width: 100% !important;
+    aspect-ratio: auto !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  /* Por padrão o navegador remove cores/imagens de fundo na impressão — sem isso
+     a faixa terracota, a onda decorativa e o fundo creme do certificado saem em branco. */
+  #certificate-print-area,
+  #certificate-print-area * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  @page {
+    size: landscape;
+    margin: 0;
+  }
+}

@@ -28,7 +28,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 bg-brand-500 border-r border-black/10 flex flex-col flex-shrink-0">
+    <aside className="print-hide w-60 bg-brand-500 border-r border-black/10 flex flex-col flex-shrink-0">
       {/* Logo */}
       <div className="px-5 py-6 border-b border-white/15">
         <Link href="/dashboard/home">

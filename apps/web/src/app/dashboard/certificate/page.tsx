@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Award, ChevronDown, Loader2, AlertTriangle, Clock, FileText, Sparkles } from "lucide-react";
+import { Award, ChevronDown, Loader2, AlertTriangle, Clock, FileText, Sparkles, Download } from "lucide-react";
 import { adminHeaders } from "@/lib/supabase";
 import { aiHeaders } from "@/lib/api-key";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
+import { CertificateTemplate } from "@/components/certificate/CertificateTemplate";
 
 const APPROACH_LABELS: Record<string, string> = {
   PSYCHOANALYSIS: "Psicanálise Freudiana", COGNITIVE_BEHAVIORAL: "TCC",
@@ -64,6 +65,15 @@ function CertificateMarkdown({ text }: { text: string }) {
       })}
     </div>
   );
+}
+
+/** Formato compacto para o certificado ("2h30", "45min", "0h") — evita arredondar minutos reais para "0h". */
+function formatHoursLabel(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.round((totalSeconds % 3600) / 60);
+  if (h === 0 && m === 0) return "0h";
+  if (h === 0) return `${m}min`;
+  return m > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
 }
 
 function formatDuration(totalSeconds: number): string {
@@ -156,7 +166,7 @@ export default function CertificatePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="print-hide flex items-center gap-3">
         <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center">
           <Award className="w-5 h-5 text-brand-500" strokeWidth={1.8} />
         </div>
@@ -167,7 +177,7 @@ export default function CertificatePage() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div className="print-hide bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SelectField
             label="Terapeuta"
@@ -200,15 +210,41 @@ export default function CertificatePage() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600">
+        <div className="print-hide flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           {error}
         </div>
       )}
 
+      {/* Certificado (layout para impressão/PDF) */}
+      {report && (
+        <div className="space-y-3">
+          <div className="print-hide flex items-center justify-end">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 px-3.5 py-2 rounded-lg transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Baixar PDF
+            </button>
+          </div>
+          <CertificateTemplate
+            therapistName={report.therapist.name}
+            approachLabel={
+              report.synthesis.length > 0
+                ? report.synthesis.map(row => APPROACH_LABELS[row.approach] ?? row.approach).join(" · ")
+                : "—"
+            }
+            periodLabel={`${fmtDate(report.period.start)} a ${fmtDate(report.period.end)}`}
+            totalHoursLabel={formatHoursLabel(report.totalSeconds)}
+            totalSessions={report.totalSessions}
+          />
+        </div>
+      )}
+
       {/* Relatório */}
       {report && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
+        <div className="print-hide bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
           <div className="border-b border-gray-100 pb-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Terapeuta</p>
             <p className="text-base font-bold text-gray-900">{report.therapist.name}</p>

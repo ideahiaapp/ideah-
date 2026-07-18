@@ -12,7 +12,7 @@ export function TopBar() {
   const role      = user?.role === "admin" ? "Administrador" : "Terapeuta";
 
   return (
-    <header className="h-14 bg-brand-500 border-b border-black/10 flex items-center justify-between px-6 flex-shrink-0">
+    <header className="print-hide h-14 bg-brand-500 border-b border-black/10 flex items-center justify-between px-6 flex-shrink-0">
       {/* Busca */}
       <div className="relative w-72">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />

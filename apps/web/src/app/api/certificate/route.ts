@@ -129,7 +129,8 @@ export async function GET(req: NextRequest) {
 
     const { data: authUserData } = await supabase.auth.admin.getUserById(therapistId);
     const therapistUser = authUserData?.user;
-    const therapistName = therapistUser?.user_metadata?.name ?? therapistUser?.email ?? "—";
+    // "||" (não "??") de propósito: user_metadata.name pode vir como string vazia, não só null/undefined.
+    const therapistName = therapistUser?.user_metadata?.name?.trim() || therapistUser?.email || "—";
 
     // Prompt cadastrado pelo admin na aba "Certificado" de Prompts, com fallback para o padrão acima.
     const { data: promptRow } = await supabase
