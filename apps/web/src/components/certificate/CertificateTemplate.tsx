@@ -24,13 +24,13 @@ export function CertificateTemplate({
 }: CertificateTemplateProps) {
   return (
     <div
-      id="certificate-print-area"
-      className="relative w-full aspect-[1.55] mx-auto overflow-hidden rounded-2xl border border-brand-100 shadow-xl bg-[#FDF6EF]"
+      className="certificate-card relative w-full aspect-[1.55] mx-auto overflow-hidden rounded-2xl border border-brand-100 shadow-xl bg-[#FDF6EF]"
     >
-      {/* Onda decorativa à esquerda */}
+      {/* Onda decorativa à esquerda — oval com border-radius (não clip-path,
+          que é descartado com frequência na impressão/exportação em PDF).
+          Altura cobre a página inteira (topo a base), largura menor que a altura. */}
       <div
-        className="absolute inset-y-0 left-0 w-[26%] bg-gradient-to-br from-brand-600 to-brand-400"
-        style={{ clipPath: "ellipse(75% 60% at 0% 50%)" }}
+        className="absolute left-[-16%] inset-y-0 w-[42%] h-full rounded-[50%] bg-gradient-to-br from-brand-600 to-brand-400"
         aria-hidden
       />
 

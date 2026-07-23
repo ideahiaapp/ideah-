@@ -24,23 +24,38 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = serviceClient();
+  const emailLower = email.toLowerCase().trim();
 
-  // Já existe conta ativa com esse e-mail?
-  const { data: existingUsers } = await supabase.auth.admin.listUsers();
-  if (existingUsers?.users.some(u => u.email?.toLowerCase() === email.toLowerCase())) {
+  // "Cadastrado de verdade" = tem linha em therapist_profiles (é o que o AuthGuard exige pra logar).
+  const { data: existingProfile } = await supabase
+    .from("therapist_profiles")
+    .select("user_id")
+    .eq("email", emailLower)
+    .maybeSingle();
+
+  if (existingProfile) {
     return NextResponse.json({ error: "Este e-mail já está cadastrado. Tente fazer login." }, { status: 409 });
+  }
+
+  // Pode existir um usuário "órfão" no auth (de uma tentativa anterior que não completou
+  // o vínculo com therapist_profiles) — sem profile ele não consegue logar mesmo, então
+  // removemos pra liberar o e-mail para um novo cadastro.
+  const { data: existingUsers } = await supabase.auth.admin.listUsers();
+  const orphanUser = existingUsers?.users.find(u => u.email?.toLowerCase() === emailLower);
+  if (orphanUser) {
+    await supabase.auth.admin.deleteUser(orphanUser.id);
   }
 
   const passwordEncrypted = encryptPending(password);
 
   // Substitui um cadastro pendente anterior do mesmo e-mail (ex.: usuário tentou de novo)
-  await supabase.from("pending_registrations").delete().eq("email", email.toLowerCase());
+  await supabase.from("pending_registrations").delete().eq("email", emailLower);
 
   const { data, error } = await supabase
     .from("pending_registrations")
     .insert({
       name,
-      email: email.toLowerCase(),
+      email: emailLower,
       password_encrypted: passwordEncrypted,
       approaches,
       category: category ?? "individual",

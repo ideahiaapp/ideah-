@@ -24,17 +24,21 @@ body {
     height: auto !important;
     overflow: visible !important;
   }
-  #certificate-print-area {
+  .certificate-card {
     width: 100% !important;
     aspect-ratio: auto !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     border: none !important;
   }
+  /* Um certificado por página — sem quebra depois do último. */
+  .certificate-card:not(:last-child) {
+    break-after: page;
+  }
   /* Por padrão o navegador remove cores/imagens de fundo na impressão — sem isso
      a faixa terracota, a onda decorativa e o fundo creme do certificado saem em branco. */
-  #certificate-print-area,
-  #certificate-print-area * {
+  .certificate-card,
+  .certificate-card * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;

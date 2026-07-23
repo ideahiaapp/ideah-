@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, User, CheckCircle2, ArrowLeft, Loader2, BookOpen, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
 
 const BASES = [
   { key: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
@@ -30,6 +32,8 @@ const ANNUAL_DISCOUNT = 0.2; // 20% off no plano anual
 const ANNUAL_PRICE_PER_BASE = MONTHLY_PRICE_PER_BASE * (1 - ANNUAL_DISCOUNT);
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { login } = useAuthStore();
   const [step, setStep]           = useState<1 | 2 | 3 | 4>(1);
   const [name, setName]           = useState("");
   const [email, setEmail]         = useState("");
@@ -124,6 +128,32 @@ export default function RegisterPage() {
       url.searchParams.set("ref", pendingId ?? "");
       url.searchParams.set("amount", total.toFixed(2));
       window.location.href = url.toString();
+    } finally {
+      setPayLoading(false);
+    }
+  }
+
+  /**
+   * ⚠️ TEMPORÁRIO — cria a conta direto, sem pagamento, enquanto o checkout não
+   * está configurado. Chama /api/auth/dev-complete-registration (ver comentário
+   * lá). Remover este botão junto com a rota quando o pagamento estiver pronto.
+   */
+  async function handleTestBypass() {
+    if (!pendingId) return;
+    setError("");
+    setPayLoading(true);
+    try {
+      const res = await fetch("/api/auth/dev-complete-registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pendingId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao criar conta de teste.");
+      await login(email, password);
+      router.replace("/dashboard/home");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao criar conta de teste.");
     } finally {
       setPayLoading(false);
     }
@@ -454,6 +484,12 @@ export default function RegisterPage() {
               <p className="text-xs text-gray-400 text-center mt-4">
                 Você será redirecionado para o checkout seguro da Greenn.
               </p>
+
+              {/* ⚠️ TEMPORÁRIO — remover quando o checkout de pagamento estiver configurado. */}
+              <button type="button" onClick={handleTestBypass} disabled={payLoading}
+                className="w-full mt-3 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-semibold rounded-xl py-2.5 transition-colors disabled:opacity-50 text-xs flex items-center justify-center gap-2">
+                {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "⚠ Criar conta sem pagar (modo de teste)"}
+              </button>
             </>
           )}
         </div>

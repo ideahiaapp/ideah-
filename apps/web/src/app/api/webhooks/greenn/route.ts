@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { decryptPending } from "@/lib/pendingRegistrationCrypto";
+import { completePendingRegistration } from "@/lib/completePendingRegistration";
 
 function serviceClient() {
   return createClient(
@@ -92,30 +92,10 @@ export async function POST(req: NextRequest) {
   }
   if (pending.status === "completed") return NextResponse.json({ ok: true, note: "Já processado." });
 
-  const password = decryptPending(pending.password_encrypted);
-
-  const { data: created, error: createErr } = await supabase.auth.admin.createUser({
-    email: pending.email,
-    password,
-    email_confirm: true,
-    user_metadata: { name: pending.name },
-  });
-
-  if (createErr || !created.user) {
-    return NextResponse.json({ error: createErr?.message ?? "Erro ao criar conta." }, { status: 500 });
+  try {
+    const result = await completePendingRegistration(supabase, pending);
+    return NextResponse.json({ ok: true, ...result });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao criar conta." }, { status: 500 });
   }
-
-  if (pending.approaches?.length) {
-    await supabase.from("therapist_approaches").insert(
-      pending.approaches.map((approach: string) => ({ therapist_id: created.user.id, approach }))
-    );
-  }
-
-  // Mantém o registro (auditoria) mas remove a senha cifrada e marca como concluído.
-  await supabase
-    .from("pending_registrations")
-    .update({ status: "completed", password_encrypted: "" })
-    .eq("id", pending.id);
-
-  return NextResponse.json({ ok: true, userId: created.user.id });
 }
