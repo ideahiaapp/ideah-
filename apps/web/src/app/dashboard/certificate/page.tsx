@@ -165,7 +165,7 @@ export default function CertificatePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto flex flex-col gap-6 print:max-w-none print:m-0 print:gap-0">
       <div className="print-hide flex items-center gap-3">
         <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center">
           <Award className="w-5 h-5 text-brand-500" strokeWidth={1.8} />
@@ -218,7 +218,7 @@ export default function CertificatePage() {
 
       {/* Certificados (um por abordagem/teoria supervisionada — layout para impressão/PDF) */}
       {report && report.synthesis.length > 0 && (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6 print:gap-0">
           <div className="print-hide flex items-center justify-end">
             <button
               onClick={() => window.print()}

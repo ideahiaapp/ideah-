@@ -25,8 +25,15 @@ body {
     overflow: visible !important;
   }
   .certificate-card {
-    width: 100% !important;
-    aspect-ratio: auto !important;
+    /* Tamanho fixo em mm, igual ao @page abaixo — garante que o que aparece
+       na tela seja exatamente o que sai impresso, sem sobra de página nem
+       corte. Não usar aspect-ratio/width:100% aqui: o conteúdo do card é todo
+       position:absolute, então sem uma altura explícita ele colapsa a 0px
+       e os certificados ficam sobrepostos na mesma posição da página. */
+    width: 297mm !important;
+    height: 210mm !important;
+    max-width: none !important;
+    margin: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     border: none !important;
@@ -44,7 +51,7 @@ body {
     color-adjust: exact !important;
   }
   @page {
-    size: landscape;
+    size: 297mm 210mm;
     margin: 0;
   }
 }
