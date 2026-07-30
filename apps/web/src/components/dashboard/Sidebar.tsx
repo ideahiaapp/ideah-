@@ -32,7 +32,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-5 py-6 border-b border-white/15">
         <Link href="/dashboard/home">
-          <Image src="/logoPaideia.png" alt="Paideia" width={170} height={85} className="rounded-lg" priority />
+          <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={170} height={40} priority />
         </Link>
       </div>
 
