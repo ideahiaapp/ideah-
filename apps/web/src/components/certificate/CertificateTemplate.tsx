@@ -91,3 +91,40 @@ export function CertificateTemplate({
     </div>
   );
 }
+
+function BackMarkdown({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-2.5 text-[12px] text-gray-700 leading-relaxed">
+      {lines.map((line, i) => {
+        if (line.startsWith("# "))   return <h1  key={i} className="font-serif text-lg font-bold text-ink mt-1">{line.slice(2)}</h1>;
+        if (line.startsWith("## "))  return <h2  key={i} className="text-sm font-bold text-brand-600 mt-3">{line.slice(3)}</h2>;
+        if (line.startsWith("### ")) return <h3  key={i} className="text-xs font-semibold text-gray-700 mt-2">{line.slice(4)}</h3>;
+        if (line.startsWith("- ") || line.startsWith("• ")) {
+          return <li key={i} className="ml-4 list-disc">{line.slice(2)}</li>;
+        }
+        if (line.trim() === "") return <div key={i} className="h-1" />;
+        const parts = line.split(/\*\*(.*?)\*\*/g);
+        return (
+          <p key={i}>
+            {parts.map((part, j) => (j % 2 === 1 ? <strong key={j} className="text-ink">{part}</strong> : part))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Verso do certificado: mesma página/tamanho do certificate-card, mas sem a faixa
+    superior nem a onda decorativa à esquerda — só o texto indicado no prompt. */
+export function CertificateBackTemplate({ text }: { text: string }) {
+  return (
+    <div
+      className="certificate-card relative w-full aspect-[297/210] mx-auto overflow-hidden rounded-2xl border border-brand-100 shadow-xl bg-[#FDF6EF]"
+    >
+      <div className="absolute inset-0 px-[12%] py-[10%] overflow-hidden">
+        <BackMarkdown text={text} />
+      </div>
+    </div>
+  );
+}

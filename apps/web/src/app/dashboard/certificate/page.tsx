@@ -6,7 +6,18 @@ import { adminHeaders } from "@/lib/supabase";
 import { aiHeaders } from "@/lib/api-key";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
-import { CertificateTemplate } from "@/components/certificate/CertificateTemplate";
+import { CertificateTemplate, CertificateBackTemplate } from "@/components/certificate/CertificateTemplate";
+
+const BACK_MARKER = "INFORMAÇÕES DO VERSO DO CERTIFICADO";
+
+/** Separa o texto gerado pela IA em frente/verso a partir do marcador combinado no prompt. */
+function splitCertificateText(text: string): { front: string; back: string | null } {
+  const idx = text.indexOf(BACK_MARKER);
+  if (idx === -1) return { front: text.trim(), back: null };
+  const front = text.slice(0, idx).trim();
+  const back = text.slice(idx + BACK_MARKER.length).trim();
+  return { front, back: back || null };
+}
 
 const APPROACH_LABELS: Record<string, string> = {
   PSYCHOANALYSIS: "Psicanálise Freudiana", COGNITIVE_BEHAVIORAL: "TCC",
@@ -140,6 +151,10 @@ export default function CertificatePage() {
 
   const canGenerate = !!therapistId && !!period;
 
+  const { front: frontText, back: backText } = report?.certificateText
+    ? splitCertificateText(report.certificateText)
+    : { front: "", back: null };
+
   async function handleGenerate() {
     if (!canGenerate) return;
     setLoading(true); setError(null); setReport(null);
@@ -222,14 +237,16 @@ export default function CertificatePage() {
             </button>
           </div>
           {report.synthesis.map(row => (
-            <CertificateTemplate
-              key={row.approach}
-              therapistName={report.therapist.name}
-              approachLabel={APPROACH_LABELS[row.approach] ?? row.approach}
-              periodLabel={`${fmtDate(report.period.start)} a ${fmtDate(report.period.end)}`}
-              totalHoursLabel={formatHoursLabel(row.totalSeconds)}
-              totalSessions={row.count}
-            />
+            <div key={row.approach} className="flex flex-col gap-6 print:gap-0">
+              <CertificateTemplate
+                therapistName={report.therapist.name}
+                approachLabel={APPROACH_LABELS[row.approach] ?? row.approach}
+                periodLabel={`${fmtDate(report.period.start)} a ${fmtDate(report.period.end)}`}
+                totalHoursLabel={formatHoursLabel(row.totalSeconds)}
+                totalSessions={row.count}
+              />
+              {backText && <CertificateBackTemplate text={backText} />}
+            </div>
           ))}
         </div>
       )}
@@ -247,14 +264,14 @@ export default function CertificatePage() {
           </div>
 
           {/* Certificado gerado por IA */}
-          {report.certificateText && (
+          {frontText && (
             <div className="border-b border-gray-100 pb-6">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-brand-500" />
                 <p className="text-sm font-bold text-gray-800">Certificado</p>
                 <span className="text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100 font-medium">IA</span>
               </div>
-              <CertificateMarkdown text={report.certificateText} />
+              <CertificateMarkdown text={frontText} />
             </div>
           )}
 
