@@ -26,7 +26,6 @@ const ALL_APPROACHES = [
 
 const FREQUENCIES = ["Semanal","Quinzenal","Mensal","Sob demanda"];
 const DURATIONS   = ["45","50","60","90"];
-const REFERRALS   = ["Busca própria","Indicação de cliente","Indicação de médico/psiquiatra","Plataforma online","Redes sociais","Outro"];
 
 export default function NewClientPage() {
   const router     = useRouter();
@@ -34,7 +33,7 @@ export default function NewClientPage() {
 
   const [form, setForm] = useState({
     name: "", email: "", phone: "", birthDate: "", occupation: "",
-    approach: "", frequency: "Semanal", duration: "50", referral: "",
+    approach: "", frequency: "Semanal", duration: "50",
     mainDemand: "", notes: "", emergencyContact: "",
     vulnerability: [] as string[],
     lgpdConsent: false, pseudonymized: false,
@@ -90,7 +89,6 @@ export default function NewClientPage() {
         status:            "ACTIVE",
         session_frequency: form.frequency,
         session_duration:  parseInt(form.duration),
-        referral:          form.referral || null,
         main_demand:       form.mainDemand.trim() || null,
         notes:             form.notes.trim() || null,
         emergency_contact: form.emergencyContact.trim() || null,
@@ -144,9 +142,6 @@ export default function NewClientPage() {
             </div>
           </Field>
           <VoiceInput label="Profissão / Ocupação" value={form.occupation} onChange={v => set("occupation", v)} placeholder="Ex: Designer, Engenheiro..." />
-          <Field label="Como chegou até você">
-            <SelectField value={form.referral} onChange={v => set("referral", v)} placeholder="Selecionar..." options={REFERRALS} />
-          </Field>
         </div>
       </Section>
 
