@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Award, ChevronDown, Loader2, AlertTriangle, Clock, FileText, Sparkles, Download } from "lucide-react";
+import { Award, ChevronDown, Loader2, AlertTriangle, Sparkles, Download } from "lucide-react";
 import { adminHeaders } from "@/lib/supabase";
 import { aiHeaders } from "@/lib/api-key";
 import { cn } from "@/lib/utils";
@@ -74,13 +74,6 @@ function formatHoursLabel(totalSeconds: number): string {
   if (h === 0 && m === 0) return "0h";
   if (h === 0) return `${m}min`;
   return m > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
-}
-
-function formatDuration(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 function fmtDate(iso: string): string {
@@ -265,80 +258,6 @@ export default function CertificatePage() {
             </div>
           )}
 
-          {/* Síntese */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="w-4 h-4 text-brand-500" />
-              <p className="text-sm font-bold text-gray-800">Tempo de supervisão por abordagem</p>
-            </div>
-
-            {report.synthesis.length === 0 ? (
-              <p className="text-sm text-gray-500 italic">Nenhuma supervisão registrada neste período.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {report.synthesis.map(row => (
-                  <div key={row.approach} className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-100 bg-gray-50">
-                    <span className="text-sm font-medium text-gray-700">{APPROACH_LABELS[row.approach] ?? row.approach}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-gray-500">{row.count} sessão(ões)</span>
-                      <span className="text-sm font-bold text-brand-700 tabular-nums">{formatDuration(row.totalSeconds)}</span>
-                    </div>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-brand-50 border border-brand-100 mt-2">
-                  <span className="text-sm font-bold text-brand-800">Total geral</span>
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs text-brand-600">{report.totalSessions} sessão(ões)</span>
-                    <span className="text-sm font-bold text-brand-800 tabular-nums">{formatDuration(report.totalSeconds)}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Detalhado */}
-          {report.evolutions && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <FileText className="w-4 h-4 text-emerald-600" />
-                <p className="text-sm font-bold text-gray-800">Supervisões realizadas no período</p>
-              </div>
-
-              {report.evolutions.length === 0 ? (
-                <p className="text-sm text-gray-500 italic">Nenhuma supervisão registrada neste período.</p>
-              ) : (
-                <div className="space-y-3">
-                  {report.evolutions.map(ev => (
-                    <div key={ev.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="text-sm font-semibold text-gray-800">{ev.clientName}</span>
-                        <span className="text-xs text-gray-500">
-                          {fmtDate(ev.sessionDate)}{ev.sessionTime && ` às ${ev.sessionTime.slice(0, 5)} h`}
-                        </span>
-                        {ev.approach && (
-                          <span className="text-[10px] bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
-                            {APPROACH_LABELS[ev.approach] ?? ev.approach}
-                          </span>
-                        )}
-                        {ev.durationSeconds != null && (
-                          <span className="text-[10px] font-semibold text-brand-600 tabular-nums">
-                            {formatDuration(ev.durationSeconds)}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{ev.content}</p>
-                      {ev.hypothesis && (
-                        <p className="text-xs text-gray-600 mt-2"><strong>Hipótese clínica:</strong> {ev.hypothesis}</p>
-                      )}
-                      {ev.nextSessionPlan && (
-                        <p className="text-xs text-gray-600 mt-1"><strong>Plano para próxima sessão:</strong> {ev.nextSessionPlan}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>
