@@ -139,7 +139,14 @@ export async function GET(req: NextRequest) {
       .eq("approach", "CERTIFICATE")
       .maybeSingle() as { data: { prompt: string } | null };
 
-    const systemPrompt = promptRow?.prompt?.trim() || DEFAULT_CERTIFICATE_PROMPT;
+    const basePrompt = promptRow?.prompt?.trim() || DEFAULT_CERTIFICATE_PROMPT;
+    // Reforço automático (não editável pelo admin): se o prompt acima definir conteúdo
+    // para o verso do certificado a partir do cabeçalho "INFORMAÇÕES DO VERSO DO CERTIFICADO",
+    // a IA precisa reproduzir essa linha literalmente na resposta — é assim que a tela do
+    // certificado separa programaticamente o texto da frente do texto do verso.
+    const systemPrompt = /informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado/i.test(basePrompt)
+      ? `${basePrompt}\n\nIMPORTANTE: se as instruções acima definirem conteúdo para o verso do certificado (a partir de "INFORMAÇÕES DO VERSO DO CERTIFICADO"), reproduza essa linha exatamente, em maiúsculas, sozinha em um parágrafo, imediatamente antes de escrever o conteúdo do verso — isso marca a divisão entre frente e verso na sua resposta.`
+      : basePrompt;
 
     const synthesisLines = synthesis.length > 0
       ? synthesis.map(row =>
