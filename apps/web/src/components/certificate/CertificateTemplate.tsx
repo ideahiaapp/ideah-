@@ -43,7 +43,7 @@ export function CertificateTemplate({
       </div>
 
       {/* Conteúdo */}
-      <div className="absolute inset-0 pt-[16%] pb-[5%] px-[8%] pl-[30%] flex flex-col">
+      <div className="absolute inset-0 pt-[13%] pb-[5%] px-[8%] pl-[30%] flex flex-col">
         <p className="text-[11px] font-bold tracking-[0.25em] text-ink text-center">CERTIFICADO</p>
         <h1 className="font-serif text-[clamp(1.4rem,3vw,2.25rem)] leading-tight text-ink text-center mt-1">
           Formação Clínica Continuada
