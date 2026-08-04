@@ -1755,20 +1755,141 @@ const ALL_APPROACHES_SETTINGS = [
   { value: "SYSTEMIC",             label: "Constelação Familiar" },
 ];
 
+function AnamneseApproachRow({ approach, label, updatedAt, hasTemplate, onSaved }: {
+  approach: string;
+  label: string;
+  updatedAt?: string;
+  hasTemplate: boolean;
+  onSaved: (approach: string, updatedAt: string) => void;
+}) {
+  const [expanded,  setExpanded]  = useState(false);
+  const [content,   setContent]   = useState("");
+  const [loaded,    setLoaded]    = useState(false);
+  const [loading,   setLoading]   = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [msg,       setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  function toggle() {
+    const next = !expanded;
+    setExpanded(next);
+    if (next && !loaded) {
+      setLoading(true);
+      fetch(`/api/anamnese-templates/${approach}`, { cache: "no-store" })
+        .then(r => r.json())
+        .then(d => setContent(d.content ?? ""))
+        .catch(() => {})
+        .finally(() => { setLoading(false); setLoaded(true); });
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/anamnese-templates/${approach}`, {
+        method: "PUT",
+        headers: await adminHeaders(),
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setMsg({ type: "ok", text: "Formulário salvo com sucesso." });
+      onSaved(approach, new Date().toISOString());
+    } catch (err) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Erro ao salvar." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <button
+        onClick={toggle}
+        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50/50 transition-colors text-left"
+      >
+        <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform flex-shrink-0", !expanded && "-rotate-90")} />
+        <span className="font-medium text-gray-800 flex-1">{label}</span>
+        {hasTemplate ? (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full">
+            <CheckCircle2 className="w-3 h-3" /> Cadastrado
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold bg-gray-50 text-gray-500 border border-gray-200 px-2.5 py-1 rounded-full">
+            <AlertTriangle className="w-3 h-3" /> Não cadastrado
+          </span>
+        )}
+        {updatedAt && (
+          <span className="text-xs text-gray-500 hidden sm:inline">
+            {new Date(updatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+          </span>
+        )}
+      </button>
+
+      {expanded && (
+        <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-3">
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-500 py-4 justify-center">
+              <Loader2 className="w-4 h-4 animate-spin" /> Carregando…
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-gray-500">
+                Conteúdo HTML do formulário (seções, perguntas, campos) apresentado ao cliente ao preencher a anamnese desta abordagem.
+              </p>
+              <TextareaWithMic
+                value={content}
+                onValueChange={setContent}
+                rows={16}
+                placeholder="Cole ou escreva aqui o HTML do formulário de anamnese desta abordagem..."
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent"
+              />
+              {msg && (
+                <div className={cn(
+                  "flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium",
+                  msg.type === "ok" ? "bg-green-50 border border-green-100 text-green-700"
+                                   : "bg-red-50 border border-red-100 text-red-600"
+                )}>
+                  {msg.type === "ok" ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+                  {msg.text}
+                </div>
+              )}
+              <div className="flex justify-end">
+                <SaveButton saving={saving} saved={false} disabled={!content.trim()} onClick={handleSave} label="Salvar formulário" />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabAnamnese() {
   const [templates, setTemplates] = useState<{ approach: string; updated_at: string }[]>([]);
   const [loading,   setLoading]   = useState(true);
 
-  useEffect(() => {
+  function loadTemplates() {
     fetch("/api/anamnese-templates", { cache: "no-store" })
       .then(r => r.json())
       .then(d => setTemplates(d.templates ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(loadTemplates, []);
 
   const templateMap = new Set(templates.map(t => t.approach));
   const templateUpdated = Object.fromEntries(templates.map(t => [t.approach, t.updated_at]));
+
+  function handleSaved(approach: string, updatedAt: string) {
+    setTemplates(prev => {
+      const exists = prev.some(t => t.approach === approach);
+      return exists
+        ? prev.map(t => t.approach === approach ? { ...t, updated_at: updatedAt } : t)
+        : [...prev, { approach, updated_at: updatedAt }];
+    });
+  }
 
   return (
     <div className="space-y-5">
@@ -1776,7 +1897,7 @@ function TabAnamnese() {
         <h2 className="text-base font-bold text-gray-800">Formulários de Anamnese</h2>
         <p className="text-sm text-gray-500 mt-1">
           Cada abordagem terapêutica pode ter um formulário de anamnese específico.
-          Os formulários cadastrados são apresentados ao cliente ao preencher a anamnese.
+          Clique em uma abordagem para editar o formulário apresentado ao cliente ao preencher a anamnese.
         </p>
       </div>
 
@@ -1785,53 +1906,19 @@ function TabAnamnese() {
           <Loader2 className="w-6 h-6 text-brand-400 animate-spin" />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50/60 border-b border-gray-100">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Abordagem Terapêutica</th>
-                <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Anamnese</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Última atualização</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {ALL_APPROACHES_SETTINGS.map(a => {
-                const has = templateMap.has(a.value);
-                const updatedAt = templateUpdated[a.value];
-                return (
-                  <tr key={a.value} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-5 py-4">
-                      <span className="font-medium text-gray-800">{a.label}</span>
-                    </td>
-                    <td className="px-5 py-4 text-center">
-                      {has ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full">
-                          <CheckCircle2 className="w-3 h-3" /> Sim
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold bg-gray-50 text-gray-500 border border-gray-200 px-2.5 py-1 rounded-full">
-                          <AlertTriangle className="w-3 h-3" /> Não
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-gray-500 text-xs">
-                      {updatedAt
-                        ? new Date(updatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
-                        : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {ALL_APPROACHES_SETTINGS.map(a => (
+            <AnamneseApproachRow
+              key={a.value}
+              approach={a.value}
+              label={a.label}
+              updatedAt={templateUpdated[a.value]}
+              hasTemplate={templateMap.has(a.value)}
+              onSaved={handleSaved}
+            />
+          ))}
         </div>
       )}
-
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
-        Para cadastrar ou atualizar um formulário de anamnese, execute o arquivo{" "}
-        <code className="font-mono bg-amber-100 px-1 rounded">supabase/seed_anamnese_templates.sql</code>{" "}
-        no SQL Editor do Supabase.
-      </div>
     </div>
   );
 }
