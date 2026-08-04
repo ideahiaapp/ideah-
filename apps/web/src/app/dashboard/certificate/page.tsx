@@ -8,14 +8,16 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { CertificateTemplate, CertificateBackTemplate } from "@/components/certificate/CertificateTemplate";
 
-const BACK_MARKER = "INFORMAÇÕES DO VERSO DO CERTIFICADO";
+// Tolerante a maiúsculas/minúsculas, acentos opcionais e prefixo markdown (#, ##, **) antes do marcador,
+// já que o texto vem de uma IA e não reproduz o marcador sempre 100% literal.
+const BACK_MARKER_RE = /[#*\s]*informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado[:*#\s]*/i;
 
 /** Separa o texto gerado pela IA em frente/verso a partir do marcador combinado no prompt. */
 function splitCertificateText(text: string): { front: string; back: string | null } {
-  const idx = text.indexOf(BACK_MARKER);
-  if (idx === -1) return { front: text.trim(), back: null };
-  const front = text.slice(0, idx).trim();
-  const back = text.slice(idx + BACK_MARKER.length).trim();
+  const match = BACK_MARKER_RE.exec(text);
+  if (!match) return { front: text.trim(), back: null };
+  const front = text.slice(0, match.index).trim();
+  const back = text.slice(match.index + match[0].length).trim();
   return { front, back: back || null };
 }
 
