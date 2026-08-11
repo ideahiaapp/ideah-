@@ -46,7 +46,7 @@ export default function AuthCallback() {
             return;
           }
         }
-        router.replace("/(tabs)/");
+        router.replace("/(tabs)/" as never);
       } else {
         router.replace("/(auth)/login");
       }
