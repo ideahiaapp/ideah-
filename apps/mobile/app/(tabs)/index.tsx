@@ -52,7 +52,7 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.card} onPress={() => router.push("/(tabs)/clients")} activeOpacity={0.85}>
+          <TouchableOpacity style={s.card} onPress={() => router.push("/new-client" as never)} activeOpacity={0.85}>
             <View style={[s.cardIcon, { backgroundColor: Colors.brand[100] }]}>
               <Ionicons name="people" size={22} color={Colors.brand[600]} />
             </View>

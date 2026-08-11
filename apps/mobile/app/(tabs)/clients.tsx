@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAuthStore } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
@@ -31,6 +32,7 @@ const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Ex
 const MOOD_COLOR = ["", "#EF4444", "#F97316", "#EAB308", "#3B82F6", "#22C55E"];
 
 export default function ClientsScreen() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [clients, setClients]   = useState<Client[]>([]);
   const [filtered, setFiltered] = useState<Client[]>([]);
@@ -54,6 +56,7 @@ export default function ClientsScreen() {
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   useEffect(() => {
     const q = search.toLowerCase();
@@ -106,7 +109,12 @@ export default function ClientsScreen() {
           <HamburgerMenu />
           <Text style={s.title}>Clientes</Text>
         </View>
-        <Text style={s.count}>{clients.length} total</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Text style={s.count}>{clients.length} total</Text>
+          <TouchableOpacity onPress={() => router.push("/new-client" as never)} style={s.addBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="add" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Busca */}
@@ -209,6 +217,7 @@ const s = StyleSheet.create({
   header:      { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
   title:       { fontSize: 24, fontWeight: "700", color: Colors.ink },
   count:       { fontSize: 13, color: Colors.gray[500] },
+  addBtn:      { width: 30, height: 30, borderRadius: 15, backgroundColor: Colors.brand[500], alignItems: "center", justifyContent: "center" },
   searchRow:   { flexDirection: "row", alignItems: "center", backgroundColor: Colors.white, marginHorizontal: 20, marginBottom: 12, borderRadius: 12, borderWidth: 1, borderColor: Colors.gray[200], paddingHorizontal: 12 },
   searchIcon:  { marginRight: 8 },
   searchInput: { flex: 1, paddingVertical: 11, fontSize: 14, color: Colors.ink },
