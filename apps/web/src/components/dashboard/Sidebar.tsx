@@ -13,21 +13,26 @@ import {
   Home,
   Award,
   ClipboardList,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
 
 const NAV = [
-  { href: "/dashboard/home",        icon: Home,            label: "Home" },
-  { href: "/dashboard/supervision", icon: MessageSquare,   label: "Supervisão" },
-  { href: "/dashboard/clients",     icon: Users,           label: "Clientes" },
-  { href: "/dashboard/schedule",    icon: CalendarDays,    label: "Agenda" },
-  { href: "/dashboard/reports",     icon: Briefcase,       label: "Meu escritório" },
-  { href: "/dashboard/certificate", icon: Award,           label: "Certificado" },
-  { href: "/dashboard/survey",      icon: ClipboardList,   label: "Pesquisa de Satisfação" },
+  { href: "/dashboard/home",         icon: Home,            label: "Home",                     adminOnly: false },
+  { href: "/dashboard/supervision",  icon: MessageSquare,   label: "Supervisão",                adminOnly: false },
+  { href: "/dashboard/clients",      icon: Users,           label: "Clientes",                  adminOnly: false },
+  { href: "/dashboard/schedule",     icon: CalendarDays,    label: "Agenda",                     adminOnly: false },
+  { href: "/dashboard/reports",      icon: Briefcase,       label: "Meu escritório",              adminOnly: false },
+  { href: "/dashboard/certificate",  icon: Award,           label: "Certificado",                adminOnly: false },
+  { href: "/dashboard/survey",       icon: ClipboardList,   label: "Pesquisa de Satisfação",      adminOnly: false },
+  { href: "/dashboard/survey-results", icon: BarChart3,     label: "Resultados da Pesquisa",      adminOnly: true },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
 
   return (
     <aside className="print-hide w-60 bg-brand-500 border-r border-black/10 flex flex-col flex-shrink-0">
@@ -40,7 +45,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV.map(({ href, icon: Icon, label }) => {
+        {NAV.filter(item => !item.adminOnly || isAdmin).map(({ href, icon: Icon, label }) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
           return (
             <Link
