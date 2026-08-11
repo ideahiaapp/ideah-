@@ -33,11 +33,95 @@ const PERIOD_OPTIONS = [
   { value: "1y", label: "1 ano" },
 ];
 
-function formatDuration(totalSeconds: number): string {
+const BACK_MARKER_RE = /[#*\s]*informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado[:*#\s]*/i;
+
+/** Separa o texto gerado pela IA em frente/verso a partir do marcador combinado no prompt. */
+function splitCertificateText(text: string): { front: string; back: string | null } {
+  const match = BACK_MARKER_RE.exec(text);
+  if (!match) return { front: text.trim(), back: null };
+  const front = text.slice(0, match.index).trim();
+  const back = text.slice(match.index + match[0].length).trim();
+  return { front, back: back || null };
+}
+
+/** Formato compacto para o certificado ("2h30", "45min", "0h") — evita arredondar minutos reais para "0h". */
+function formatHoursLabel(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const sec = totalSeconds % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  const m = Math.round((totalSeconds % 3600) / 60);
+  if (h === 0 && m === 0) return "0h";
+  if (h === 0) return `${m}min`;
+  return m > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR");
+}
+
+function CertStat({ icon, label, value }: { icon: React.ComponentProps<typeof Ionicons>["name"]; label: string; value: string }) {
+  return (
+    <View style={s.certStat}>
+      <Ionicons name={icon} size={14} color={Colors.brand[500]} />
+      <Text style={s.certStatLabel}>{label}</Text>
+      <Text style={s.certStatValue} numberOfLines={1}>{value}</Text>
+    </View>
+  );
+}
+
+/** Frente do certificado — aproxima em React Native o layout visual usado na versão web (CertificateTemplate.tsx). */
+function CertificateCard({ therapistName, approachLabel, periodLabel, totalHoursLabel, totalSessions }: {
+  therapistName: string; approachLabel: string; periodLabel: string; totalHoursLabel: string; totalSessions: number;
+}) {
+  return (
+    <View style={s.certCard}>
+      <View style={s.certWave} />
+      <View style={s.certTopBar}><Text style={s.certWordmark}>PAIDEIA</Text></View>
+      <View style={s.certContent}>
+        <Text style={s.certEyebrow}>CERTIFICADO</Text>
+        <Text style={s.certTitle}>Formação Clínica Continuada</Text>
+        <Text style={s.certSubtitle}>Estudo Clínico Supervisionado</Text>
+
+        <View style={s.certDividerRow}>
+          <View style={s.certDividerLine} />
+          <View style={s.certDividerDot} />
+          <View style={s.certDividerLine} />
+        </View>
+
+        <Text style={s.certCertifiesLabel}>Certificamos que</Text>
+        <Text style={s.certName} numberOfLines={2}>{therapistName || "—"}</Text>
+
+        <Text style={s.certParagraph}>
+          concluiu <Text style={s.certBold}>{totalHoursLabel}</Text> de Formação Clínica Continuada, desenvolvidas na
+          modalidade de <Text style={s.certBold}>Estudo Clínico Supervisionado</Text> na plataforma Paideia, por meio
+          da análise de casos clínicos, formulação de hipóteses e integração entre teoria e prática dentro da abordagem:
+        </Text>
+
+        <View style={s.certApproachBox}><Text style={s.certApproachText} numberOfLines={1}>{approachLabel}</Text></View>
+
+        <View style={s.certStatsRow}>
+          <CertStat icon="calendar" label="PERÍODO" value={periodLabel} />
+          <CertStat icon="time" label="CARGA HORÁRIA" value={totalHoursLabel} />
+          <CertStat icon="people" label="SUPERVISÕES" value={`${totalSessions} sessões`} />
+        </View>
+
+        <View style={s.certSignature}>
+          <Text style={s.certSignatureName}>Equipe Paideia</Text>
+          <View style={s.certSignatureLine} />
+          <Text style={s.certSignatureLabel}>EQUIPE PAIDEIA</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Verso do certificado — mesmo card, sem faixa superior nem onda decorativa, só o texto indicado no prompt. */
+function CertificateBackCard({ text }: { text: string }) {
+  return (
+    <View style={s.certCard}>
+      <View style={s.certBackContent}>
+        <MarkdownText text={text} />
+      </View>
+    </View>
+  );
 }
 
 function PickerField({ label, value, options, onChange }: {
@@ -100,6 +184,10 @@ export default function CertificateScreen() {
 
   const canGenerate = !!therapistId && !!period;
 
+  const { front: frontText, back: backText } = report?.certificateText
+    ? splitCertificateText(report.certificateText)
+    : { front: "", back: null };
+
   async function generate() {
     if (!canGenerate) return;
     setLoading(true); setError(null); setReport(null);
@@ -153,52 +241,42 @@ export default function CertificateScreen() {
         )}
 
         {report && (
-          <View style={s.card}>
-            <View style={s.reportHeader}>
-              <Text style={s.reportLabel}>Terapeuta</Text>
-              <Text style={s.reportName}>{report.therapist.name}</Text>
-              <Text style={s.reportEmail}>{report.therapist.email}</Text>
-            </View>
-
-            {report.certificateText && (
-              <View style={s.certTextBox}>
-                <View style={s.cardHeader}>
-                  <Ionicons name="sparkles" size={16} color={Colors.brand[500]} />
-                  <Text style={s.cardTitle}>Certificado</Text>
-                </View>
-                <MarkdownText text={report.certificateText} />
+          <>
+            <View style={s.card}>
+              <View style={[s.reportHeader, { borderBottomWidth: 0, marginBottom: 0, paddingBottom: 0 }]}>
+                <Text style={s.reportLabel}>Terapeuta</Text>
+                <Text style={s.reportName}>{report.therapist.name}</Text>
+                <Text style={s.reportEmail}>{report.therapist.email}</Text>
               </View>
-            )}
 
-            <View style={s.synthesisSection}>
-              <View style={s.cardHeader}>
-                <Ionicons name="time" size={16} color={Colors.brand[500]} />
-                <Text style={s.cardTitle}>Tempo de supervisão por abordagem</Text>
-              </View>
-              {report.synthesis.length === 0 ? (
-                <Text style={s.emptyText}>Nenhuma supervisão registrada neste período.</Text>
-              ) : (
-                <>
-                  {report.synthesis.map(row => (
-                    <View key={row.approach} style={s.synthesisRow}>
-                      <Text style={s.synthesisLabel}>{APPROACH_LABELS[row.approach] ?? row.approach}</Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                        <Text style={s.synthesisCount}>{row.count} sessão(ões)</Text>
-                        <Text style={s.synthesisHours}>{formatDuration(row.totalSeconds)}</Text>
-                      </View>
-                    </View>
-                  ))}
-                  <View style={s.totalRow}>
-                    <Text style={s.totalLabel}>Total geral</Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                      <Text style={s.totalCount}>{report.totalSessions} sessão(ões)</Text>
-                      <Text style={s.totalHours}>{formatDuration(report.totalSeconds)}</Text>
-                    </View>
+              {frontText && (
+                <View style={[s.certTextBox, { marginTop: 14 }]}>
+                  <View style={s.cardHeader}>
+                    <Ionicons name="sparkles" size={16} color={Colors.brand[500]} />
+                    <Text style={s.cardTitle}>Certificado</Text>
                   </View>
-                </>
+                  <MarkdownText text={frontText} />
+                </View>
               )}
             </View>
-          </View>
+
+            {report.synthesis.length === 0 ? (
+              <View style={s.card}><Text style={s.emptyText}>Nenhuma supervisão registrada neste período.</Text></View>
+            ) : (
+              report.synthesis.map(row => (
+                <View key={row.approach} style={{ gap: 12, marginBottom: 16 }}>
+                  <CertificateCard
+                    therapistName={report.therapist.name}
+                    approachLabel={APPROACH_LABELS[row.approach] ?? row.approach}
+                    periodLabel={`${fmtDate(report.period.start)} a ${fmtDate(report.period.end)}`}
+                    totalHoursLabel={formatHoursLabel(row.totalSeconds)}
+                    totalSessions={row.count}
+                  />
+                  {backText && <CertificateBackCard text={backText} />}
+                </View>
+              ))
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -231,15 +309,34 @@ const s = StyleSheet.create({
   reportLabel: { fontSize: 11, fontWeight: "700", color: Colors.gray[500], textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
   reportName: { fontSize: 16, fontWeight: "700", color: Colors.ink },
   reportEmail: { fontSize: 13, color: Colors.gray[500] },
-  certTextBox: { marginBottom: 18, paddingBottom: 18, borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
-  synthesisSection: { gap: 8 },
+  certTextBox: { marginBottom: 4 },
   emptyText:  { fontSize: 13, color: Colors.gray[500], fontStyle: "italic" },
-  synthesisRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: Colors.gray[50], borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6 },
-  synthesisLabel: { fontSize: 13, color: Colors.gray[700], fontWeight: "500", flex: 1 },
-  synthesisCount: { fontSize: 11, color: Colors.gray[500] },
-  synthesisHours: { fontSize: 13, fontWeight: "700", color: Colors.brand[700] },
-  totalRow:   { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: Colors.brand[50], borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, marginTop: 6 },
-  totalLabel: { fontSize: 13, fontWeight: "700", color: Colors.brand[800] },
-  totalCount: { fontSize: 11, color: Colors.brand[600] },
-  totalHours: { fontSize: 13, fontWeight: "700", color: Colors.brand[800] },
+
+  // Card do certificado (frente/verso)
+  certCard:     { width: "100%", aspectRatio: 297 / 210, backgroundColor: "#FDF6EF", borderRadius: 16, borderWidth: 1, borderColor: Colors.brand[100], overflow: "hidden" },
+  certWave:     { position: "absolute", left: "-16%", top: 0, bottom: 0, width: "42%", borderRadius: 500, backgroundColor: Colors.brand[500] },
+  certTopBar:   { position: "absolute", top: 0, left: 0, right: 0, height: "13%", backgroundColor: Colors.brand[500], alignItems: "center", justifyContent: "center", zIndex: 10 },
+  certWordmark: { color: "#fff", fontWeight: "700", fontSize: 13, letterSpacing: 3, fontStyle: "italic" },
+  certContent:  { position: "absolute", top: "15%", bottom: "4%", left: "29%", right: "7%" },
+  certEyebrow:  { fontSize: 8, fontWeight: "700", letterSpacing: 2, color: Colors.ink, textAlign: "center" },
+  certTitle:    { fontSize: 15, fontWeight: "700", color: Colors.ink, textAlign: "center", marginTop: 3 },
+  certSubtitle: { fontSize: 9, fontStyle: "italic", color: Colors.brand[600], textAlign: "center", marginTop: 1 },
+  certDividerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginVertical: 6, paddingHorizontal: 30 },
+  certDividerLine: { flex: 1, height: 1, backgroundColor: Colors.brand[200] },
+  certDividerDot: { width: 4, height: 4, backgroundColor: Colors.brand[400], transform: [{ rotate: "45deg" }] },
+  certCertifiesLabel: { fontSize: 8, color: Colors.gray[500], textAlign: "center" },
+  certName:     { fontSize: 13, fontWeight: "700", color: Colors.brand[600], textAlign: "center", textTransform: "uppercase", marginTop: 2 },
+  certParagraph: { fontSize: 7.5, color: Colors.gray[600], textAlign: "center", lineHeight: 11, marginTop: 6, paddingHorizontal: 4 },
+  certBold:     { color: Colors.ink, fontWeight: "700" },
+  certApproachBox: { alignSelf: "center", marginTop: 6, borderWidth: 1, borderColor: Colors.brand[300], borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, maxWidth: "90%" },
+  certApproachText: { fontSize: 8, fontWeight: "700", color: Colors.brand[600] },
+  certStatsRow: { flexDirection: "row", justifyContent: "space-around", marginTop: 10 },
+  certStat:     { alignItems: "center", gap: 2, maxWidth: 70 },
+  certStatLabel: { fontSize: 6, fontWeight: "700", color: Colors.gray[500], letterSpacing: 0.5 },
+  certStatValue: { fontSize: 8, fontWeight: "700", color: Colors.ink },
+  certSignature: { marginTop: "auto", alignItems: "center", paddingTop: 6 },
+  certSignatureName: { fontSize: 11, fontStyle: "italic", color: Colors.ink },
+  certSignatureLine: { height: 1, width: 90, backgroundColor: Colors.gray[300], marginVertical: 3 },
+  certSignatureLabel: { fontSize: 6.5, fontWeight: "700", color: Colors.gray[500], letterSpacing: 1 },
+  certBackContent: { flex: 1, padding: 16 },
 });
