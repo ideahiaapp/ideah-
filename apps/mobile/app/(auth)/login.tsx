@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Link, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
 import { useAuthStore } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
@@ -34,9 +35,13 @@ export default function LoginScreen() {
     setGoogleLoading(true);
     setError("");
     try {
+      // Linking.createURL gera o esquema certo em cada ambiente: exp://<host>/--/callback
+      // dentro do Expo Go (só ele sabe abrir esse link de volta), e paideia://callback
+      // num app publicado/standalone — ao contrário de um valor fixo, que só funciona
+      // fora do Expo Go.
       const redirectTo = Platform.OS === "web"
         ? `${window.location.origin}/callback`
-        : "paideia://callback";
+        : Linking.createURL("callback");
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo, skipBrowserRedirect: true },
