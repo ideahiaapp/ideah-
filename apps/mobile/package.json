@@ -16,6 +16,7 @@
     "@expo/vector-icons": "^15.0.3",
     "@opentelemetry/api": "^1.9.1",
     "@supabase/supabase-js": "^2.43.0",
+    "babel-preset-expo": "~54.0.10",
     "expo": "^54.0.0",
     "expo-constants": "~18.0.13",
     "expo-haptics": "~15.0.8",
