@@ -11,6 +11,7 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 const MENU_ITEMS: { label: string; icon: IoniconsName; href: string }[] = [
   { label: "Início",         icon: "home-outline",        href: "/(tabs)" },
   { label: "Clientes",       icon: "people-outline",      href: "/(tabs)/clients" },
+  { label: "Evoluções",      icon: "document-text-outline", href: "/evolutions" },
   { label: "Agenda",         icon: "calendar-outline",    href: "/(tabs)/schedule" },
   { label: "Meu escritório", icon: "briefcase-outline",   href: "/(tabs)/reports" },
   { label: "Certificado",    icon: "ribbon-outline",      href: "/(tabs)/certificate" },
