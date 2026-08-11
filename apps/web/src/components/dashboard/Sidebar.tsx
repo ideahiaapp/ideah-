@@ -12,6 +12,7 @@ import {
   CalendarDays,
   Home,
   Award,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const NAV = [
   { href: "/dashboard/schedule",    icon: CalendarDays,    label: "Agenda" },
   { href: "/dashboard/reports",     icon: Briefcase,       label: "Meu escritório" },
   { href: "/dashboard/certificate", icon: Award,           label: "Certificado" },
+  { href: "/dashboard/survey",      icon: ClipboardList,   label: "Pesquisa de Satisfação" },
 ];
 
 export function Sidebar() {

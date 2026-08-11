@@ -15,6 +15,7 @@ const MENU_ITEMS: { label: string; icon: IoniconsName; href: string }[] = [
   { label: "Agenda",         icon: "calendar-outline",    href: "/(tabs)/schedule" },
   { label: "Meu escritório", icon: "briefcase-outline",   href: "/(tabs)/reports" },
   { label: "Certificado",    icon: "ribbon-outline",      href: "/(tabs)/certificate" },
+  { label: "Pesquisa de Satisfação", icon: "clipboard-outline", href: "/survey" },
   { label: "Configurações",  icon: "settings-outline",    href: "/(tabs)/settings" },
 ];
 
