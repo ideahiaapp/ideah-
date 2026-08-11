@@ -1,5 +1,5 @@
 import { View, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import type { TextInputProps } from "react-native";
+import type { TextInputProps, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { Colors } from "@/constants/colors";
@@ -18,8 +18,14 @@ export function VoiceTextInput({ value, onValueChange, style, ...rest }: VoiceTe
   const isRecording = state === "recording";
   const displayValue = isRecording && interimText ? `${value} ${interimText}` : value;
 
+  // Repassa flex/width do style recebido para o wrapper: como esses valores controlam o
+  // dimensionamento dentro do flex row do chamador (ex.: campo de chat + botão de enviar),
+  // aplicá-los só no TextInput interno não tem efeito no layout do pai — o campo cresce
+  // livremente e empurra o botão para fora da tela.
+  const { flex, width } = (StyleSheet.flatten(style) ?? {}) as Pick<ViewStyle, "flex" | "width">;
+
   return (
-    <View style={s.wrap}>
+    <View style={[s.wrap, { flex, width }]}>
       <TextInput
         {...rest}
         value={displayValue}
