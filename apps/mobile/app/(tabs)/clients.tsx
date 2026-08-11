@@ -15,7 +15,7 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 type Client = {
   id: string; name: string; email: string | null; phone: string | null;
   status: string; approach_label: string | null; main_demand: string | null;
-  total_sessions: number; created_at: string;
+  total_sessions: number; created_at: string; anamnese_id: string | null;
 };
 
 const ALL_APPROACHES = [
@@ -229,6 +229,14 @@ type Evolution = {
   mood: number | null; session_number: number | null;
 };
 
+type TabId = "sem-anamnese" | "ativos" | "aguardando";
+
+type Anamnese = {
+  id: string; name: string; email: string; phone: string | null;
+  intention: string | null; how_found: string | null; emergency_contact: string | null;
+  approach: string | null; created_at: string;
+};
+
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   ACTIVE:   { label: "Ativo",     color: "#16A34A", bg: "#DCFCE7" },
   INACTIVE: { label: "Inativo",   color: "#6B7280", bg: "#F3F4F6" },
@@ -237,38 +245,234 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 
 const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Excelente"];
 const MOOD_COLOR = ["", "#EF4444", "#F97316", "#EAB308", "#3B82F6", "#22C55E"];
+const FREQUENCIES = ["Semanal", "Quinzenal", "Mensal", "Sob demanda"];
+const DURATIONS   = ["45", "50", "60", "90"];
+
+function PendingAnamneseCard({ anamnese, onReview, onReject }: {
+  anamnese: Anamnese; onReview: () => void; onReject: () => void;
+}) {
+  const [rejecting, setRejecting] = useState(false);
+
+  async function handleReject() {
+    setRejecting(true);
+    try { await onReject(); } finally { setRejecting(false); }
+  }
+
+  return (
+    <View style={s.pendingCard}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+        <View style={s.pendingAvatar}><Text style={s.pendingAvatarText}>{anamnese.name[0]?.toUpperCase()}</Text></View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.pendingName} numberOfLines={1}>{anamnese.name}</Text>
+          <Text style={s.pendingEmail} numberOfLines={1}>{anamnese.email}</Text>
+          {anamnese.phone && <Text style={s.pendingEmail} numberOfLines={1}>{anamnese.phone}</Text>}
+        </View>
+        <Text style={s.pendingDate}>{new Date(anamnese.created_at).toLocaleDateString("pt-BR")}</Text>
+      </View>
+      {anamnese.intention && (
+        <View style={s.intentionBox}>
+          <Text style={s.intentionLabel}>Intenção da sessão</Text>
+          <Text style={s.intentionText}>"{anamnese.intention}"</Text>
+        </View>
+      )}
+      <View style={s.pendingActions}>
+        <TouchableOpacity style={s.reviewBtn} onPress={onReview} activeOpacity={0.8}>
+          <Ionicons name="chevron-forward" size={14} color="#fff" />
+          <Text style={s.reviewBtnText}>Visualizar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={s.rejectBtn} onPress={handleReject} disabled={rejecting} activeOpacity={0.8}>
+          {rejecting ? <ActivityIndicator size="small" color="#DC2626" /> : <><Ionicons name="close-circle-outline" size={14} color="#DC2626" /><Text style={s.rejectBtnText}>Recusar</Text></>}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function AnamneseReviewModal({ anamneseId, therapistId, onClose, onAccepted }: {
+  anamneseId: string | null; therapistId: string; onClose: () => void; onAccepted: () => void;
+}) {
+  const [anamnese, setAnamnese] = useState<(Anamnese & { referral?: string | null }) | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [approach, setApproach] = useState("");
+  const [frequency, setFrequency] = useState("Semanal");
+  const [duration, setDuration]   = useState("50");
+  const [mainDemand, setMainDemand] = useState("");
+  const [notes, setNotes]         = useState("");
+  const [saving, setSaving]       = useState(false);
+  const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>([]);
+  const [loadingApproaches, setLoadingApproaches]   = useState(true);
+
+  useEffect(() => {
+    if (!anamneseId) return;
+    setLoading(true);
+    fetch(`${process.env.EXPO_PUBLIC_WEB_URL}/api/anamnese/${anamneseId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.anamnese) {
+          setAnamnese(d.anamnese);
+          setMainDemand(d.anamnese.intention ?? "");
+          setApproach(d.anamnese.approach ?? "");
+        }
+      })
+      .finally(() => setLoading(false));
+
+    fetch(`${process.env.EXPO_PUBLIC_WEB_URL}/api/therapist-approaches?therapistId=${therapistId}`)
+      .then(r => r.json())
+      .then(d => setAcquiredApproaches(d.approaches ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingApproaches(false));
+  }, [anamneseId, therapistId]);
+
+  const approachOptions = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
+  const selectedApproach = ALL_APPROACHES.find(a => a.value === approach);
+  const canSave = !!approach && !!anamnese;
+
+  async function handleAccept() {
+    if (!canSave || !anamnese) return;
+    setSaving(true);
+    try {
+      const { error: insErr } = await supabase.from("clients").insert({
+        therapist_id:      therapistId,
+        name:              anamnese.name,
+        email:             anamnese.email || null,
+        phone:             anamnese.phone || null,
+        approach:          selectedApproach?.value ?? null,
+        approach_label:    selectedApproach?.label ?? null,
+        status:            "ACTIVE",
+        session_frequency: frequency,
+        session_duration:  parseInt(duration, 10),
+        main_demand:       mainDemand.trim() || anamnese.intention || null,
+        notes:             notes.trim() || null,
+        emergency_contact: anamnese.emergency_contact || null,
+        anamnese_id:       anamnese.id,
+        initials:          anamnese.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? "").join(""),
+        color:             "#C2542F",
+        total_sessions:    0,
+      });
+      if (insErr) throw insErr;
+
+      await fetch(`${process.env.EXPO_PUBLIC_WEB_URL}/api/anamnese/${anamnese.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "ACCEPTED" }),
+      });
+
+      onAccepted();
+      onClose();
+    } catch (e) {
+      Alert.alert("Erro", e instanceof Error ? e.message : "Erro ao ativar cliente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal visible={!!anamneseId} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <SafeAreaView style={s.safe}>
+        <View style={s.modalHeader}>
+          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={Colors.gray[700]} /></TouchableOpacity>
+          <Text style={s.modalTitle} numberOfLines={1}>{anamnese?.name ?? "Anamnese"}</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        {loading ? (
+          <ActivityIndicator color={Colors.brand[500]} style={{ marginTop: 40 }} />
+        ) : !anamnese ? (
+          <Text style={[s.emptyText, { marginTop: 40 }]}>Anamnese não encontrada.</Text>
+        ) : (
+          <ScrollView contentContainerStyle={s.modalScroll} keyboardShouldPersistTaps="handled">
+            <View style={s.infoCard}>
+              <View style={s.infoRow}><Text style={s.infoLabel}>E-mail</Text><Text style={s.infoValue}>{anamnese.email}</Text></View>
+              {anamnese.phone && <View style={s.infoRow}><Text style={s.infoLabel}>Telefone</Text><Text style={s.infoValue}>{anamnese.phone}</Text></View>}
+              {anamnese.how_found && <View style={s.infoRow}><Text style={s.infoLabel}>Como chegou</Text><Text style={s.infoValue}>{anamnese.how_found}</Text></View>}
+              {anamnese.intention && <View style={s.infoRow}><Text style={s.infoLabel}>Intenção</Text><Text style={s.infoValue}>{anamnese.intention}</Text></View>}
+            </View>
+
+            <Text style={s.fieldLabel}>Abordagem terapêutica *</Text>
+            {loadingApproaches ? (
+              <ActivityIndicator size="small" color={Colors.brand[500]} style={{ marginBottom: 10 }} />
+            ) : approachOptions.length === 0 ? (
+              <Text style={s.warnText}>Nenhuma base teórica adquirida. Acesse Configurações → Minhas Bases.</Text>
+            ) : (
+              <PickerField label="Selecionar..." value={approach} onChange={setApproach} options={approachOptions} />
+            )}
+
+            <Text style={s.fieldLabel}>Frequência das sessões</Text>
+            <PickerField label="Selecionar..." value={frequency} onChange={setFrequency} options={FREQUENCIES.map(f => ({ value: f, label: f }))} />
+
+            <Text style={s.fieldLabel}>Duração (minutos)</Text>
+            <PickerField label="Selecionar..." value={duration} onChange={setDuration} options={DURATIONS.map(d => ({ value: d, label: `${d} min` }))} />
+
+            <Text style={s.fieldLabel}>Demanda principal</Text>
+            <TextInput value={mainDemand} onChangeText={setMainDemand} multiline numberOfLines={3} style={s.textarea} placeholder="Descreva a demanda..." placeholderTextColor={Colors.gray[400]} />
+
+            <Text style={s.fieldLabel}>Observações</Text>
+            <TextInput value={notes} onChangeText={setNotes} multiline numberOfLines={3} style={s.textarea} placeholder="Opcional..." placeholderTextColor={Colors.gray[400]} />
+
+            <TouchableOpacity style={[s.saveBtn, (!canSave || saving) && s.actionBtnDisabled]} onPress={handleAccept} disabled={!canSave || saving} activeOpacity={0.85}>
+              {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.saveBtnText}>Aceitar e ativar cliente</Text>}
+            </TouchableOpacity>
+          </ScrollView>
+        )}
+      </SafeAreaView>
+    </Modal>
+  );
+}
 
 export default function ClientsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const [tab, setTab]           = useState<TabId>("ativos");
   const [clients, setClients]   = useState<Client[]>([]);
-  const [filtered, setFiltered] = useState<Client[]>([]);
   const [search, setSearch]     = useState("");
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState<Client | null>(null);
   const [evolutions, setEvolutions] = useState<Evolution[]>([]);
   const [evoLoading, setEvoLoading] = useState(false);
 
+  const [pending, setPending]         = useState<Anamnese[]>([]);
+  const [loadingPending, setLoadingPending] = useState(true);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     const { data } = await supabase
       .from("clients")
-      .select("id, name, email, phone, status, approach_label, main_demand, total_sessions, created_at")
+      .select("id, name, email, phone, status, approach_label, main_demand, total_sessions, created_at, anamnese_id")
       .eq("therapist_id", user.id)
       .order("name");
     setClients((data ?? []) as Client[]);
-    setFiltered((data ?? []) as Client[]);
     setLoading(false);
   }, [user]);
 
-  useEffect(() => { load(); }, [load]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const loadPending = useCallback(async () => {
+    if (!user) return;
+    setLoadingPending(true);
+    fetch(`${process.env.EXPO_PUBLIC_WEB_URL}/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
+      .then(r => r.json())
+      .then(d => setPending(d.anamneses ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingPending(false));
+  }, [user]);
 
-  useEffect(() => {
-    const q = search.toLowerCase();
-    setFiltered(clients.filter(c => c.name.toLowerCase().includes(q) || (c.email ?? "").toLowerCase().includes(q)));
-  }, [search, clients]);
+  useEffect(() => { load(); loadPending(); }, [load, loadPending]);
+  useFocusEffect(useCallback(() => { load(); loadPending(); }, [load, loadPending]));
+
+  const activeClients = clients.filter(c => c.status === "ACTIVE");
+  const semAnamnese    = activeClients.filter(c => !c.anamnese_id);
+  const comAnamnese    = activeClients.filter(c => !!c.anamnese_id);
+
+  const q = search.toLowerCase();
+  const filterClients = (list: Client[]) =>
+    list.filter(c => c.name.toLowerCase().includes(q) || (c.email ?? "").toLowerCase().includes(q));
+
+  function handleReject(id: string) {
+    return fetch(`${process.env.EXPO_PUBLIC_WEB_URL}/api/anamnese/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "REJECTED" }),
+    }).then(() => setPending(prev => prev.filter(a => a.id !== id)));
+  }
 
   async function openClient(c: Client) {
     setSelected(c);
@@ -324,30 +528,63 @@ export default function ClientsScreen() {
         </View>
       </View>
 
-      {/* Busca */}
-      <View style={s.searchRow}>
-        <Ionicons name="search" size={16} color={Colors.gray[400]} style={s.searchIcon} />
-        <TextInput
-          style={s.searchInput}
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Buscar cliente..."
-          placeholderTextColor={Colors.gray[400]}
-        />
+      {/* Abas */}
+      <View style={s.tabRow}>
+        {([
+          { id: "sem-anamnese" as TabId, label: "Sem anamnese", count: semAnamnese.length },
+          { id: "ativos" as TabId,       label: "Ativos",       count: comAnamnese.length },
+          { id: "aguardando" as TabId,   label: "Aguardando",   count: pending.length },
+        ]).map(t => (
+          <TouchableOpacity key={t.id} style={[s.tabBtn, tab === t.id && s.tabBtnActive]} onPress={() => setTab(t.id)}>
+            <Text style={[s.tabBtnText, tab === t.id && s.tabBtnTextActive]}>{t.label}</Text>
+            {t.count > 0 && (
+              <View style={[s.tabBadge, tab === t.id && s.tabBadgeActive]}>
+                <Text style={[s.tabBadgeText, tab === t.id && s.tabBadgeTextActive]}>{t.count}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
 
-      {loading ? (
+      {/* Busca */}
+      {tab !== "aguardando" && (
+        <View style={s.searchRow}>
+          <Ionicons name="search" size={16} color={Colors.gray[400]} style={s.searchIcon} />
+          <TextInput
+            style={s.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Buscar cliente..."
+            placeholderTextColor={Colors.gray[400]}
+          />
+        </View>
+      )}
+
+      {(tab === "aguardando" ? loadingPending : loading) ? (
         <ActivityIndicator color={Colors.brand[500]} style={{ marginTop: 40 }} />
+      ) : tab === "aguardando" ? (
+        <FlatList
+          data={pending}
+          keyExtractor={a => a.id}
+          renderItem={({ item }) => (
+            <PendingAnamneseCard anamnese={item} onReview={() => setReviewingId(item.id)} onReject={() => handleReject(item.id)} />
+          )}
+          contentContainerStyle={s.list}
+          ListHeaderComponent={user ? <AnamneseLinkCard therapistId={user.id} clients={clients} /> : null}
+          ListEmptyComponent={<Text style={s.emptyText}>Nenhuma anamnese aguardando aprovação.</Text>}
+        />
       ) : (
         <FlatList
-          data={filtered}
+          data={filterClients(tab === "sem-anamnese" ? semAnamnese : comAnamnese)}
           keyExtractor={c => c.id}
           renderItem={renderClient}
           contentContainerStyle={s.list}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={user ? <AnamneseLinkCard therapistId={user.id} clients={clients} /> : null}
           ListEmptyComponent={
-            <Text style={s.emptyText}>Nenhum cliente encontrado.</Text>
+            <Text style={s.emptyText}>
+              {tab === "sem-anamnese" ? "Todos os clientes ativos têm anamnese." : "Nenhum cliente encontrado."}
+            </Text>
           }
         />
       )}
@@ -417,6 +654,16 @@ export default function ClientsScreen() {
           </SafeAreaView>
         )}
       </Modal>
+
+      {/* Revisão de anamnese pendente */}
+      {user && (
+        <AnamneseReviewModal
+          anamneseId={reviewingId}
+          therapistId={user.id}
+          onClose={() => setReviewingId(null)}
+          onAccepted={() => { load(); loadPending(); }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -470,6 +717,36 @@ const s = StyleSheet.create({
   badge:       { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   badgeText:   { fontSize: 11, fontWeight: "600" },
   emptyText:   { textAlign: "center", color: Colors.gray[400], marginTop: 40, fontSize: 14 },
+  // Abas
+  tabRow:      { flexDirection: "row", gap: 6, paddingHorizontal: 20, marginBottom: 12 },
+  tabBtn:      { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.gray[200] },
+  tabBtnActive: { backgroundColor: Colors.brand[500], borderColor: Colors.brand[500] },
+  tabBtnText:  { fontSize: 12, fontWeight: "600", color: Colors.gray[500] },
+  tabBtnTextActive: { color: "#fff" },
+  tabBadge:    { minWidth: 18, height: 18, borderRadius: 9, backgroundColor: Colors.gray[100], alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+  tabBadgeActive: { backgroundColor: "rgba(255,255,255,0.25)" },
+  tabBadgeText: { fontSize: 10, fontWeight: "700", color: Colors.gray[600] },
+  tabBadgeTextActive: { color: "#fff" },
+  // Card de anamnese pendente
+  pendingCard: { backgroundColor: Colors.white, borderRadius: 16, padding: 14, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  pendingAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#FEF3C7", alignItems: "center", justifyContent: "center" },
+  pendingAvatarText: { fontSize: 15, fontWeight: "700", color: "#B45309" },
+  pendingName: { fontSize: 14, fontWeight: "700", color: Colors.ink },
+  pendingEmail: { fontSize: 11, color: Colors.gray[500], marginTop: 1 },
+  pendingDate: { fontSize: 11, color: Colors.gray[400] },
+  intentionBox: { backgroundColor: "#FEF3C7", borderRadius: 10, padding: 10, marginTop: 10 },
+  intentionLabel: { fontSize: 10, fontWeight: "700", color: "#B45309", marginBottom: 2 },
+  intentionText: { fontSize: 12, color: "#78350F", fontStyle: "italic" },
+  pendingActions: { flexDirection: "row", gap: 8, marginTop: 12 },
+  reviewBtn:   { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, backgroundColor: Colors.brand[500], borderRadius: 10, paddingVertical: 9 },
+  reviewBtnText: { fontSize: 12, fontWeight: "700", color: "#fff" },
+  rejectBtn:   { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FECACA", borderRadius: 10, paddingVertical: 9 },
+  rejectBtnText: { fontSize: 12, fontWeight: "700", color: "#DC2626" },
+  // Modal de revisão
+  fieldLabel:  { fontSize: 12, fontWeight: "600", color: Colors.gray[600], marginBottom: 6, marginTop: 4 },
+  textarea:    { minHeight: 70, textAlignVertical: "top", marginBottom: 10, borderWidth: 1, borderColor: Colors.gray[200], borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontSize: 13, color: Colors.ink, backgroundColor: Colors.white },
+  saveBtn:     { marginTop: 16, backgroundColor: Colors.brand[500], borderRadius: 14, paddingVertical: 14, alignItems: "center", justifyContent: "center" },
+  saveBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
   // Modal
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
   modalTitle:  { flex: 1, fontSize: 17, fontWeight: "700", color: Colors.ink, textAlign: "center", marginHorizontal: 8 },
