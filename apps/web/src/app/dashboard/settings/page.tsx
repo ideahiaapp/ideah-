@@ -1162,6 +1162,8 @@ type TherapistRow = {
 function ApproachManager({ therapist }: { therapist: TherapistRow }) {
   const [acquired, setAcquired] = useState<string[]>([]);
   const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState<string | null>(null);
+  const [error,    setError]    = useState("");
 
   useEffect(() => {
     fetch(`/api/therapist-approaches?therapistId=${therapist.userId}`)
@@ -1171,24 +1173,48 @@ function ApproachManager({ therapist }: { therapist: TherapistRow }) {
       .finally(() => setLoading(false));
   }, [therapist.userId]);
 
+  async function toggle(key: string) {
+    const next = acquired.includes(key) ? acquired.filter(a => a !== key) : [...acquired, key];
+    setSaving(key); setError("");
+    try {
+      const res = await fetch("/api/therapist-approaches", {
+        method: "PUT",
+        headers: await adminHeaders(),
+        body: JSON.stringify({ therapistId: therapist.userId, approaches: next }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erro ao atualizar bases.");
+      setAcquired(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao atualizar bases.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
   if (loading) return <div className="py-2 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-gray-500" /></div>;
 
   return (
     <div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
       <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Bases teóricas</p>
+      <p className="text-[11px] text-gray-500">Toque em uma base para adicionar/remover do pacote do terapeuta.</p>
+      {error && <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg px-2.5 py-1.5">{error}</div>}
       <div className="flex flex-wrap gap-1.5">
         {ALL_APPROACHES.map(a => {
           const has = acquired.includes(a.key);
           return (
-            <span
+            <button
               key={a.key}
+              type="button"
+              onClick={() => toggle(a.key)}
+              disabled={saving === a.key}
               className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold",
-                has ? "bg-indigo-600 text-white" : "bg-indigo-100 text-indigo-400"
+                "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60",
+                has ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-indigo-100 text-indigo-400 hover:bg-indigo-200"
               )}
             >
+              {saving === a.key && <Loader2 className="w-3 h-3 animate-spin" />}
               {a.label}
-            </span>
+            </button>
           );
         })}
       </div>
