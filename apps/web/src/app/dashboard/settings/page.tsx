@@ -1175,18 +1175,134 @@ function ApproachManager({ therapist }: { therapist: TherapistRow }) {
 
   return (
     <div className="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
-      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Bases adquiridas</p>
-      {acquired.length === 0 ? (
-        <p className="text-xs text-gray-500 italic">Nenhuma base adquirida.</p>
-      ) : (
-        <div className="flex flex-wrap gap-1.5">
-          {ALL_APPROACHES.filter(a => acquired.includes(a.key)).map(a => (
-            <span key={a.key} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white">
+      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Bases teóricas</p>
+      <div className="flex flex-wrap gap-1.5">
+        {ALL_APPROACHES.map(a => {
+          const has = acquired.includes(a.key);
+          return (
+            <span
+              key={a.key}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-semibold",
+                has ? "bg-indigo-600 text-white" : "bg-indigo-100 text-indigo-400"
+              )}
+            >
               {a.label}
             </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AddTherapistForm({ onCreated }: { onCreated: () => void }) {
+  const [open,     setOpen]     = useState(false);
+  const [name,     setName]     = useState("");
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [approaches, setApproaches] = useState<string[]>([]);
+  const [saving,   setSaving]   = useState(false);
+  const [error,    setError]    = useState("");
+  const [saved,    setSaved]    = useState(false);
+
+  const canSave = name.trim() && email.trim() && password.length >= 6;
+
+  function toggleApproach(key: string) {
+    setApproaches(prev => prev.includes(key) ? prev.filter(a => a !== key) : [...prev, key]);
+  }
+
+  function reset() {
+    setName(""); setEmail(""); setPassword(""); setApproaches([]); setError("");
+  }
+
+  async function handleSave() {
+    if (!canSave) return;
+    setSaving(true); setError("");
+    try {
+      const res = await fetch("/api/admin/therapists", {
+        method: "POST",
+        headers: await adminHeaders(),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password, approaches }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro ao criar terapeuta.");
+      setSaved(true);
+      reset();
+      onCreated();
+      setTimeout(() => { setSaved(false); setOpen(false); }, 1500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao criar terapeuta.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-brand-500 hover:bg-brand-600 text-white transition-colors"
+      >
+        <Users className="w-4 h-4" /> Adicionar terapeuta
+      </button>
+    );
+  }
+
+  return (
+    <div className="border border-brand-200 bg-brand-50 rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold text-brand-800">Novo terapeuta</p>
+        <button onClick={() => { setOpen(false); reset(); }} className="text-gray-400 hover:text-gray-600 text-sm">
+          ✕
+        </button>
+      </div>
+      <p className="text-xs text-brand-600">
+        Cria a conta direto, sem passar pelo pagamento — útil enquanto o checkout ainda não está ativo. A senha pode ser trocada depois pelo próprio terapeuta.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo"
+          className="px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300" />
+        <input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" type="email"
+          className="px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300" />
+        <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Senha (mín. 6 caracteres)" type="text"
+          className="px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 md:col-span-2" />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-gray-600 mb-1.5">Bases teóricas (opcional — pode adicionar depois)</p>
+        <div className="flex flex-wrap gap-1.5">
+          {ALL_APPROACHES.map(a => (
+            <button
+              key={a.key}
+              type="button"
+              onClick={() => toggleApproach(a.key)}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors",
+                approaches.includes(a.key) ? "bg-indigo-600 text-white" : "bg-indigo-100 text-indigo-400 hover:bg-indigo-200"
+              )}
+            >
+              {a.label}
+            </button>
           ))}
         </div>
-      )}
+      </div>
+      {error && <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl px-3 py-2">{error}</div>}
+      <div className="flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={!canSave || saving || saved}
+          className={cn(
+            "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors",
+            saved ? "bg-green-500 text-white"
+              : canSave && !saving ? "bg-brand-500 hover:bg-brand-600 text-white"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          )}
+        >
+          {saved ? <><CheckCircle2 className="w-4 h-4" /> Criado!</>
+            : saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando...</>
+            : "Criar terapeuta"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -1232,6 +1348,8 @@ function TabTerapeutas() {
           <h2 className="font-semibold text-gray-900">Terapeutas com acesso</h2>
           <p className="text-sm text-gray-500 mt-0.5">Gerencie acesso e bases adquiridas por cada terapeuta.</p>
         </div>
+
+        <AddTherapistForm onCreated={load} />
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">{error}</div>

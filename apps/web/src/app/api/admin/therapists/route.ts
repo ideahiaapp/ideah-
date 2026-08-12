@@ -62,6 +62,51 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// POST /api/admin/therapists — cria um terapeuta diretamente (fase de testes, sem pagamento)
+export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin(req);
+    const supabaseAdmin = serviceClient();
+    const { name, email, password, approaches } = await req.json() as {
+      name?: string; email?: string; password?: string; approaches?: string[];
+    };
+
+    if (!name?.trim() || !email?.trim() || !password || password.length < 6) {
+      return NextResponse.json({ error: "Nome, e-mail e senha (mín. 6 caracteres) são obrigatórios." }, { status: 400 });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+      email: emailLower,
+      password,
+      email_confirm: true,
+      user_metadata: { name: name.trim() },
+    });
+    if (createErr || !created.user) {
+      return NextResponse.json({ error: createErr?.message ?? "Erro ao criar conta." }, { status: 500 });
+    }
+
+    // Sem isso o AuthGuard bloqueia o login (checa /api/auth/verify, que exige
+    // uma linha em therapist_profiles).
+    const { error: profileErr } = await supabaseAdmin
+      .from("therapist_profiles")
+      .upsert({ user_id: created.user.id, email: emailLower });
+    if (profileErr) throw profileErr;
+
+    if (approaches?.length) {
+      const { error: apErr } = await supabaseAdmin
+        .from("therapist_approaches")
+        .insert(approaches.map(approach => ({ therapist_id: created.user.id, approach })));
+      if (apErr) throw apErr;
+    }
+
+    return NextResponse.json({ ok: true, userId: created.user.id });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Erro interno";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
 // PATCH /api/admin/therapists — bloquear/desbloquear
 export async function PATCH(req: NextRequest) {
   try {
