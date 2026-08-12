@@ -229,6 +229,10 @@ type Evolution = {
   mood: number | null; session_number: number | null;
 };
 
+type Supervision = {
+  id: string; title: string; approach: string; updated_at: string; messages_count: number;
+};
+
 type TabId = "sem-anamnese" | "ativos" | "aguardando";
 
 type Anamnese = {
@@ -428,6 +432,9 @@ export default function ClientsScreen() {
   const [selected, setSelected] = useState<Client | null>(null);
   const [evolutions, setEvolutions] = useState<Evolution[]>([]);
   const [evoLoading, setEvoLoading] = useState(false);
+  const [supervisions, setSupervisions] = useState<Supervision[]>([]);
+  const [supLoading, setSupLoading] = useState(false);
+  const [deletingSupId, setDeletingSupId] = useState<string | null>(null);
 
   const [pending, setPending]         = useState<Anamnese[]>([]);
   const [loadingPending, setLoadingPending] = useState(true);
@@ -477,14 +484,39 @@ export default function ClientsScreen() {
   async function openClient(c: Client) {
     setSelected(c);
     setEvoLoading(true);
-    const { data } = await supabase
-      .from("evolutions")
-      .select("id, session_date, content, mood, session_number")
-      .eq("client_id", c.id)
-      .order("session_date", { ascending: false })
-      .limit(20);
-    setEvolutions((data ?? []) as Evolution[]);
+    setSupLoading(true);
+    const [evoRes, supRes] = await Promise.all([
+      supabase
+        .from("evolutions")
+        .select("id, session_date, content, mood, session_number")
+        .eq("client_id", c.id)
+        .order("session_date", { ascending: false })
+        .limit(20),
+      supabase
+        .from("supervisions")
+        .select("id, title, approach, updated_at, messages_count")
+        .eq("client_id", c.id)
+        .order("updated_at", { ascending: false }),
+    ]);
+    setEvolutions((evoRes.data ?? []) as Evolution[]);
+    setSupervisions((supRes.data ?? []) as Supervision[]);
     setEvoLoading(false);
+    setSupLoading(false);
+  }
+
+  async function deleteSupervision(sv: Supervision) {
+    Alert.alert("Excluir supervisão", `Excluir "${sv.title}"? Essa ação não pode ser desfeita.`, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir", style: "destructive", onPress: async () => {
+          setDeletingSupId(sv.id);
+          const { error } = await supabase.from("supervisions").delete().eq("id", sv.id);
+          setDeletingSupId(null);
+          if (error) { Alert.alert("Erro", error.message); return; }
+          setSupervisions(prev => prev.filter(s => s.id !== sv.id));
+        },
+      },
+    ]);
   }
 
   async function toggleStatus(c: Client) {
@@ -629,6 +661,31 @@ export default function ClientsScreen() {
                 )}
               </View>
 
+              <Text style={s.sectionTitle}>Supervisões ({supervisions.length})</Text>
+
+              {supLoading ? (
+                <ActivityIndicator color={Colors.brand[500]} style={{ marginBottom: 20 }} />
+              ) : supervisions.length === 0 ? (
+                <Text style={[s.emptyText, { marginTop: 0, marginBottom: 20 }]}>Nenhuma supervisão sobre este caso ainda.</Text>
+              ) : (
+                <View style={{ marginBottom: 20, gap: 8 }}>
+                  {supervisions.map(sv => (
+                    <View key={sv.id} style={s.supCard}>
+                      <View style={s.supIcon}><Ionicons name="chatbubbles-outline" size={16} color={Colors.brand[500]} /></View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={s.supTitle} numberOfLines={1}>{sv.title}</Text>
+                        <Text style={s.supMeta}>{new Date(sv.updated_at).toLocaleDateString("pt-BR")} · {sv.messages_count} msgs</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => deleteSupervision(sv)} disabled={deletingSupId === sv.id} style={s.supDeleteBtn} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                        {deletingSupId === sv.id
+                          ? <ActivityIndicator size="small" color={Colors.gray[400]} />
+                          : <Ionicons name="trash-outline" size={16} color={Colors.gray[400]} />}
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
               <Text style={s.sectionTitle}>Evoluções recentes</Text>
 
               {evoLoading ? (
@@ -762,4 +819,9 @@ const s = StyleSheet.create({
   moodBadge:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   moodText:    { fontSize: 11, fontWeight: "600" },
   evoContent:  { fontSize: 13, color: Colors.gray[700], lineHeight: 20 },
+  supCard:     { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: Colors.white, borderRadius: 14, padding: 12, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  supIcon:     { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.brand[50], alignItems: "center", justifyContent: "center" },
+  supTitle:    { fontSize: 13, fontWeight: "600", color: Colors.ink },
+  supMeta:     { fontSize: 11, color: Colors.gray[400], marginTop: 1 },
+  supDeleteBtn: { padding: 4 },
 });
