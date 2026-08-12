@@ -7,9 +7,9 @@ import {
   ArrowLeft, Phone, Mail, Briefcase, Clock, Calendar, FileText,
   MessageSquare, Plus, ChevronRight, Pencil, Sparkles, Target,
   UserCheck, Hourglass, Activity, Loader2, ClipboardList,
-  ChevronDown, Save, AlertTriangle,
+  ChevronDown, Save, AlertTriangle, Trash2,
 } from "lucide-react";
-import { getClient, getEvolutionsByClient, getSupervisionsByClient } from "@/lib/db";
+import { getClient, getEvolutionsByClient, getSupervisionsByClient, deleteSupervision } from "@/lib/db";
 import { formatDate, cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client, Evolution, Supervision } from "@/lib/database.types";
@@ -93,6 +93,20 @@ export default function ClientDetailPage() {
   const [anamneseLoading, setAnamneseLoading] = useState(false);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
+  const [deletingSupervisionId, setDeletingSupervisionId] = useState<string | null>(null);
+
+  async function handleDeleteSupervision(sv: Supervision) {
+    if (!confirm(`Excluir a supervisão "${sv.title}"? Essa ação não pode ser desfeita.`)) return;
+    setDeletingSupervisionId(sv.id);
+    try {
+      await deleteSupervision(sv.id);
+      setSupervisions(prev => prev.filter(s => s.id !== sv.id));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao excluir supervisão.");
+    } finally {
+      setDeletingSupervisionId(null);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -458,26 +472,38 @@ export default function ClientDetailPage() {
             <EmptyState icon={MessageSquare} text="Nenhuma supervisão sobre este caso ainda." />
           ) : (
             supervisions.map(sv => (
-              <Link key={sv.id} href={`/dashboard/supervision`}
-                className="block bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-brand-200 hover:shadow-md transition-all p-5 group">
-                <div className="flex items-start gap-4">
-                  <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <MessageSquare className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{sv.title}</p>
-                      <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full font-medium flex-shrink-0 border border-brand-100">
-                        {sv.approach}
-                      </span>
+              <div key={sv.id} className="relative group">
+                <Link href={`/dashboard/supervision`}
+                  className="block bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-brand-200 hover:shadow-md transition-all p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <MessageSquare className="w-4 h-4 text-brand-500" strokeWidth={1.8} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-semibold text-gray-800 truncate pr-8">{sv.title}</p>
+                        <span className="text-xs bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full font-medium flex-shrink-0 border border-brand-100">
+                          {sv.approach}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0 pr-8">
+                      <p className="text-xs text-gray-400">{formatDate(new Date(sv.updated_at))}</p>
+                      <p className="text-xs text-gray-300 mt-1">{sv.messages_count} msgs</p>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xs text-gray-400">{formatDate(new Date(sv.updated_at))}</p>
-                    <p className="text-xs text-gray-300 mt-1">{sv.messages_count} msgs</p>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteSupervision(sv); }}
+                  disabled={deletingSupervisionId === sv.id}
+                  aria-label="Excluir supervisão"
+                  className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  {deletingSupervisionId === sv.id
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Trash2 className="w-4 h-4" strokeWidth={1.8} />}
+                </button>
+              </div>
             ))
           )}
         </div>

@@ -38,6 +38,13 @@ export async function createSupervision(payload: SupervisionInsert): Promise<Sup
   return data;
 }
 
+export async function deleteSupervision(id: string): Promise<void> {
+  // supervision_messages tem "on delete cascade" para supervision_id — apagar a
+  // supervisão já remove as mensagens junto, sem precisar de uma segunda query.
+  const { error } = await supabase.from("supervisions").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function updateSupervisionTimestamp(id: string, messagesCount: number): Promise<void> {
   const { error } = await supabase
     .from("supervisions")
