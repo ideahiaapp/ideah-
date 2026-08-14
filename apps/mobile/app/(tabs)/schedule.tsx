@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, ActivityIndicator, Modal, ScrollView, Alert,
+  TextInput, ActivityIndicator, Modal, ScrollView, Alert, Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +19,7 @@ type Session = {
   clients: { name: string; initials: string | null; color: string | null } | null;
 };
 
-type Client = { id: string; name: string };
+type Client = { id: string; name: string; email: string | null; phone: string | null };
 
 const STATUS_MAP: Record<SessionStatus, { label: string; color: string; bg: string }> = {
   confirmed: { label: "Confirmada", color: "#16A34A", bg: "#DCFCE7" },
@@ -33,6 +33,58 @@ const DURATIONS = [30, 45, 50, 60, 90];
 
 function toDateStr(d: Date) {
   return d.toISOString().slice(0, 10);
+}
+
+function timeToMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(min: number): string {
+  const h = Math.floor(min / 60).toString().padStart(2, "0");
+  const m = (min % 60).toString().padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+/** Espelha buildGoogleCalendarUrl da web — mesmo formato de link. */
+function buildGoogleCalendarUrl(params: {
+  clientName: string; date: string; startTime: string; duration: number;
+  notes?: string; meetLink?: string; clientEmail?: string | null;
+}): string {
+  const start = params.date.replace(/-/g, "") + "T" + params.startTime.replace(":", "") + "00";
+  const endMin = timeToMinutes(params.startTime) + params.duration;
+  const endStr = minutesToTime(endMin).replace(":", "") + "00";
+  const end = params.date.replace(/-/g, "") + "T" + endStr;
+  const details = [
+    params.notes || "Sessão registrada via Paideia",
+    params.meetLink ? `Link da videochamada: ${params.meetLink}` : "",
+  ].filter(Boolean).join("\n\n");
+  const search = new URLSearchParams({
+    action: "TEMPLATE",
+    text:   `Sessão — ${params.clientName}`,
+    dates:  `${start}/${end}`,
+    details,
+    ...(params.meetLink ? { location: params.meetLink } : {}),
+    ...(params.clientEmail ? { add: params.clientEmail } : {}),
+  });
+  return `https://calendar.google.com/calendar/render?${search.toString()}`;
+}
+
+function buildWhatsAppUrl(phone: string, message: string): string {
+  const digits = phone.replace(/\D/g, "");
+  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
+}
+
+function buildSessionMessage(params: {
+  clientName: string; date: string; startTime: string; duration: number; meetLink?: string;
+}): string {
+  const dateFmt = params.date.split("-").reverse().join("/");
+  const endTime = minutesToTime(timeToMinutes(params.startTime) + params.duration);
+  const firstName = params.clientName.split(" ")[0];
+  let msg = `Olá, ${firstName}! Confirmando sua sessão:\n📅 ${dateFmt}\n🕐 ${params.startTime} às ${endTime}`;
+  if (params.meetLink) msg += `\n🔗 Link da videochamada: ${params.meetLink}`;
+  return msg;
 }
 
 function monthLabel(d: Date) {
@@ -95,12 +147,48 @@ function NewSessionModal({ visible, date, clients, therapistId, onClose, onSaved
   const [status, setStatus]       = useState<SessionStatus>("confirmed");
   const [price, setPrice]         = useState("");
   const [notes, setNotes]         = useState("");
+  const [meetLink, setMeetLink]   = useState("");
+  const [addToCalendar, setAddToCalendar] = useState(true);
   const [saving, setSaving]       = useState(false);
+  const [createdInfo, setCreatedInfo] = useState<{ clientName: string; phone: string | null } | null>(null);
 
   const canSave = !!clientId && !!time;
+  const selectedClient = clients.find(c => c.id === clientId) ?? null;
+
+  function reset() {
+    setClientId(""); setTime("09:00"); setDuration("50"); setStatus("confirmed");
+    setPrice(""); setNotes(""); setMeetLink(""); setAddToCalendar(true); setCreatedInfo(null);
+  }
+
+  function handleClose() {
+    reset();
+    onClose();
+  }
+
+  function openGoogleCalendar() {
+    if (!selectedClient) return;
+    Linking.openURL(buildGoogleCalendarUrl({
+      clientName:  selectedClient.name,
+      date,
+      startTime:   time,
+      duration:    parseInt(duration, 10),
+      notes:       notes || undefined,
+      meetLink:    meetLink || undefined,
+      clientEmail: selectedClient.email,
+    }));
+  }
+
+  function sendWhatsApp() {
+    if (!createdInfo?.phone) return;
+    Linking.openURL(buildWhatsAppUrl(createdInfo.phone, buildSessionMessage({
+      clientName: createdInfo.clientName,
+      date, startTime: time, duration: parseInt(duration, 10),
+      meetLink: meetLink || undefined,
+    })));
+  }
 
   async function handleSave() {
-    if (!canSave) return;
+    if (!canSave || !selectedClient) return;
     setSaving(true);
     try {
       const { error } = await supabase.from("sessions").insert({
@@ -114,9 +202,9 @@ function NewSessionModal({ visible, date, clients, therapistId, onClose, onSaved
         price:        price ? Number(price) : null,
       });
       if (error) throw error;
-      setClientId(""); setTime("09:00"); setDuration("50"); setStatus("confirmed"); setPrice(""); setNotes("");
+      setCreatedInfo({ clientName: selectedClient.name, phone: selectedClient.phone });
       onSaved();
-      onClose();
+      if (addToCalendar) openGoogleCalendar();
     } catch (e) {
       Alert.alert("Erro", e instanceof Error ? e.message : "Erro ao salvar sessão.");
     } finally {
@@ -125,21 +213,21 @@ function NewSessionModal({ visible, date, clients, therapistId, onClose, onSaved
   }
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
       <SafeAreaView style={s.safe}>
         <View style={s.modalHeader}>
-          <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={Colors.gray[700]} /></TouchableOpacity>
+          <TouchableOpacity onPress={handleClose}><Ionicons name="close" size={24} color={Colors.gray[700]} /></TouchableOpacity>
           <Text style={s.modalTitle}>Nova Sessão</Text>
           <View style={{ width: 24 }} />
         </View>
         <ScrollView contentContainerStyle={s.modalScroll} keyboardShouldPersistTaps="handled">
+          <Text style={s.fieldLabel}>Cliente *</Text>
+          <PickerField label="Selecionar cliente..." value={clientId} onChange={setClientId} options={clients.map(c => ({ value: c.id, label: c.name }))} />
+
           <Text style={s.fieldLabel}>Data</Text>
           <View style={[s.input, { justifyContent: "center" }]}>
             <Text style={{ color: Colors.ink, fontSize: 14 }}>{new Date(date + "T00:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</Text>
           </View>
-
-          <Text style={s.fieldLabel}>Cliente *</Text>
-          <PickerField label="Selecionar cliente..." value={clientId} onChange={setClientId} options={clients.map(c => ({ value: c.id, label: c.name }))} />
 
           <Text style={s.fieldLabel}>Horário *</Text>
           <TextInput value={time} onChangeText={setTime} placeholder="09:00" placeholderTextColor={Colors.gray[400]} style={s.input} />
@@ -149,7 +237,7 @@ function NewSessionModal({ visible, date, clients, therapistId, onClose, onSaved
 
           <Text style={s.fieldLabel}>Status</Text>
           <PickerField label="Selecionar..." value={status} onChange={v => setStatus(v as SessionStatus)}
-            options={(["confirmed", "pending", "cancelled", "done"] as SessionStatus[]).map(st => ({ value: st, label: STATUS_MAP[st].label }))} />
+            options={(["confirmed", "pending"] as SessionStatus[]).map(st => ({ value: st, label: STATUS_MAP[st].label }))} />
 
           <Text style={s.fieldLabel}>Valor (R$)</Text>
           <TextInput value={price} onChangeText={setPrice} placeholder="180" placeholderTextColor={Colors.gray[400]} keyboardType="numeric" style={s.input} />
@@ -157,9 +245,62 @@ function NewSessionModal({ visible, date, clients, therapistId, onClose, onSaved
           <Text style={s.fieldLabel}>Observações</Text>
           <TextInput value={notes} onChangeText={setNotes} placeholder="Opcional..." placeholderTextColor={Colors.gray[400]} multiline numberOfLines={3} style={[s.input, { minHeight: 70, textAlignVertical: "top" }]} />
 
-          <TouchableOpacity style={[s.saveBtn, (!canSave || saving) && s.saveBtnDisabled]} onPress={handleSave} disabled={!canSave || saving} activeOpacity={0.85}>
-            {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.saveBtnText}>Salvar sessão</Text>}
-          </TouchableOpacity>
+          {!createdInfo && (
+            <>
+              <Text style={s.fieldLabel}>Link da videochamada (opcional)</Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TextInput
+                  value={meetLink}
+                  onChangeText={setMeetLink}
+                  placeholder="Cole aqui o link gerado pelo Meet"
+                  placeholderTextColor={Colors.gray[400]}
+                  style={[s.input, { flex: 1 }]}
+                />
+                <TouchableOpacity style={s.meetBtn} onPress={() => Linking.openURL("https://meet.google.com/new")}>
+                  <Ionicons name="videocam-outline" size={16} color="#16A34A" />
+                  <Text style={s.meetBtnText}>Gerar</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={s.checkboxRow} onPress={() => setAddToCalendar(v => !v)} activeOpacity={0.8}>
+                <View style={[s.checkbox, addToCalendar && s.checkboxChecked]}>
+                  {addToCalendar && <Ionicons name="checkmark" size={12} color="#fff" />}
+                </View>
+                <Text style={s.checkboxLabel}>Adicionar ao Google Calendar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[s.saveBtn, (!canSave || saving) && s.saveBtnDisabled]} onPress={handleSave} disabled={!canSave || saving} activeOpacity={0.85}>
+                {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={s.saveBtnText}>Marcar sessão</Text>}
+              </TouchableOpacity>
+            </>
+          )}
+
+          {createdInfo && (
+            <View style={{ gap: 8, marginTop: 20 }}>
+              <View style={s.successBox}>
+                <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
+                <Text style={s.successText}>Sessão criada!</Text>
+              </View>
+
+              <TouchableOpacity style={s.calendarBtn} onPress={openGoogleCalendar}>
+                <Ionicons name="calendar-outline" size={16} color="#1D4ED8" />
+                <Text style={s.calendarBtnText}>Abrir no Google Calendar</Text>
+              </TouchableOpacity>
+
+              {createdInfo.phone ? (
+                <TouchableOpacity style={s.whatsappBtn} onPress={sendWhatsApp}>
+                  <Ionicons name="logo-whatsapp" size={16} color="#15803D" />
+                  <Text style={s.whatsappBtnText}>Enviar agendamento via WhatsApp</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={s.helperText}>Cadastre o telefone do cliente para enviar o agendamento via WhatsApp.</Text>
+              )}
+
+              <TouchableOpacity onPress={handleClose} style={{ paddingVertical: 8 }}>
+                <Text style={[s.helperText, { textAlign: "center" }]}>Fechar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -188,7 +329,7 @@ export default function ScheduleScreen() {
         .gte("date", toDateStr(gridStart))
         .lte("date", toDateStr(gridEnd))
         .order("start_time", { ascending: true }),
-      supabase.from("clients").select("id, name").eq("therapist_id", user.id).order("name"),
+      supabase.from("clients").select("id, name, email, phone").eq("therapist_id", user.id).order("name"),
     ]);
     setSessions((sessionsRes.data ?? []) as unknown as Session[]);
     setClients((clientsRes.data ?? []) as Client[]);
@@ -382,6 +523,19 @@ const s = StyleSheet.create({
   saveBtn:    { marginTop: 20, backgroundColor: Colors.brand[500], borderRadius: 14, paddingVertical: 14, alignItems: "center", justifyContent: "center" },
   saveBtnDisabled: { backgroundColor: Colors.gray[300] },
   saveBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  meetBtn:     { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, borderWidth: 1, borderColor: Colors.gray[200], borderRadius: 12, backgroundColor: Colors.white },
+  meetBtnText: { fontSize: 12, fontWeight: "700", color: "#16A34A" },
+  checkboxRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14 },
+  checkbox:    { width: 20, height: 20, borderRadius: 6, borderWidth: 2, borderColor: Colors.gray[300], alignItems: "center", justifyContent: "center" },
+  checkboxChecked: { backgroundColor: Colors.brand[500], borderColor: Colors.brand[500] },
+  checkboxLabel: { fontSize: 13, color: Colors.gray[700] },
+  successBox:  { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#DCFCE7", borderWidth: 1, borderColor: "#BBF7D0", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11 },
+  successText: { fontSize: 13, fontWeight: "700", color: "#15803D" },
+  calendarBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 2, borderColor: "#BFDBFE", borderRadius: 12, paddingVertical: 12, backgroundColor: Colors.white },
+  calendarBtnText: { fontSize: 13, fontWeight: "700", color: "#1D4ED8" },
+  whatsappBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#DCFCE7", borderWidth: 1, borderColor: "#BBF7D0", borderRadius: 12, paddingVertical: 12 },
+  whatsappBtnText: { fontSize: 13, fontWeight: "700", color: "#15803D" },
+  helperText:  { fontSize: 11, color: Colors.gray[400] },
   selector:   { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: Colors.gray[200], borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12 },
   selectorText: { fontSize: 14, color: Colors.ink, flex: 1 },
   selectorPlaceholder: { fontSize: 14, color: Colors.gray[400], flex: 1 },
