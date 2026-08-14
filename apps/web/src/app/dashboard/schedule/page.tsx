@@ -168,17 +168,6 @@ function GoogleCalendarIcon({ className }: { className?: string }) {
   );
 }
 
-/* ─── Ícone Google Meet ──────────────────────────── */
-function GoogleMeetIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 8v8a2 2 0 002 2h7V6H5a2 2 0 00-2 2z" fill="#00AC47"/>
-      <path d="M12 6v12l4-3V9l-4-3z" fill="#00832D"/>
-      <path d="M16 9l5-3.6v13.2L16 15V9z" fill="#00AC47"/>
-    </svg>
-  );
-}
-
 /* ─── Ícone WhatsApp ─────────────────────────────── */
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -449,25 +438,17 @@ function SessionModal({
               {/* Link do Google Meet */}
               <div className="space-y-1.5">
                 <label htmlFor="meet-link-input" className="block text-xs font-semibold text-gray-600">Link da videochamada (opcional)</label>
-                <div className="flex gap-2">
-                  <input
-                    id="meet-link-input"
-                    type="text"
-                    value={meetLink}
-                    onChange={e => setMeetLink(e.target.value)}
-                    placeholder="Cole aqui o link gerado pelo Meet"
-                    className="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
-                  />
-                  <a
-                    href="https://meet.google.com/new"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-green-200 hover:text-green-700 transition-colors flex-shrink-0"
-                  >
-                    <GoogleMeetIcon className="w-4 h-4" />
-                    Gerar
-                  </a>
-                </div>
+                <input
+                  id="meet-link-input"
+                  type="text"
+                  value={meetLink}
+                  onChange={e => setMeetLink(e.target.value)}
+                  placeholder="Cole aqui o link de uma sala fixa, se já tiver uma"
+                  className="w-full px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
+                />
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Deixe em branco para criar a sala na hora marcada: ao adicionar ao Google Calendar, clique em <strong>&quot;Adicionar Google Meet&quot;</strong> na tela do evento — o link fica vinculado a esse horário, em vez de abrir uma reunião instantânea agora.
+                </p>
               </div>
 
               {/* Google Calendar */}
@@ -650,24 +631,16 @@ function SessionModal({
                   {/* Link do Google Meet */}
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-gray-600">Link da videochamada (opcional)</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={meetLink}
-                        onChange={e => setMeetLink(e.target.value)}
-                        placeholder="Cole aqui o link gerado pelo Meet"
-                        className="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
-                      />
-                      <a
-                        href="https://meet.google.com/new"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-green-200 hover:text-green-700 transition-colors flex-shrink-0"
-                      >
-                        <GoogleMeetIcon className="w-4 h-4" />
-                        Gerar
-                      </a>
-                    </div>
+                    <input
+                      type="text"
+                      value={meetLink}
+                      onChange={e => setMeetLink(e.target.value)}
+                      placeholder="Cole aqui o link de uma sala fixa, se já tiver uma"
+                      className="w-full px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
+                    />
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
+                      Deixe em branco para criar a sala na hora marcada: ao adicionar ao Google Calendar, clique em <strong>&quot;Adicionar Google Meet&quot;</strong> na tela do evento — o link fica vinculado a esse horário, em vez de abrir uma reunião instantânea agora.
+                    </p>
                   </div>
 
                   {/* Google Calendar */}
