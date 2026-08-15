@@ -1,4 +1,4 @@
-import { BookOpen, Download } from "lucide-react";
+import { BookOpen, Download, ArrowUp } from "lucide-react";
 
 /* ─── Pequenos blocos de conteúdo reutilizados ─────────────────── */
 function P({ children }: { children: React.ReactNode }) {
@@ -69,6 +69,12 @@ function Section({ id, title, children }: { id: string; title: string; children:
     <section id={id} className="scroll-mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-7 space-y-4">
       <h2 className="font-serif text-2xl text-brand-600 border-b border-gray-100 pb-3">{title}</h2>
       {children}
+      <div className="pt-2 border-t border-gray-50">
+        <a href="#sumario" className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-brand-600 transition-colors">
+          <ArrowUp className="w-3 h-3" />
+          Voltar ao Sumário
+        </a>
+      </div>
     </section>
   );
 }
@@ -131,7 +137,7 @@ export default function ManualPage() {
       </div>
 
       {/* Sumário clicável */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div id="sumario" className="scroll-mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <p className="text-sm font-bold text-gray-800 mb-3">Sumário</p>
         <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
           {TOC.map(item => (
