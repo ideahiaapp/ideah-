@@ -18,6 +18,17 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic, InputWithMic } from "@/components/ui/VoiceField";
 import type { Client, Supervision, SupervisionMessage, Evolution } from "@/lib/database.types";
+import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+
+const SUPERVISION_HOW_IT_WORKS: HowItWorksContent = {
+  title: "Supervisão clínica",
+  subtitle: "Um espaço de reflexão dialógica para investigar seus casos a partir da abordagem teórica escolhida.",
+  steps: [
+    { title: "Escolha o cliente", desc: "Selecione, na lista à esquerda, o caso que deseja supervisionar." },
+    { title: "Inicie a reflexão", desc: "Traga suas impressões, dúvidas ou situações da sessão. O Paideia dialoga com você por meio de perguntas, não de respostas prontas." },
+    { title: "Finalize e gere a evolução", desc: "Ao encerrar, registre impressões e hipótese — a conversa vira automaticamente um registro de evolução clínica." },
+  ],
+};
 
 /* ─── Tipos ─────────────────────────────────────────── */
 interface Message {
@@ -572,6 +583,7 @@ export default function WorkspacePage() {
   const [clients,      setClients]      = useState<Client[]>([]);
   const [supervisions, setSupervisions] = useState<Supervision[]>([]);
   const [evolutions,   setEvolutions]   = useState<Evolution[]>([]);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(searchParams.get("client"));
   const [activeSessionId,  setActiveSessionId]  = useState<string | null>(null);
@@ -1025,6 +1037,9 @@ export default function WorkspacePage() {
               <p className="text-sm">Selecione um cliente para iniciar</p>
             </div>
           )}
+          <div className="flex-shrink-0">
+            <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+          </div>
         </div>
 
 
@@ -1275,6 +1290,10 @@ export default function WorkspacePage() {
           onConfirm={handleConfirmFinishSupervision}
           onCancel={() => { setShowFinishModal(false); setAfterFinishAction(null); }}
         />
+      )}
+
+      {howItWorksOpen && (
+        <HowItWorksModal content={SUPERVISION_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
       )}
     </div>
   );

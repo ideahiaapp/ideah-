@@ -14,6 +14,17 @@ import { getClinicSettings } from "@/lib/clinic-settings";
 import type { Client } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
 import { VoiceTextarea } from "@/components/ui/VoiceField";
+import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+
+const SCHEDULE_HOW_IT_WORKS: HowItWorksContent = {
+  title: "Agenda",
+  subtitle: "Organize as sessões marcadas com seus clientes na semana.",
+  steps: [
+    { title: "Clique em \"Nova sessão\"", desc: "Escolha o cliente, data, horário e duração." },
+    { title: "Defina o status", desc: "Confirmada ou Pendente — o status pode ser atualizado depois, direto no card da sessão." },
+    { title: "Compartilhe, se precisar", desc: "Adicione ao Google Calendar ou envie a confirmação por WhatsApp em um clique." },
+  ],
+};
 
 type SessionStatus = "confirmed" | "pending" | "cancelled" | "done";
 
@@ -822,6 +833,7 @@ export default function SchedulePage() {
   const [sessions,  setSessions]  = useState<ScheduleSession[]>([]);
   const [modal,     setModal]     = useState<ModalState | null>(null);
   const [clients,   setClients]   = useState<Client[]>([]);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -907,6 +919,7 @@ export default function SchedulePage() {
       <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100 flex-shrink-0 gap-4">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-ink">Agenda</h1>
+          <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
 
           {/* Navegação de semana */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
@@ -1098,6 +1111,10 @@ export default function SchedulePage() {
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
         />
+      )}
+
+      {howItWorksOpen && (
+        <HowItWorksModal content={SCHEDULE_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
       )}
     </div>
   );

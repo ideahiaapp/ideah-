@@ -14,6 +14,17 @@ import { useAuthStore } from "@/store/auth.store";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Client } from "@/lib/database.types";
+import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+
+const CLIENTS_HOW_IT_WORKS: HowItWorksContent = {
+  title: "Acompanhamento do cliente",
+  subtitle: "Organize em um único espaço o cadastro, a anamnese, o prontuário e o histórico do acompanhamento.",
+  steps: [
+    { title: "Cadastre o cliente", desc: "Informe os dados iniciais e a abordagem terapêutica, ou envie o link de anamnese para o próprio cliente se pré-cadastrar." },
+    { title: "Aprove a anamnese", desc: "Anamneses recebidas por link aparecem em \"Aguardando aprovação\" — revise e aceite para ativar o cliente." },
+    { title: "Acompanhe o percurso", desc: "Supervisões, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
+  ],
+};
 
 type TabId = "sem-anamnese" | "ativos" | "aguardando";
 
@@ -532,6 +543,7 @@ function ClientsPageInner() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
   const [search,  setSearch]  = useState("");
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const [pendingAnamneses,  setPendingAnamneses]  = useState<Anamnese[]>([]);
   const [loadingPending,    setLoadingPending]    = useState(true);
@@ -593,7 +605,10 @@ function ClientsPageInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink">Clientes</h1>
-          <p className="text-gray-500 text-sm mt-1">Gerencie seus clientes e prontuários</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-gray-500 text-sm">Gerencie seus clientes e prontuários</p>
+            <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+          </div>
         </div>
         <Link
           href="/dashboard/clients/new"
@@ -603,6 +618,10 @@ function ClientsPageInner() {
           Novo cliente
         </Link>
       </div>
+
+      {howItWorksOpen && (
+        <HowItWorksModal content={CLIENTS_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
+      )}
 
       {/* Link de anamnese */}
       {user && <AnamneseLinkCard therapistId={user.id} clients={clients} />}

@@ -14,6 +14,17 @@ import { useAuthStore } from "@/store/auth.store";
 import { adminHeaders } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
+import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+
+const SETTINGS_HOW_IT_WORKS: HowItWorksContent = {
+  title: "Configurações",
+  subtitle: "Personalize sua conta e as integrações do Paideia. As abas visíveis variam conforme seu perfil (terapeuta ou administrador).",
+  steps: [
+    { title: "Perfil e Segurança", desc: "Dados pessoais, configurações clínicas (valor de sessão, horários) e alteração de senha." },
+    { title: "API Key", desc: "Cadastre a chave do provedor de IA (Anthropic, Gemini ou Ollama) para usar Supervisão, Certificado e Relatórios." },
+    { title: "Minhas Bases e Ética CFP", desc: "Veja suas abordagens contratadas e confirme os compromissos éticos exigidos pela Res. CFP nº 21/2025." },
+  ],
+};
 
 type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas" | "prompts" | "minhasbases" | "anamnese" | "usoapi";
 
@@ -2073,6 +2084,7 @@ export default function SettingsPage() {
   const isAdmin = user?.role === "admin";
   const [tab, setTab] = useState<Tab>("perfil");
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   useEffect(() => {
     setApiKeyConfigured(hasApiKey());
@@ -2102,9 +2114,16 @@ export default function SettingsPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-ink">Configurações</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-ink">Configurações</h1>
+          <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+        </div>
         <p className="text-gray-500 text-sm mt-1">Gerencie sua conta, segurança e integrações</p>
       </div>
+
+      {howItWorksOpen && (
+        <HowItWorksModal content={SETTINGS_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
+      )}
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl">

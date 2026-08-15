@@ -7,6 +7,17 @@ import { aiHeaders } from "@/lib/api-key";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { CertificateTemplate, CertificateBackTemplate } from "@/components/certificate/CertificateTemplate";
+import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+
+const CERTIFICATE_HOW_IT_WORKS: HowItWorksContent = {
+  title: "Certificado de Supervisão",
+  subtitle: "Emite o certificado de Formação Clínica Continuada com base nas horas de supervisão realizadas no sistema.",
+  steps: [
+    { title: "Selecione o período", desc: "1 mês, 3 meses, 6 meses ou 1 ano." },
+    { title: "Gere o certificado", desc: "Um certificado é criado para cada abordagem teórica usada em supervisões dentro do período." },
+    { title: "Baixe em PDF", desc: "Use \"Baixar PDF\" e escolha \"Salvar como PDF\" na janela de impressão do navegador." },
+  ],
+};
 
 // Tolerante a maiúsculas/minúsculas, acentos opcionais e prefixo markdown (#, ##, **) antes do marcador,
 // já que o texto vem de uma IA e não reproduz o marcador sempre 100% literal.
@@ -127,6 +138,7 @@ export default function CertificatePage() {
 
   const [therapistId, setTherapistId] = useState("");
   const [period,      setPeriod]      = useState("");
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const [report,  setReport]  = useState<CertificateReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -181,10 +193,19 @@ export default function CertificatePage() {
           <Award className="w-5 h-5 text-brand-500" strokeWidth={1.8} />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-ink">Certificado de Supervisão</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-ink">Certificado de Supervisão</h1>
+            <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+          </div>
           <p className="text-gray-500 text-sm">Relatório de horas de supervisão por abordagem teórica</p>
         </div>
       </div>
+
+      {howItWorksOpen && (
+        <div className="print-hide">
+          <HowItWorksModal content={CERTIFICATE_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="print-hide bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

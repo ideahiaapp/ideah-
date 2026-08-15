@@ -2,18 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Users, MessageSquare, Clock, X } from "lucide-react";
+import { Users, MessageSquare, Clock } from "lucide-react";
 import { getClients } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client } from "@/lib/database.types";
-
-type HowItWorksContent = {
-  title: string;
-  subtitle: string;
-  steps: { title: string; desc: string }[];
-  ctaLabel: string;
-  ctaHref: string;
-};
+import { HowItWorksModal, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
   supervision: {
@@ -39,45 +32,6 @@ const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
     ctaHref: "/dashboard/clients/new",
   },
 };
-
-function HowItWorksModal({ content, onClose }: { content: HowItWorksContent; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-        <button
-          onClick={onClose}
-          aria-label="Fechar"
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-        <h2 className="font-serif text-xl text-ink pr-6">{content.title}</h2>
-        <p className="text-sm text-gray-500 mt-2 leading-relaxed">{content.subtitle}</p>
-        <div className="mt-5 space-y-4">
-          {content.steps.map((step, i) => (
-            <div key={step.title} className="flex gap-3">
-              <div className="w-6 h-6 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                {i + 1}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-800">{step.title}</p>
-                <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <Link
-          href={content.ctaHref}
-          onClick={onClose}
-          className="mt-6 flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-full"
-        >
-          {content.ctaLabel}
-        </Link>
-      </div>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const { user } = useAuthStore();

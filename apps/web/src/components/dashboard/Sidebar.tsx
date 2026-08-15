@@ -14,6 +14,7 @@ import {
   Award,
   ClipboardList,
   BarChart3,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/dashboard/certificate",  icon: Award,           label: "Certificado",                adminOnly: false },
   { href: "/dashboard/survey",       icon: ClipboardList,   label: "Pesquisa de Satisfação",      adminOnly: false },
   { href: "/dashboard/survey-results", icon: BarChart3,     label: "Resultados da Pesquisa",      adminOnly: true },
+  { href: "/dashboard/manual",       icon: BookOpen,        label: "Manual",                     adminOnly: false },
 ];
 
 export function Sidebar() {
