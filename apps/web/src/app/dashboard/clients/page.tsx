@@ -14,7 +14,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Client } from "@/lib/database.types";
-import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const CLIENTS_HOW_IT_WORKS: HowItWorksContent = {
   title: "Acompanhamento do cliente",
@@ -543,7 +543,6 @@ function ClientsPageInner() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState<string | null>(null);
   const [search,  setSearch]  = useState("");
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const [pendingAnamneses,  setPendingAnamneses]  = useState<Anamnese[]>([]);
   const [loadingPending,    setLoadingPending]    = useState(true);
@@ -607,7 +606,7 @@ function ClientsPageInner() {
           <h1 className="text-2xl font-bold text-ink">Clientes</h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-gray-500 text-sm">Gerencie seus clientes e prontuários</p>
-            <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+            <HowItWorksTrigger content={CLIENTS_HOW_IT_WORKS} />
           </div>
         </div>
         <Link
@@ -618,10 +617,6 @@ function ClientsPageInner() {
           Novo cliente
         </Link>
       </div>
-
-      {howItWorksOpen && (
-        <HowItWorksModal content={CLIENTS_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
-      )}
 
       {/* Link de anamnese */}
       {user && <AnamneseLinkCard therapistId={user.id} clients={clients} />}

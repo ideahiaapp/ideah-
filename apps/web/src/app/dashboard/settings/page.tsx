@@ -14,7 +14,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { adminHeaders } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
-import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const SETTINGS_HOW_IT_WORKS: HowItWorksContent = {
   title: "Configurações",
@@ -2084,7 +2084,6 @@ export default function SettingsPage() {
   const isAdmin = user?.role === "admin";
   const [tab, setTab] = useState<Tab>("perfil");
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   useEffect(() => {
     setApiKeyConfigured(hasApiKey());
@@ -2116,14 +2115,10 @@ export default function SettingsPage() {
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-ink">Configurações</h1>
-          <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+          <HowItWorksTrigger content={SETTINGS_HOW_IT_WORKS} />
         </div>
         <p className="text-gray-500 text-sm mt-1">Gerencie sua conta, segurança e integrações</p>
       </div>
-
-      {howItWorksOpen && (
-        <HowItWorksModal content={SETTINGS_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
-      )}
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl">

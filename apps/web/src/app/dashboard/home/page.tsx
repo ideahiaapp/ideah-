@@ -6,7 +6,7 @@ import { Users, MessageSquare, Clock } from "lucide-react";
 import { getClients } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client } from "@/lib/database.types";
-import { HowItWorksModal, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
   supervision: {
@@ -41,7 +41,6 @@ export default function HomePage() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const [city, setCity] = useState<string | null>(null);
-  const [howItWorks, setHowItWorks] = useState<"supervision" | "client" | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -95,12 +94,7 @@ export default function HomePage() {
             >
               Iniciar supervisão
             </Link>
-            <button
-              onClick={() => setHowItWorks("supervision")}
-              className="text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors"
-            >
-              Como funciona?
-            </button>
+            <HowItWorksTrigger content={HOW_IT_WORKS.supervision} />
           </div>
         </div>
 
@@ -119,19 +113,10 @@ export default function HomePage() {
             >
               Cadastrar cliente
             </Link>
-            <button
-              onClick={() => setHowItWorks("client")}
-              className="text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors"
-            >
-              Como funciona?
-            </button>
+            <HowItWorksTrigger content={HOW_IT_WORKS.client} />
           </div>
         </div>
       </div>
-
-      {howItWorks && (
-        <HowItWorksModal content={HOW_IT_WORKS[howItWorks]} onClose={() => setHowItWorks(null)} />
-      )}
 
       <div>
         <h3 className="font-serif text-lg text-ink mb-3">Últimos clientes</h3>

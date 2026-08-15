@@ -7,7 +7,7 @@ import { aiHeaders } from "@/lib/api-key";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { CertificateTemplate, CertificateBackTemplate } from "@/components/certificate/CertificateTemplate";
-import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const CERTIFICATE_HOW_IT_WORKS: HowItWorksContent = {
   title: "Certificado de Supervisão",
@@ -138,7 +138,6 @@ export default function CertificatePage() {
 
   const [therapistId, setTherapistId] = useState("");
   const [period,      setPeriod]      = useState("");
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const [report,  setReport]  = useState<CertificateReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -195,17 +194,11 @@ export default function CertificatePage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-ink">Certificado de Supervisão</h1>
-            <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+            <HowItWorksTrigger content={CERTIFICATE_HOW_IT_WORKS} />
           </div>
           <p className="text-gray-500 text-sm">Relatório de horas de supervisão por abordagem teórica</p>
         </div>
       </div>
-
-      {howItWorksOpen && (
-        <div className="print-hide">
-          <HowItWorksModal content={CERTIFICATE_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
-        </div>
-      )}
 
       {/* Filtros */}
       <div className="print-hide bg-white rounded-2xl border border-gray-100 shadow-sm p-6">

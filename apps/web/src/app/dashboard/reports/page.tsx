@@ -16,7 +16,7 @@ import { cn, formatRelative } from "@/lib/utils";
 import type { Client } from "@/lib/database.types";
 import type { EvolutionWithClient } from "@/lib/db/evolutions";
 import type { SupervisionWithClient } from "@/lib/db/supervisions";
-import { HowItWorksModal, HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const REPORTS_HOW_IT_WORKS: HowItWorksContent = {
   title: "Meu Escritório",
@@ -833,7 +833,6 @@ export default function ReportsPage() {
   const [tab, setTab]           = useState<Tab>("geral");
   const [reportSubTab, setReportSubTab] = useState<ReportSubTab>("evolucao");
   const [drillDown, setDrillDown] = useState<DrillType | null>(null);
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const [clients,     setClients]     = useState<Client[]>([]);
   const [evolutions,  setEvolutions]  = useState<EvolutionWithClient[]>([]);
@@ -985,7 +984,7 @@ export default function ReportsPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-ink">{greeting}, {firstName}</h1>
-            <HowItWorksTrigger onClick={() => setHowItWorksOpen(true)} />
+            <HowItWorksTrigger content={REPORTS_HOW_IT_WORKS} />
           </div>
           <p className="text-gray-500 text-sm mt-0.5 capitalize">
             {new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
@@ -995,10 +994,6 @@ export default function ReportsPage() {
           Dados dos últimos 6 meses
         </span>
       </div>
-
-      {howItWorksOpen && (
-        <HowItWorksModal content={REPORTS_HOW_IT_WORKS} onClose={() => setHowItWorksOpen(false)} />
-      )}
 
       {/* Ações rápidas */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
