@@ -17,6 +17,7 @@ const CERTIFICATE_HOW_IT_WORKS: HowItWorksContent = {
     { title: "Gere o certificado", desc: "Um certificado é criado para cada abordagem teórica usada em supervisões dentro do período." },
     { title: "Baixe em PDF", desc: "Use \"Baixar PDF\" e escolha \"Salvar como PDF\" na janela de impressão do navegador." },
   ],
+  illustration: "certificate",
 };
 
 // Tolerante a maiúsculas/minúsculas, acentos opcionais e prefixo markdown (#, ##, **) antes do marcador,

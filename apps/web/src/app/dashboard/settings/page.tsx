@@ -24,6 +24,7 @@ const SETTINGS_HOW_IT_WORKS: HowItWorksContent = {
     { title: "API Key", desc: "Cadastre a chave do provedor de IA (Anthropic, Gemini ou Ollama) para usar Supervisão, Certificado e Relatórios." },
     { title: "Minhas Bases e Ética CFP", desc: "Veja suas abordagens contratadas e confirme os compromissos éticos exigidos pela Res. CFP nº 21/2025." },
   ],
+  illustration: "settings",
 };
 
 type Tab = "perfil" | "seguranca" | "plano" | "api" | "base" | "etica" | "terapeutas" | "prompts" | "minhasbases" | "anamnese" | "usoapi";

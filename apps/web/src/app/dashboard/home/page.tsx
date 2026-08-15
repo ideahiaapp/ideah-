@@ -19,6 +19,7 @@ const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
     ],
     ctaLabel: "Iniciar supervisão",
     ctaHref: "/dashboard/supervision",
+    illustration: "supervision",
   },
   client: {
     title: "Acompanhamento do cliente",
@@ -30,6 +31,7 @@ const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
     ],
     ctaLabel: "Cadastrar cliente",
     ctaHref: "/dashboard/clients/new",
+    illustration: "clients",
   },
 };
 

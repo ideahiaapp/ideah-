@@ -24,6 +24,7 @@ const SCHEDULE_HOW_IT_WORKS: HowItWorksContent = {
     { title: "Defina o status", desc: "Confirmada ou Pendente — o status pode ser atualizado depois, direto no card da sessão." },
     { title: "Compartilhe, se precisar", desc: "Adicione ao Google Calendar ou envie a confirmação por WhatsApp em um clique." },
   ],
+  illustration: "schedule",
 };
 
 type SessionStatus = "confirmed" | "pending" | "cancelled" | "done";

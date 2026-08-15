@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { X, BookOpen, HelpCircle } from "lucide-react";
 import { useHowItWorks, type HowItWorksContent } from "@/lib/how-it-works-context";
+import { HOW_IT_WORKS_ILLUSTRATIONS } from "@/components/dashboard/HowItWorksIllustrations";
 
 export type { HowItWorksContent };
 
@@ -14,6 +15,8 @@ export type { HowItWorksContent };
 export function HowItWorksPanel() {
   const { content, close } = useHowItWorks();
   if (!content) return null;
+
+  const Illustration = content.illustration ? HOW_IT_WORKS_ILLUSTRATIONS[content.illustration] : null;
 
   return (
     <aside className="print-hide w-[380px] flex-shrink-0 bg-white border-l border-gray-100 shadow-sm overflow-y-auto">
@@ -48,6 +51,12 @@ export function HowItWorksPanel() {
             </div>
           ))}
         </div>
+
+        {Illustration && (
+          <div className="mt-8 max-w-[220px] mx-auto">
+            <Illustration />
+          </div>
+        )}
 
         {content.ctaLabel && content.ctaHref && (
           <Link

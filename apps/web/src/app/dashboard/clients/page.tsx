@@ -24,6 +24,7 @@ const CLIENTS_HOW_IT_WORKS: HowItWorksContent = {
     { title: "Aprove a anamnese", desc: "Anamneses recebidas por link aparecem em \"Aguardando aprovação\" — revise e aceite para ativar o cliente." },
     { title: "Acompanhe o percurso", desc: "Supervisões, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
   ],
+  illustration: "clients",
 };
 
 type TabId = "sem-anamnese" | "ativos" | "aguardando";

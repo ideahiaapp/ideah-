@@ -9,6 +9,8 @@ export type HowItWorksContent = {
   steps: { title: string; desc: string }[];
   ctaLabel?: string;
   ctaHref?: string;
+  /** Chave da ilustração decorativa exibida ao final do texto (ver HowItWorksIllustrations.tsx). */
+  illustration?: "supervision" | "clients" | "schedule" | "reports" | "certificate" | "settings";
 };
 
 interface HowItWorksContextValue {

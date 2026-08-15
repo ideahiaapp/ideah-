@@ -26,6 +26,7 @@ const REPORTS_HOW_IT_WORKS: HowItWorksContent = {
     { title: "Clientes", desc: "Lista consolidada dos seus casos, com atalhos para o prontuário de cada um." },
     { title: "Relatórios", desc: "Geração de documentos oficiais, relatório de evoluções e prospecto de paciente, prontos para impressão ou envio." },
   ],
+  illustration: "reports",
 };
 
 /* ─── Paleta ─────────────────────────────────────────────────────── */

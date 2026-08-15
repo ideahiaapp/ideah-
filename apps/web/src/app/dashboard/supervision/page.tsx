@@ -28,6 +28,7 @@ const SUPERVISION_HOW_IT_WORKS: HowItWorksContent = {
     { title: "Inicie a reflexão", desc: "Traga suas impressões, dúvidas ou situações da sessão. O Paideia dialoga com você por meio de perguntas, não de respostas prontas." },
     { title: "Finalize e gere a evolução", desc: "Ao encerrar, registre impressões e hipótese — a conversa vira automaticamente um registro de evolução clínica." },
   ],
+  illustration: "supervision",
 };
 
 /* ─── Tipos ─────────────────────────────────────────── */
