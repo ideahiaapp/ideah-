@@ -316,6 +316,14 @@ function RegisterPage() {
                 <p className="text-gray-500 mt-1">Preencha seus dados para continuar</p>
               </div>
 
+              <button type="button" onClick={handleGoogleSignup} disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl py-3 transition-colors text-sm disabled:opacity-50">
+                {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <GoogleIcon />}
+                Continuar com Google
+              </button>
+
+              <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div><div className="relative flex justify-center text-xs text-gray-500 bg-white px-3 mx-auto w-fit">ou</div></div>
+
               <form onSubmit={goToStep2} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Nome completo</label>
@@ -374,14 +382,6 @@ function RegisterPage() {
                   Ao criar sua conta, você concorda com os <Link href="/termos" className="text-brand-500 hover:underline">Termos de Uso</Link> e a <Link href="/privacidade" className="text-brand-500 hover:underline">Política de Privacidade</Link>.
                 </p>
               </form>
-
-              <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div><div className="relative flex justify-center text-xs text-gray-500 bg-white px-3 mx-auto w-fit">ou</div></div>
-
-              <button type="button" onClick={handleGoogleSignup} disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl py-3 transition-colors text-sm disabled:opacity-50">
-                {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <GoogleIcon />}
-                Continuar com Google
-              </button>
 
               <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div><div className="relative flex justify-center text-xs text-gray-500 bg-white px-3 mx-auto w-fit">Já tem conta?</div></div>
               <Link href="/auth/login" className="block w-full text-center border border-brand-300 text-brand-600 hover:bg-brand-50 font-semibold rounded-xl py-3 transition-colors text-sm">Fazer login</Link>
