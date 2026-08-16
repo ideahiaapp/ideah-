@@ -636,6 +636,7 @@ export default function WorkspacePage() {
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(searchParams.get("client"));
   const [activeSessionId,  setActiveSessionId]  = useState<string | null>(null);
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(searchParams.get("session"));
 
   const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>(APPROACH_ORDER);
   const [approachKey,  setApproachKey]  = useState("PSYCHOANALYSIS");
@@ -732,6 +733,17 @@ export default function WorkspacePage() {
       setSupervisions(svs);
       setEvolutions(evs);
 
+      /* Veio de um link apontando para uma supervisão específica (ex.: aba
+         Supervisões no cadastro do cliente) — abre ela em vez da mais recente. */
+      if (pendingSessionId) {
+        const target = svs.find(s => s.id === pendingSessionId);
+        setPendingSessionId(null);
+        if (target) {
+          loadSessionImpl(target);
+          return;
+        }
+      }
+
       /* Abordagem inicial: a da última supervisão anterior deste cliente, ou a
          primeira cadastrada para ele se ainda não houve supervisão. */
       const client = clients.find(c => c.id === selectedClientId);
@@ -748,6 +760,7 @@ export default function WorkspacePage() {
         setApproachKey(preferred);
       }
     }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClientId, clients]);
 
   /* ── Fetch anamnese completa do cliente ── */

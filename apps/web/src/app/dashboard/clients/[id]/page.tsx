@@ -656,7 +656,7 @@ export default function ClientDetailPage() {
           ) : (
             supervisions.map(sv => (
               <div key={sv.id} className="relative group">
-                <Link href={`/dashboard/supervision`}
+                <Link href={`/dashboard/supervision?client=${client.id}&session=${sv.id}`}
                   className="block bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-brand-200 hover:shadow-md transition-all p-5">
                   <div className="flex items-start gap-4">
                     <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 mt-0.5">
