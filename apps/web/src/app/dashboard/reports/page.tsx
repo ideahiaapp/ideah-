@@ -276,10 +276,11 @@ function DrillClients({ onClose, clients, evolutions, supervisions }: {
 }
 
 /* ═══ Drill: Horas Clínicas ════════════════════════════════════════ */
-function DrillHours({ onClose, clients, months }: {
+function DrillHours({ onClose, clients, months, evolutions }: {
   onClose: () => void;
   clients: Client[];
   months: MonthData[];
+  evolutions: EvolutionWithClient[];
 }) {
   const clinicCfg     = getClinicSettings();
   const totalSessions = months.reduce((a, m) => a + m.sessions, 0);
@@ -288,7 +289,9 @@ function DrillHours({ onClose, clients, months }: {
 
   const activeClients = clients.filter(c => c.status === "ACTIVE");
   const perClient = activeClients.map(c => {
-    const sess = c.total_sessions ?? 0;
+    /* client.total_sessions nunca é incrementado após o cadastro — usa a
+       contagem real de evoluções registradas para este cliente. */
+    const sess = evolutions.filter(e => e.client_id === c.id).length;
     return { ...c, sessions: sess, hours: Math.round(sess * (c.session_duration ?? clinicCfg.sessionDuration) / 60) };
   }).sort((a, b) => b.hours - a.hours);
   const maxH = Math.max(...perClient.map(c => c.hours), 1);
@@ -365,11 +368,12 @@ function formatBRL(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function DrillRevenue({ onClose, clients, months, sessionPrice }: {
+function DrillRevenue({ onClose, clients, months, sessionPrice, evolutions }: {
   onClose: () => void;
   clients: Client[];
   months: MonthData[];
   sessionPrice: number;
+  evolutions: EvolutionWithClient[];
 }) {
   const totalSessions = months.reduce((a, m) => a + m.sessions, 0);
   const totalRevenue  = totalSessions * sessionPrice;
@@ -378,7 +382,9 @@ function DrillRevenue({ onClose, clients, months, sessionPrice }: {
 
   const activeClients = clients.filter(c => c.status === "ACTIVE");
   const perClient = activeClients.map(c => {
-    const sess = c.total_sessions ?? 0;
+    /* client.total_sessions nunca é incrementado após o cadastro — usa a
+       contagem real de evoluções registradas para este cliente. */
+    const sess = evolutions.filter(e => e.client_id === c.id).length;
     return { ...c, sessions: sess, revenue: sess * sessionPrice };
   }).sort((a, b) => b.revenue - a.revenue);
   const maxRevenue = Math.max(...perClient.map(c => c.revenue), 1);
@@ -1428,9 +1434,9 @@ export default function ReportsPage() {
       {/* ══ Drawers de drill-down ══ */}
       {drillDown === "sessions"   && <DrillSessions onClose={() => setDrillDown(null)} />}
       {drillDown === "clients"    && <DrillClients  onClose={() => setDrillDown(null)} clients={clients} evolutions={evolutions} supervisions={supervisions} />}
-      {drillDown === "hours"      && <DrillHours    onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} />}
+      {drillDown === "hours"      && <DrillHours    onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} evolutions={evolutions} />}
       {drillDown === "evolutions" && <DrillEvolutions onClose={() => setDrillDown(null)} evolutions={evolutions} />}
-      {drillDown === "revenue"    && <DrillRevenue   onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} sessionPrice={sessionPrice} />}
+      {drillDown === "revenue"    && <DrillRevenue   onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} sessionPrice={sessionPrice} evolutions={evolutions} />}
     </div>
   );
 }
