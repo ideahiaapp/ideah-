@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail]   = useState("");
@@ -17,7 +17,13 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
     try {
-      await api.post("/auth/forgot-password", { email });
+      // Antes chamava um backend separado (apps/api) que não tem essa rota
+      // implementada nem roda em produção — a chamada falhava silenciosamente e a
+      // tela sempre mostrava sucesso. Usa direto o Supabase Auth, que já cuida do
+      // e-mail de recuperação (mesmo provedor usado em login/cadastro).
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
       setSent(true);
     } catch {
       // Sempre mostrar sucesso por segurança (não vazar se e-mail existe)
