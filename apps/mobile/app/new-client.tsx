@@ -98,7 +98,7 @@ export default function NewClientScreen() {
 
   const [form, setForm] = useState({
     name: "", email: "", phone: "", birthDate: "", occupation: "",
-    approach: "", frequency: "Semanal", duration: "50",
+    approaches: [] as string[], frequency: "Semanal", duration: "50",
     mainDemand: "", notes: "", emergencyContact: "",
     lgpdConsent: false,
   });
@@ -120,11 +120,20 @@ export default function NewClientScreen() {
   }, [user]);
 
   const APPROACHES = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
-  const selectedApproach = APPROACHES.find(a => a.value === form.approach);
-  const canSave = form.name.trim() && form.approach && form.mainDemand.trim() && form.lgpdConsent;
+  const selectedApproaches = APPROACHES.filter(a => form.approaches.includes(a.value));
+  const canSave = form.name.trim() && form.approaches.length > 0 && form.mainDemand.trim() && form.lgpdConsent;
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm(p => ({ ...p, [field]: value }));
+  }
+
+  function toggleApproach(value: string) {
+    setForm(p => ({
+      ...p,
+      approaches: p.approaches.includes(value)
+        ? p.approaches.filter(x => x !== value)
+        : [...p.approaches, value],
+    }));
   }
 
   async function handleSave() {
@@ -138,8 +147,9 @@ export default function NewClientScreen() {
         phone:             form.phone || null,
         birth_date:        form.birthDate || null,
         occupation:        form.occupation || null,
-        approach:          selectedApproach?.value ?? null,
-        approach_label:    selectedApproach?.label ?? null,
+        approach:          selectedApproaches[0]?.value ?? null,
+        approach_label:    selectedApproaches[0]?.label ?? null,
+        approaches:        selectedApproaches.map(a => a.value),
         status:            "ACTIVE",
         session_frequency: form.frequency,
         session_duration:  parseInt(form.duration, 10),
@@ -191,13 +201,26 @@ export default function NewClientScreen() {
           </SectionCard>
 
           <SectionCard icon="heart" title="Configuração clínica">
-            <FieldLabel required>Abordagem terapêutica</FieldLabel>
+            <FieldLabel required>Abordagem terapêutica (selecione uma ou mais)</FieldLabel>
             {loadingApproaches ? (
               <View style={[s.input, { justifyContent: "center" }]}><ActivityIndicator size="small" color={Colors.brand[500]} /></View>
             ) : APPROACHES.length === 0 ? (
               <Text style={s.warnText}>Nenhuma base teórica adquirida. Acesse Configurações → Minhas Bases.</Text>
             ) : (
-              <PickerField label="Selecionar..." value={form.approach} onChange={v => set("approach", v)} options={APPROACHES} />
+              <View style={s.chipsWrap}>
+                {APPROACHES.map(a => {
+                  const active = form.approaches.includes(a.value);
+                  return (
+                    <TouchableOpacity
+                      key={a.value}
+                      onPress={() => toggleApproach(a.value)}
+                      style={[s.chip, active && s.chipActive]}
+                    >
+                      <Text style={[s.chipText, active && s.chipTextActive]}>{a.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             )}
 
             <FieldLabel>Frequência das sessões</FieldLabel>
@@ -289,4 +312,9 @@ const s = StyleSheet.create({
   pickerItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
   pickerItemActive: { backgroundColor: Colors.brand[50] },
   pickerItemText: { fontSize: 14, color: Colors.ink, flex: 1 },
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: Colors.gray[200], backgroundColor: Colors.white },
+  chipActive: { backgroundColor: Colors.brand[500], borderColor: Colors.brand[500] },
+  chipText: { fontSize: 12, fontWeight: "600", color: Colors.gray[600] },
+  chipTextActive: { color: "#fff" },
 });

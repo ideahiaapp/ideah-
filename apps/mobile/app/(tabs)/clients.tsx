@@ -14,9 +14,14 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 
 type Client = {
   id: string; name: string; email: string | null; phone: string | null;
-  status: string; approach_label: string | null; main_demand: string | null;
+  status: string; approach_label: string | null; approaches: string[] | null; main_demand: string | null;
   total_sessions: number; created_at: string; anamnese_id: string | null;
 };
+
+function clientApproachLabels(c: Pick<Client, "approach_label" | "approaches">): string[] {
+  if (c.approaches?.length) return c.approaches.map(v => ALL_APPROACHES.find(a => a.value === v)?.label ?? v);
+  return c.approach_label ? [c.approach_label] : [];
+}
 
 const ALL_APPROACHES = [
   { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
@@ -445,7 +450,7 @@ export default function ClientsScreen() {
     setLoading(true);
     const { data } = await supabase
       .from("clients")
-      .select("id, name, email, phone, status, approach_label, main_demand, total_sessions, created_at, anamnese_id")
+      .select("id, name, email, phone, status, approach_label, approaches, main_demand, total_sessions, created_at, anamnese_id")
       .eq("therapist_id", user.id)
       .order("name");
     setClients((data ?? []) as Client[]);
@@ -535,7 +540,7 @@ export default function ClientsScreen() {
         </View>
         <View style={s.clientInfo}>
           <Text style={s.clientName} numberOfLines={1}>{item.name}</Text>
-          <Text style={s.clientSub} numberOfLines={1}>{item.approach_label ?? "Abordagem não definida"}</Text>
+          <Text style={s.clientSub} numberOfLines={1}>{clientApproachLabels(item).join(", ") || "Abordagem não definida"}</Text>
         </View>
         <View style={[s.badge, { backgroundColor: st.bg }]}>
           <Text style={[s.badgeText, { color: st.color }]}>{st.label}</Text>
@@ -643,7 +648,7 @@ export default function ClientsScreen() {
               <View style={s.infoCard}>
                 <View style={s.infoRow}>
                   <Text style={s.infoLabel}>Abordagem</Text>
-                  <Text style={s.infoValue}>{selected.approach_label ?? "—"}</Text>
+                  <Text style={s.infoValue}>{clientApproachLabels(selected).join(", ") || "—"}</Text>
                 </View>
                 <View style={s.infoRow}>
                   <Text style={s.infoLabel}>Demanda principal</Text>

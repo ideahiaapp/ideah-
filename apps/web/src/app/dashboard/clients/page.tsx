@@ -473,7 +473,9 @@ function AnamneseCard({ anamnese, onDecision }: { anamnese: Anamnese; onDecision
 
 function ClientRow({ client }: { client: Client }) {
   const status = STATUS_CONFIG[client.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.INACTIVE;
-  const approachColor = APPROACH_COLORS[client.approach_label ?? ""] ?? "bg-gray-50 text-gray-600";
+  const approachLabels = client.approaches?.length
+    ? client.approaches.map(v => ALL_APPROACHES.find(a => a.value === v)?.label ?? v)
+    : (client.approach_label ? [client.approach_label] : []);
   return (
     <Link href={`/dashboard/clients/${client.id}`}
       className="flex md:grid md:grid-cols-[2fr_1.2fr_1fr_1fr_auto] gap-4 items-center px-5 py-4 hover:bg-gray-50 transition-colors group">
@@ -488,10 +490,12 @@ function ClientRow({ client }: { client: Client }) {
         </div>
         <span className={cn("w-2 h-2 rounded-full flex-shrink-0 hidden md:block", status.dot)} title={status.label} />
       </div>
-      <div className="hidden md:flex">
-        <span className={cn("text-xs px-2.5 py-1 rounded-full font-medium", approachColor)}>
-          {client.approach_label}
-        </span>
+      <div className="hidden md:flex flex-wrap gap-1">
+        {approachLabels.map(label => (
+          <span key={label} className={cn("text-xs px-2.5 py-1 rounded-full font-medium", APPROACH_COLORS[label] ?? "bg-gray-50 text-gray-600")}>
+            {label}
+          </span>
+        ))}
       </div>
       <div className="hidden md:block">
         <p className="text-sm font-semibold text-gray-800">{client.total_sessions}</p>

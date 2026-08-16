@@ -33,7 +33,7 @@ export default function NewClientPage() {
 
   const [form, setForm] = useState({
     name: "", email: "", phone: "", birthDate: "", occupation: "",
-    approach: "", frequency: "Semanal", duration: "50",
+    approaches: [] as string[], frequency: "Semanal", duration: "50",
     mainDemand: "", notes: "", emergencyContact: "",
     vulnerability: [] as string[],
     lgpdConsent: false, pseudonymized: false,
@@ -57,8 +57,8 @@ export default function NewClientPage() {
 
   const APPROACHES = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
 
-  const selectedApproach = APPROACHES.find(a => a.label === form.approach);
-  const canSave = form.name.trim() && form.approach && form.mainDemand.trim() && form.lgpdConsent;
+  const selectedApproaches = APPROACHES.filter(a => form.approaches.includes(a.label));
+  const canSave = form.name.trim() && form.approaches.length > 0 && form.mainDemand.trim() && form.lgpdConsent;
 
   function toggleVulnerability(v: string) {
     setForm(p => ({
@@ -66,6 +66,15 @@ export default function NewClientPage() {
       vulnerability: p.vulnerability.includes(v)
         ? p.vulnerability.filter(x => x !== v)
         : [...p.vulnerability, v],
+    }));
+  }
+
+  function toggleApproach(label: string) {
+    setForm(p => ({
+      ...p,
+      approaches: p.approaches.includes(label)
+        ? p.approaches.filter(x => x !== label)
+        : [...p.approaches, label],
     }));
   }
 
@@ -84,8 +93,9 @@ export default function NewClientPage() {
         phone:             form.phone || null,
         birth_date:        form.birthDate || null,
         occupation:        form.occupation || null,
-        approach:          selectedApproach?.value ?? null,
-        approach_label:    selectedApproach?.label ?? null,
+        approach:          selectedApproaches[0]?.value ?? null,
+        approach_label:    selectedApproaches[0]?.label ?? null,
+        approaches:        selectedApproaches.map(a => a.value),
         status:            "ACTIVE",
         session_frequency: form.frequency,
         session_duration:  parseInt(form.duration),
@@ -146,18 +156,36 @@ export default function NewClientPage() {
       </Section>
 
       <Section icon={Heart} title="Configuração clínica">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Abordagem terapêutica" required className="md:col-span-1">
-            {loadingApproaches ? (
-              <div className={inputCls + " flex items-center text-gray-400"}>Carregando...</div>
-            ) : APPROACHES.length === 0 ? (
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-                Nenhuma base teórica adquirida. Acesse Configurações → Minhas Bases.
-              </p>
-            ) : (
-              <SelectField value={form.approach} onChange={v => set("approach", v)} placeholder="Selecionar..." options={APPROACHES.map(a => a.label)} />
-            )}
-          </Field>
+        <Field label="Abordagem terapêutica (selecione uma ou mais)" required>
+          {loadingApproaches ? (
+            <div className={inputCls + " flex items-center text-gray-400"}>Carregando...</div>
+          ) : APPROACHES.length === 0 ? (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+              Nenhuma base teórica adquirida. Acesse Configurações → Minhas Bases.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {APPROACHES.map(a => {
+                const active = form.approaches.includes(a.label);
+                return (
+                  <button
+                    key={a.value}
+                    type="button"
+                    onClick={() => toggleApproach(a.label)}
+                    className={cn(
+                      "px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors",
+                      active
+                        ? "bg-brand-500 border-brand-500 text-white"
+                        : "bg-white border-gray-200 text-gray-600 hover:border-brand-300"
+                    )}>
+                    {a.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Field>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Frequência das sessões">
             <SelectField value={form.frequency} onChange={v => set("frequency", v)} options={FREQUENCIES} />
           </Field>

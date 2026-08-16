@@ -41,6 +41,9 @@ export interface Database {
           birth_date: string | null;
           approach: string | null;
           approach_label: string | null;
+          /** Todas as abordagens selecionadas no cadastro — "approach"/"approach_label"
+              (acima) continuam guardando a primeira, para telas que ainda leem só uma. */
+          approaches: string[];
           status: string;
           start_date: string | null;
           last_session: string | null;
@@ -68,6 +71,7 @@ export interface Database {
           birth_date?: string | null;
           approach?: string | null;
           approach_label?: string | null;
+          approaches?: string[];
           status?: string;
           start_date?: string | null;
           last_session?: string | null;
@@ -91,6 +95,7 @@ export interface Database {
           birth_date?: string | null;
           approach?: string | null;
           approach_label?: string | null;
+          approaches?: string[];
           status?: string;
           start_date?: string | null;
           last_session?: string | null;

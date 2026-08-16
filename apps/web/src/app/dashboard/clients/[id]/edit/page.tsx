@@ -64,14 +64,18 @@ const STATUS_OPTS = [
 const inputCls = "w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-transparent text-gray-800 placeholder-gray-400";
 
 function initForm(client: Client) {
-  const approachLabel = ALL_APPROACHES.find(a => a.value === client.approach)?.label ?? client.approach_label ?? "";
+  const approachLabels = client.approaches?.length
+    ? client.approaches.map(v => ALL_APPROACHES.find(a => a.value === v)?.label).filter((l): l is string => !!l)
+    : (ALL_APPROACHES.find(a => a.value === client.approach)?.label ?? client.approach_label ?? null)
+      ? [ALL_APPROACHES.find(a => a.value === client.approach)?.label ?? client.approach_label ?? ""]
+      : [];
   return {
     name:             client.name,
     email:            client.email ?? "",
     phone:            client.phone ?? "",
     birthDate:        client.birth_date ? client.birth_date.split("T")[0] : "",
     occupation:       client.occupation ?? "",
-    approach:         approachLabel,
+    approaches:       approachLabels,
     frequency:        client.session_frequency ?? "Semanal",
     duration:         String(client.session_duration ?? 50),
     status:           client.status,
@@ -114,10 +118,8 @@ export default function EditClientPage() {
   }, [user]);
 
   const acquiredOptions = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
-  const currentNotAcquired = client && form.approach && !acquiredOptions.some(a => a.label === form.approach)
-    ? ALL_APPROACHES.find(a => a.label === form.approach)
-    : null;
-  const APPROACHES = currentNotAcquired ? [...acquiredOptions, currentNotAcquired] : acquiredOptions;
+  const currentNotAcquired = ALL_APPROACHES.filter(a => form.approaches.includes(a.label) && !acquiredOptions.some(o => o.label === a.label));
+  const APPROACHES = [...acquiredOptions, ...currentNotAcquired];
 
   useEffect(() => {
     getClient(id)
@@ -166,6 +168,14 @@ export default function EditClientPage() {
         : [...p.vulnerability, v],
     }));
   }
+  function toggleApproach(label: string) {
+    setForm(p => ({
+      ...p,
+      approaches: p.approaches.includes(label)
+        ? p.approaches.filter(x => x !== label)
+        : [...p.approaches, label],
+    }));
+  }
 
   function setAF(key: keyof AnamneseForm, value: string | boolean | string[]) {
     setAnamneseForm(prev => ({ ...prev, [key]: value }));
@@ -204,7 +214,7 @@ export default function EditClientPage() {
   async function handleSave() {
     if (!form.name.trim()) return;
     setSaving(true); setSaveErr(null);
-    const selectedApproach = APPROACHES.find(a => a.label === form.approach);
+    const selectedApproaches = APPROACHES.filter(a => form.approaches.includes(a.label));
     const statusValue = STATUS_OPTS.find(s => s.label === form.status)?.value ?? form.status;
     try {
       await updateClient(id, {
@@ -213,8 +223,9 @@ export default function EditClientPage() {
         phone:             form.phone || null,
         birth_date:        form.birthDate || null,
         occupation:        form.occupation || null,
-        approach:          selectedApproach?.value ?? null,
-        approach_label:    selectedApproach?.label ?? null,
+        approach:          selectedApproaches[0]?.value ?? null,
+        approach_label:    selectedApproaches[0]?.label ?? null,
+        approaches:        selectedApproaches.map(a => a.value),
         status:            statusValue,
         session_frequency: form.frequency,
         session_duration:  parseInt(form.duration),
@@ -302,14 +313,32 @@ export default function EditClientPage() {
       </Section>
 
       <Section icon={Heart} title="Configuração clínica">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Abordagem terapêutica" required>
-            {loadingApproaches ? (
-              <div className={inputCls + " flex items-center text-gray-400"}>Carregando...</div>
-            ) : (
-              <SelectField value={form.approach} onChange={v => set("approach", v)} options={APPROACHES.map(a => a.label)} />
-            )}
-          </Field>
+        <Field label="Abordagem terapêutica (selecione uma ou mais)" required>
+          {loadingApproaches ? (
+            <div className={inputCls + " flex items-center text-gray-400"}>Carregando...</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {APPROACHES.map(a => {
+                const active = form.approaches.includes(a.label);
+                return (
+                  <button
+                    key={a.value}
+                    type="button"
+                    onClick={() => toggleApproach(a.label)}
+                    className={cn(
+                      "px-3.5 py-2 rounded-xl text-xs font-semibold border transition-colors",
+                      active
+                        ? "bg-brand-500 border-brand-500 text-white"
+                        : "bg-white border-gray-200 text-gray-600 hover:border-brand-300"
+                    )}>
+                    {a.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Field>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Frequência">
             <SelectField value={form.frequency} onChange={v => set("frequency", v)} options={FREQUENCIES} />
           </Field>

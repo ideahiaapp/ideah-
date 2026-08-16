@@ -8,6 +8,21 @@ import { useAuthStore } from "@/store/auth.store";
 import type { Client } from "@/lib/database.types";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
+const ALL_APPROACHES = [
+  { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { value: "JUNGIAN",              label: "Junguiana" },
+  { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "TANTRA",               label: "Sexualidade Humana e Tantra" },
+  { value: "GESTALT",              label: "Gestalt-terapia" },
+  { value: "PSYCHODRAMA",          label: "Psicodrama" },
+  { value: "SYSTEMIC",             label: "Constelação Familiar" },
+];
+function clientApproachLabels(c: Client): string[] {
+  if (c.approaches?.length) return c.approaches.map(v => ALL_APPROACHES.find(a => a.value === v)?.label ?? v);
+  return c.approach_label ? [c.approach_label] : [];
+}
+
 const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
   supervision: {
     title: "Supervisão clínica",
@@ -141,7 +156,7 @@ export default function HomePage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{c.name}</p>
                   <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3" /> {c.total_sessions} sessões · {c.approach_label}
+                    <Clock className="w-3 h-3" /> {c.total_sessions} sessões · {clientApproachLabels(c).join(", ")}
                   </p>
                 </div>
               </Link>

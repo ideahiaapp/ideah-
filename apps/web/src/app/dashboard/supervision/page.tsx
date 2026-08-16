@@ -20,6 +20,21 @@ import { TextareaWithMic, InputWithMic } from "@/components/ui/VoiceField";
 import type { Client, Supervision, SupervisionMessage, Evolution } from "@/lib/database.types";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
+const ALL_APPROACHES = [
+  { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { value: "JUNGIAN",              label: "Junguiana" },
+  { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "TANTRA",               label: "Sexualidade Humana e Tantra" },
+  { value: "GESTALT",              label: "Gestalt-terapia" },
+  { value: "PSYCHODRAMA",          label: "Psicodrama" },
+  { value: "SYSTEMIC",             label: "Constelação Familiar" },
+];
+function clientApproachLabels(c: Client): string[] {
+  if (c.approaches?.length) return c.approaches.map(v => ALL_APPROACHES.find(a => a.value === v)?.label ?? v);
+  return c.approach_label ? [c.approach_label] : [];
+}
+
 const SUPERVISION_HOW_IT_WORKS: HowItWorksContent = {
   title: "Supervisão clínica",
   subtitle: "Um espaço de reflexão dialógica para investigar seus casos a partir da abordagem teórica escolhida.",
@@ -990,7 +1005,7 @@ export default function WorkspacePage() {
                   <p className={cn("text-[13px] font-semibold truncate", isSelected ? "text-brand-700" : "text-gray-800")}>
                     {client.name}
                   </p>
-                  <p className="text-[11px] text-gray-500 truncate">{client.approach_label}</p>
+                  <p className="text-[11px] text-gray-500 truncate">{clientApproachLabels(client).join(", ")}</p>
                 </div>
                 {isSelected && (evCount > 0 || svCount > 0) && (
                   <div className="flex gap-1 flex-shrink-0">
@@ -1023,7 +1038,7 @@ export default function WorkspacePage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{selectedClient.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-gray-500">{selectedClient.approach_label}</span>
+                  <span className="text-xs text-gray-500">{clientApproachLabels(selectedClient).join(", ")}</span>
                   <span className="text-gray-200">·</span>
                   <span className="text-xs text-gray-500">
                     {evolutions.length} {evolutions.length === 1 ? "evolução" : "evoluções"} · {supervisions.length} supervisões

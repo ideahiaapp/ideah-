@@ -33,6 +33,24 @@ interface Anamnese {
   created_at: string;
 }
 
+const ALL_APPROACHES = [
+  { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
+  { value: "COGNITIVE_BEHAVIORAL", label: "TCC" },
+  { value: "JUNGIAN",              label: "Junguiana" },
+  { value: "SOMATIC",              label: "Somática / Corporal" },
+  { value: "TANTRA",               label: "Sexualidade Humana e Tantra" },
+  { value: "GESTALT",              label: "Gestalt-terapia" },
+  { value: "PSYCHODRAMA",          label: "Psicodrama" },
+  { value: "SYSTEMIC",             label: "Constelação Familiar" },
+];
+
+function approachLabels(client: Client): string[] {
+  if (client.approaches?.length) {
+    return client.approaches.map(v => ALL_APPROACHES.find(a => a.value === v)?.label ?? v);
+  }
+  return client.approach_label ? [client.approach_label] : [];
+}
+
 const STATUS_CONFIG = {
   ACTIVE:   { label: "Ativo",           badge: "bg-green-50 text-green-700 border-green-200",  icon: UserCheck },
   WAITLIST: { label: "Lista de espera", badge: "bg-amber-50 text-amber-700 border-amber-200",  icon: Hourglass },
@@ -210,7 +228,7 @@ export default function ClientDetailPage() {
           </button>
           <div>
             <h1 className="text-xl font-bold text-ink">{client.name}</h1>
-            <p className="text-gray-400 text-sm mt-0.5">{client.approach_label} · {client.total_sessions} sessões</p>
+            <p className="text-gray-400 text-sm mt-0.5">{approachLabels(client).join(", ")} · {client.total_sessions} sessões</p>
           </div>
         </div>
         <Link href={`/dashboard/clients/${client.id}/edit`}
@@ -233,9 +251,11 @@ export default function ClientDetailPage() {
                 <StatusIcon className="w-3 h-3" strokeWidth={2} />
                 {status.label}
               </span>
-              <span className="text-xs bg-brand-50 text-brand-600 px-2.5 py-1 rounded-full font-medium border border-brand-100">
-                {client.approach_label}
-              </span>
+              {approachLabels(client).map(label => (
+                <span key={label} className="text-xs bg-brand-50 text-brand-600 px-2.5 py-1 rounded-full font-medium border border-brand-100">
+                  {label}
+                </span>
+              ))}
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {client.email      && <InfoItem icon={Mail}     label="E-mail"      value={client.email} />}
