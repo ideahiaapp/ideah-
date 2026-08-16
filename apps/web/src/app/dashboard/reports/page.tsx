@@ -6,7 +6,7 @@ import {
   BarChart2, Users, FileText, Brain, TrendingUp, TrendingDown,
   CalendarDays, Clock, Sparkles, ArrowUpRight, ArrowRight, Minus, X, Plus,
   ChevronRight, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
-  Download, ScrollText, ClipboardList, UserCheck, MessageSquare,
+  Download, ScrollText, ClipboardList, UserCheck, MessageSquare, DollarSign,
 } from "lucide-react";
 import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
 import { aiHeaders } from "@/lib/api-key";
@@ -49,7 +49,7 @@ const MOOD_LABEL = ["", "Muito difícil", "Difícil", "Neutro", "Produtivo", "Ex
 const MOOD_EMOJI = ["", "😟", "😕", "😐", "🙂", "😊"];
 
 type Tab       = "geral" | "clientes" | "relatorios";
-type DrillType = "sessions" | "clients" | "hours" | "evolutions";
+type DrillType = "sessions" | "clients" | "hours" | "evolutions" | "revenue";
 type ReportSubTab = "evolucao" | "relatorio_evolucoes" | "documentos_oficiais";
 
 const REPORT_SUB_TABS: { id: ReportSubTab; label: string }[] = [
@@ -355,6 +355,102 @@ function DrillHours({ onClose, clients, months }: {
             <p className="text-sm text-gray-500 text-center py-4">Nenhum cliente ativo</p>
           )}
         </div>
+      </div>
+    </DrillDrawer>
+  );
+}
+
+/* ═══ Drill: Faturamento ═══════════════════════════════════════════ */
+function formatBRL(value: number): string {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function DrillRevenue({ onClose, clients, months, sessionPrice }: {
+  onClose: () => void;
+  clients: Client[];
+  months: MonthData[];
+  sessionPrice: number;
+}) {
+  const totalSessions = months.reduce((a, m) => a + m.sessions, 0);
+  const totalRevenue  = totalSessions * sessionPrice;
+  const currentMonth  = months[months.length - 1];
+  const currentRevenue = currentMonth.sessions * sessionPrice;
+
+  const activeClients = clients.filter(c => c.status === "ACTIVE");
+  const perClient = activeClients.map(c => {
+    const sess = c.total_sessions ?? 0;
+    return { ...c, sessions: sess, revenue: sess * sessionPrice };
+  }).sort((a, b) => b.revenue - a.revenue);
+  const maxRevenue = Math.max(...perClient.map(c => c.revenue), 1);
+
+  return (
+    <DrillDrawer title="Faturamento" subtitle={`${formatBRL(totalRevenue)} no semestre`} onClose={onClose}>
+      <div className="px-6 py-5 grid grid-cols-3 gap-4 border-b border-gray-50">
+        {[
+          { label: "Total do semestre", value: formatBRL(totalRevenue), sub: `${totalSessions} sessões` },
+          { label: "Este mês",          value: formatBRL(currentRevenue), sub: `${currentMonth.sessions} sessões` },
+          { label: "Valor por sessão",  value: formatBRL(sessionPrice), sub: "configurado em Meu Escritório" },
+        ].map(s => (
+          <div key={s.label} className="bg-gray-50 rounded-xl p-3 text-center">
+            <p className="text-xs text-gray-500">{s.label}</p>
+            <p className="text-lg font-bold text-gray-800 mt-0.5">{s.value}</p>
+            <p className="text-[10px] text-gray-500">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="px-6 pt-5 pb-2">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Por mês</p>
+        <div className="space-y-2">
+          {months.map((m, i) => {
+            const revenue = m.sessions * sessionPrice;
+            const pct = totalRevenue > 0 ? Math.round(revenue / totalRevenue * 100) : 0;
+            const isLast = i === months.length - 1;
+            return (
+              <div key={m.label} className={cn("rounded-xl p-3", isLast ? "bg-brand-50 border border-brand-100" : "bg-gray-50")}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={cn("text-xs font-semibold", isLast ? "text-brand-700" : "text-gray-700")}>
+                    {m.full} {isLast && <span className="text-brand-400 font-normal">(atual)</span>}
+                  </span>
+                  <span className="text-xs font-bold text-gray-700">{formatBRL(revenue)} · {m.sessions} sessões</span>
+                </div>
+                <div className="h-2 bg-white rounded-full overflow-hidden border border-gray-100">
+                  <div className="h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, backgroundColor: isLast ? "#C2542F" : "#F5C0AC" }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="px-6 pt-5 pb-6">
+        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Por cliente</p>
+        <div className="space-y-3">
+          {perClient.map(c => (
+            <div key={c.id}>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                  style={{ backgroundColor: c.color ?? "#C2542F" }}>{c.initials ?? c.name[0]}</div>
+                <span className="text-xs font-medium text-gray-700 flex-1">{c.name}</span>
+                <span className="text-xs font-bold text-gray-600">{formatBRL(c.revenue)} ({c.sessions} sessões)</span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full"
+                  style={{ width: `${Math.round(c.revenue / maxRevenue * 100)}%`, backgroundColor: c.color ?? "#C2542F" }} />
+              </div>
+            </div>
+          ))}
+          {perClient.length === 0 && (
+            <p className="text-sm text-gray-500 text-center py-4">Nenhum cliente ativo</p>
+          )}
+        </div>
+      </div>
+
+      <div className="px-6 pb-6">
+        <p className="text-[10px] text-gray-500 leading-relaxed">
+          Valores estimados a partir do preço por sessão configurado e do número de sessões registradas — não refletem pagamentos efetivamente recebidos ou pendentes.
+        </p>
       </div>
     </DrillDrawer>
   );
@@ -1052,6 +1148,10 @@ export default function ReportsPage() {
               color="bg-orange-50 text-orange-500" />
             <KpiCard icon={MessageSquare} label="Supervisões" value={supervisions.length}
               sub="sessões dialógicas" color="bg-blue-50 text-blue-500" />
+            <KpiCard icon={DollarSign} label="Faturamento" value={formatBRL(estimatedRevenue)}
+              sub={`${formatBRL(CURRENT_MONTH.sessions * sessionPrice)} este mês`}
+              color="bg-emerald-50 text-emerald-500"
+              onClick={() => toggleDrill("revenue")} active={drillDown === "revenue"} />
           </div>
 
           {!drillDown && (
@@ -1330,6 +1430,7 @@ export default function ReportsPage() {
       {drillDown === "clients"    && <DrillClients  onClose={() => setDrillDown(null)} clients={clients} evolutions={evolutions} supervisions={supervisions} />}
       {drillDown === "hours"      && <DrillHours    onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} />}
       {drillDown === "evolutions" && <DrillEvolutions onClose={() => setDrillDown(null)} evolutions={evolutions} />}
+      {drillDown === "revenue"    && <DrillRevenue   onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} sessionPrice={sessionPrice} />}
     </div>
   );
 }
