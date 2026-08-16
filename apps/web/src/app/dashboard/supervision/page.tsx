@@ -698,8 +698,24 @@ export default function WorkspacePage() {
     ]).then(([svs, evs]) => {
       setSupervisions(svs);
       setEvolutions(evs);
+
+      /* Abordagem inicial: a da última supervisão anterior deste cliente, ou a
+         primeira cadastrada para ele se ainda não houve supervisão. */
+      const client = clients.find(c => c.id === selectedClientId);
+      const clientApproaches = client?.approaches?.length
+        ? client.approaches
+        : (client?.approach ? [client.approach] : []);
+      if (clientApproaches.length > 0) {
+        const lastSupervision = [...svs].sort(
+          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        )[0];
+        const preferred = lastSupervision && clientApproaches.includes(lastSupervision.approach)
+          ? lastSupervision.approach
+          : clientApproaches[0];
+        setApproachKey(preferred);
+      }
     }).catch(() => {});
-  }, [selectedClientId]);
+  }, [selectedClientId, clients]);
 
   /* ── Fetch anamnese completa do cliente ── */
   useEffect(() => {
