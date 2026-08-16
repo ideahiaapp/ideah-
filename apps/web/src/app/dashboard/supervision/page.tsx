@@ -815,7 +815,7 @@ export default function WorkspacePage() {
     sendMessageText(text);
   }
 
-  /* Clique direto no botão "Finalizar supervisão" — sem ação pendente após salvar */
+  /* Clique direto no botão "Encerrar Supervisão" — sem ação pendente após salvar */
   function handleFinishSupervision() {
     setAfterFinishAction(null);
     setShowFinishModal(true);
@@ -1145,53 +1145,6 @@ export default function WorkspacePage() {
           <div className="border-t border-gray-100 bg-white flex-shrink-0">
 
             <div className="px-5 py-4">
-                {/* Controle da supervisão — bem visível, acima da caixa de diálogo */}
-                <div className="flex items-center justify-center mb-3">
-                  {supervisionActive && supervisionPaused ? (
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1.5 rounded-lg tabular-nums">
-                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                        {formatDuration(elapsedSeconds)}
-                      </span>
-                      <button onClick={handleResumeSupervision}
-                        className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
-                        <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
-                        Retomar supervisão
-                      </button>
-                    </div>
-                  ) : supervisionActive ? (
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg tabular-nums">
-                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                        {formatDuration(elapsedSeconds)}
-                      </span>
-                      <button onClick={handlePauseSupervision}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-white border border-amber-200 hover:bg-amber-50 px-3.5 py-2 rounded-xl transition-colors">
-                        <PauseCircle className="w-4 h-4" strokeWidth={1.8} />
-                        Pausar
-                      </button>
-                      <button onClick={handleFinishSupervision}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl transition-colors shadow-sm">
-                        <StopCircle className="w-4 h-4" strokeWidth={1.8} />
-                        Finalizar supervisão
-                      </button>
-                    </div>
-                  ) : (
-                    <button onClick={handleStartSupervision}
-                      className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
-                      <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
-                      Iniciar supervisão
-                    </button>
-                  )}
-                </div>
-
-                <p className="text-[10px] text-gray-500 text-center mb-3">
-                  {supervisionActive && supervisionPaused
-                    ? "Supervisão pausada. Retome para continuar escrevendo."
-                    : supervisionActive
-                    ? "Apoio ao raciocínio clínico — sem diagnósticos. O julgamento clínico é sempre do terapeuta."
-                    : "Inicie a supervisão para liberar o campo de escrita."}
-                </p>
                 <div className={cn(
                   "border rounded-2xl transition-all overflow-visible",
                   !canWrite
@@ -1280,6 +1233,54 @@ export default function WorkspacePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Controle da supervisão — abaixo da caixa de diálogo */}
+                <div className="flex items-center justify-center mt-3">
+                  {supervisionActive && supervisionPaused ? (
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1.5 rounded-lg tabular-nums">
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                        {formatDuration(elapsedSeconds)}
+                      </span>
+                      <button onClick={handleResumeSupervision}
+                        className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+                        <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
+                        Retomar supervisão
+                      </button>
+                    </div>
+                  ) : supervisionActive ? (
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg tabular-nums">
+                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                        {formatDuration(elapsedSeconds)}
+                      </span>
+                      <button onClick={handlePauseSupervision}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-white border border-amber-200 hover:bg-amber-50 px-3.5 py-2 rounded-xl transition-colors">
+                        <PauseCircle className="w-4 h-4" strokeWidth={1.8} />
+                        Pausar
+                      </button>
+                      <button onClick={handleFinishSupervision}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl transition-colors shadow-sm">
+                        <StopCircle className="w-4 h-4" strokeWidth={1.8} />
+                        Encerrar Supervisão
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={handleStartSupervision}
+                      className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+                      <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
+                      Iniciar supervisão
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-[10px] text-gray-500 text-center mt-3">
+                  {supervisionActive && supervisionPaused
+                    ? "Supervisão pausada. Retome para continuar escrevendo."
+                    : supervisionActive
+                    ? "Apoio ao raciocínio clínico — sem diagnósticos. O julgamento clínico é sempre do terapeuta."
+                    : "Inicie a supervisão para liberar o campo de escrita."}
+                </p>
               </div>
           </div>
         )}
