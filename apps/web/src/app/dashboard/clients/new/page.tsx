@@ -11,9 +11,8 @@ import {
 } from "lucide-react";
 import { cn, maskPhone } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
-import { createClient, getClients, generateInitials, generateColor } from "@/lib/db";
+import { createClient, generateInitials, generateColor } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
-import type { Client } from "@/lib/database.types";
 
 const ALL_APPROACHES = [
   { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
@@ -29,11 +28,7 @@ const ALL_APPROACHES = [
 const FREQUENCIES = ["Semanal","Quinzenal","Mensal","Sob demanda"];
 const DURATIONS   = ["45","50","60","90"];
 
-type AnamneseLinkMode = "new" | "existing";
-
-function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clients: Client[] }) {
-  const [mode,        setMode]        = useState<AnamneseLinkMode>("new");
-  const [selectedId,  setSelectedId]  = useState("");
+function AnamneseLinkCard({ therapistId }: { therapistId: string }) {
   const [approach,    setApproach]    = useState("");
   const [newEmail,    setNewEmail]    = useState("");
   const [emailOpen,   setEmailOpen]   = useState(false);
@@ -55,24 +50,15 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
 
   const approachOptions = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
 
-  const selectedClient = clients.find(c => c.id === selectedId) ?? null;
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-  const ready = approach && (mode === "new" ? true : !!selectedClient);
+  const ready = !!approach;
   const approachParam = approach ? `?approach=${approach}` : "";
-  const link  = mode === "new"
-    ? `${baseUrl}/anamnese/${therapistId}${approachParam}`
-    : (selectedClient ? `${baseUrl}/anamnese/preencher/${selectedClient.id}${approachParam}` : "");
+  const link = `${baseUrl}/anamnese/${therapistId}${approachParam}`;
 
   const waText = encodeURIComponent(
-    mode === "new"
-      ? `Olá! Para agendarmos sua sessão, peço que preencha a anamnese inicial pelo link abaixo:\n${link}`
-      : `Olá ${selectedClient?.name ?? ""}! Para seguirmos com seu atendimento, peço que confirme/preencha sua anamnese pelo link abaixo:\n${link}`
+    `Olá! Para agendarmos sua sessão, peço que preencha a anamnese inicial pelo link abaixo:\n${link}`
   );
-
-  function switchMode(m: AnamneseLinkMode) {
-    setMode(m); setEmailOpen(false); setEmailSent(false); setEmailError(null); setCopied(false); setSelectedId("");
-  }
 
   function copyLink() {
     if (!link) return;
@@ -82,18 +68,13 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
   }
 
   async function sendEmail() {
-    if (mode === "existing" && !selectedClient) return;
-    if (mode === "new" && !newEmail.trim()) return;
+    if (!newEmail.trim()) return;
     setSending(true); setEmailError(null);
     try {
       const res = await fetch("/api/anamnese/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          mode === "existing"
-            ? { therapistId, clientId: selectedClient!.id }
-            : { therapistId, patientEmail: newEmail.trim() }
-        ),
+        body: JSON.stringify({ therapistId, patientEmail: newEmail.trim() }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -117,32 +98,9 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-brand-900">Enviar anamnese</p>
           <p className="text-xs text-brand-600 mt-0.5">
-            {mode === "new"
-              ? "Novo cliente — o preenchimento é o pré-cadastro. Ao receber, você ativa como cliente."
-              : "Cliente já cadastrado — os dados de cadastro já vêm preenchidos no link."}
+            O preenchimento é o pré-cadastro deste cliente. Ao receber, você ativa como cliente.
           </p>
         </div>
-      </div>
-
-      <div className="flex gap-1 bg-white border border-brand-200 rounded-xl p-1 w-fit">
-        <button
-          onClick={() => switchMode("new")}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-            mode === "new" ? "bg-brand-500 text-white" : "text-brand-600 hover:bg-brand-50"
-          )}
-        >
-          Novo cliente (pré-cadastro)
-        </button>
-        <button
-          onClick={() => switchMode("existing")}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-            mode === "existing" ? "bg-brand-500 text-white" : "text-brand-600 hover:bg-brand-50"
-          )}
-        >
-          Cliente já cadastrado
-        </button>
       </div>
 
       {/* Seletor de abordagem */}
@@ -173,21 +131,6 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-        {mode === "existing" && (
-          <div className="relative flex-1 min-w-0">
-            <select
-              value={selectedId}
-              onChange={e => { setSelectedId(e.target.value); setEmailOpen(false); setEmailSent(false); setEmailError(null); }}
-              aria-label="Selecionar cliente"
-              className="w-full appearance-none pr-9 px-4 py-2.5 text-sm bg-white border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
-            >
-              <option value="">Selecionar cliente...</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-        )}
-
         <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={copyLink}
@@ -223,7 +166,7 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
         </div>
       </div>
 
-      {emailOpen && mode === "new" && (
+      {emailOpen && (
         <div className="flex gap-2 items-center bg-white border border-brand-200 rounded-xl px-3 py-2">
           <Mail className="w-4 h-4 text-brand-300 flex-shrink-0" />
           <input
@@ -241,27 +184,6 @@ function AnamneseLinkCard({ therapistId, clients }: { therapistId: string; clien
             <button
               onClick={sendEmail}
               disabled={sending || !newEmail.trim()}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white transition-colors"
-            >
-              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Enviar"}
-            </button>
-          )}
-          <button type="button" onClick={() => setEmailOpen(false)} className="text-gray-300 hover:text-gray-500 ml-1">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {emailOpen && mode === "existing" && selectedClient && (
-        <div className="flex gap-2 items-center bg-white border border-brand-200 rounded-xl px-3 py-2">
-          <Mail className="w-4 h-4 text-brand-300 flex-shrink-0" />
-          <span className="flex-1 text-sm text-gray-700">{selectedClient.email ?? "Cliente sem e-mail cadastrado"}</span>
-          {emailSent ? (
-            <span className="text-xs font-semibold text-green-600 px-2">Enviado!</span>
-          ) : (
-            <button
-              onClick={sendEmail}
-              disabled={sending || !selectedClient.email}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white transition-colors"
             >
               {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Enviar"}
@@ -299,8 +221,6 @@ export default function NewClientPage() {
   const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>([]);
   const [loadingApproaches,  setLoadingApproaches]  = useState(true);
 
-  const [existingClients, setExistingClients] = useState<Client[]>([]);
-
   useEffect(() => {
     if (!user) return;
     fetch(`/api/therapist-approaches?therapistId=${user.id}`)
@@ -308,8 +228,6 @@ export default function NewClientPage() {
       .then(d => setAcquiredApproaches(d.approaches ?? []))
       .catch(() => {})
       .finally(() => setLoadingApproaches(false));
-
-    getClients(user.id).then(setExistingClients).catch(() => {});
   }, [user]);
 
   const APPROACHES = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
@@ -479,7 +397,7 @@ export default function NewClientPage() {
         )}
       </Section>
 
-      {user && <AnamneseLinkCard therapistId={user.id} clients={existingClients} />}
+      {user && <AnamneseLinkCard therapistId={user.id} />}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">{error}</div>
