@@ -499,7 +499,9 @@ function StartSupervisionModal({
 }
 
 /* ─── Modal: confirmar finalização ───────────────────── */
-function ConfirmEndSupervisionModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+function ConfirmEndSupervisionModal({ onConfirm, onCancel, title, message }: {
+  onConfirm: () => void; onCancel: () => void; title?: string; message?: string;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
@@ -507,9 +509,9 @@ function ConfirmEndSupervisionModal({ onConfirm, onCancel }: { onConfirm: () => 
           <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
             <StopCircle className="w-5 h-5 text-amber-500" strokeWidth={1.8} />
           </div>
-          <h2 className="text-sm font-bold text-gray-900">Deseja finalizar a supervisão?</h2>
+          <h2 className="text-sm font-bold text-gray-900">{title ?? "Deseja finalizar a supervisão?"}</h2>
         </div>
-        <p className="text-sm text-gray-500 mb-4">A supervisão em andamento será encerrada.</p>
+        <p className="text-sm text-gray-500 mb-4">{message ?? "A supervisão em andamento será encerrada."}</p>
         <div className="flex items-center gap-2">
           <button onClick={onCancel}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors">
@@ -634,6 +636,7 @@ export default function WorkspacePage() {
   const [showStartModal,    setShowStartModal]    = useState(false);
   const [showFinishModal,   setShowFinishModal]   = useState(false);
   const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null);
+  const [confirmFinishWithUnsent, setConfirmFinishWithUnsent] = useState(false);
   const [afterFinishAction,  setAfterFinishAction]  = useState<(() => void) | null>(null);
   const [sessionMeta, setSessionMeta] = useState<{ date: string; time: string; impressions: string } | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -817,6 +820,16 @@ export default function WorkspacePage() {
 
   /* Clique direto no botão "Encerrar Supervisão" — sem ação pendente após salvar */
   function handleFinishSupervision() {
+    if (input.trim()) {
+      setConfirmFinishWithUnsent(true);
+      return;
+    }
+    setAfterFinishAction(null);
+    setShowFinishModal(true);
+  }
+
+  function handleConfirmFinishWithUnsent() {
+    setConfirmFinishWithUnsent(false);
     setAfterFinishAction(null);
     setShowFinishModal(true);
   }
@@ -1293,6 +1306,15 @@ export default function WorkspacePage() {
         <ConfirmEndSupervisionModal
           onConfirm={handleConfirmLeave}
           onCancel={() => setPendingLeaveAction(null)}
+        />
+      )}
+
+      {confirmFinishWithUnsent && (
+        <ConfirmEndSupervisionModal
+          title="Deseja realmente finalizar a sessão?"
+          message="A supervisão ainda está em andamento."
+          onConfirm={handleConfirmFinishWithUnsent}
+          onCancel={() => setConfirmFinishWithUnsent(false)}
         />
       )}
 
