@@ -377,6 +377,7 @@ function DrillRevenue({ onClose, clients, months, sessions }: {
   months: RevenueMonth[];
   sessions: SessionWithClient[];
 }) {
+  const defaultPrice = getClinicSettings().sessionPrice;
   const billedSessions = sessions.filter(s => s.status !== "cancelled");
   const totalRevenue  = months.reduce((a, m) => a + m.revenue, 0);
   const totalSessions = months.reduce((a, m) => a + m.billedCount, 0);
@@ -386,9 +387,10 @@ function DrillRevenue({ onClose, clients, months, sessions }: {
   const activeClients = clients.filter(c => c.status === "ACTIVE");
   const perClient = activeClients.map(c => {
     /* Faturamento vem da Agenda: soma o valor de cada sessão agendada
-       (não cancelada) deste cliente — não um preço fixo por cliente. */
+       (não cancelada) deste cliente — não um preço fixo por cliente.
+       price fica null quando a sessão usa o valor padrão da clínica. */
     const clientSessions = billedSessions.filter(s => s.client_id === c.id);
-    const revenue = clientSessions.reduce((a, s) => a + (s.price ?? 0), 0);
+    const revenue = clientSessions.reduce((a, s) => a + (s.price ?? defaultPrice), 0);
     return { ...c, sessions: clientSessions.length, revenue };
   }).sort((a, b) => b.revenue - a.revenue);
   const maxRevenue = Math.max(...perClient.map(c => c.revenue), 1);
@@ -1039,9 +1041,11 @@ export default function ReportsPage() {
     return {
       ...m,
       billedCount: monthSessions.length,
-      revenue: monthSessions.reduce((a, s) => a + (s.price ?? 0), 0),
+      /* price fica null quando a sessão usa o valor padrão da clínica
+         (não digitou um valor customizado) — cai para o preço configurado. */
+      revenue: monthSessions.reduce((a, s) => a + (s.price ?? clinicCfg.sessionPrice), 0),
     };
-  }), [MONTHS, billedSessions]);
+  }), [MONTHS, billedSessions, clinicCfg.sessionPrice]);
   const estimatedRevenue    = REVENUE_MONTHS.reduce((a, m) => a + m.revenue, 0);
   const currentMonthRevenue = REVENUE_MONTHS[REVENUE_MONTHS.length - 1].revenue;
 
