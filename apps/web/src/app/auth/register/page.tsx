@@ -146,25 +146,19 @@ function RegisterPage() {
     if (selectedBases.length === 0) { setError("Selecione ao menos uma base de conhecimento."); return; }
     if (!ethicsAccepted) { setError("Confirme que está ciente do uso ético da ferramenta para continuar."); return; }
     setError("");
-
-    // Cadastro via Google: a conta (auth.users) já existe desde a autenticação —
-    // não há senha para guardar num cadastro pendente, então só avança para a
-    // tela de pagamento; o vínculo de terapeuta é criado lá (pagamento ou bypass).
-    if (viaGoogle) { setStep(4); return; }
-
     setPayLoading(true);
     try {
-      // A conta só é criada de verdade quando o pagamento é confirmado (ver
-      // /api/webhooks/greenn). Por enquanto guardamos um cadastro pendente.
+      // A conta só é liberada (therapist_profiles) quando o pagamento é confirmado
+      // (ver /api/webhooks/greenn) — mesmo no cadastro via Google, onde a conta em
+      // auth.users já existe desde o OAuth, mas ainda sem acesso ao painel.
       const res = await fetch("/api/auth/pending-registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name, email, password,
-          approaches: selectedBases,
-          category: "individual",
-          billing,
-        }),
+        body: JSON.stringify(
+          viaGoogle
+            ? { name, email, userId: googleUserId, approaches: selectedBases, category: "individual", billing }
+            : { name, email, password, approaches: selectedBases, category: "individual", billing }
+        ),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao registrar cadastro.");
@@ -208,24 +202,10 @@ function RegisterPage() {
    * lá). Remover este botão junto com a rota quando o pagamento estiver pronto.
    */
   async function handleTestBypass() {
+    if (!pendingId) return;
     setError("");
     setPayLoading(true);
     try {
-      if (viaGoogle && googleUserId) {
-        // A conta (auth.users) já existe via OAuth — só falta vincular o perfil
-        // de terapeuta e as bases escolhidas. Sessão já está ativa, sem senha.
-        const res = await fetch("/api/auth/register-profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: googleUserId, email, approaches: selectedBases }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Erro ao criar conta de teste.");
-        router.replace("/dashboard/home");
-        return;
-      }
-
-      if (!pendingId) return;
       const res = await fetch("/api/auth/dev-complete-registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -233,7 +213,9 @@ function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao criar conta de teste.");
-      await login(email, password);
+      // Cadastro via Google: a sessão já está ativa desde o OAuth — não há senha
+      // para fazer login com ela, só seguir direto pro painel.
+      if (!viaGoogle) await login(email, password);
       router.replace("/dashboard/home");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta de teste.");

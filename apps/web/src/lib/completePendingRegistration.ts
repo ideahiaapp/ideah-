@@ -5,7 +5,10 @@ interface PendingRegistrationRow {
   id: string;
   email: string;
   name: string;
-  password_encrypted: string;
+  password_encrypted: string | null;
+  /** Presente quando o cadastro veio do login com Google — a conta (auth.users)
+      já existe desde o OAuth, não há senha a decifrar/criar. */
+  user_id: string | null;
   approaches: string[] | null;
   status: string;
 }
@@ -16,17 +19,27 @@ interface PendingRegistrationRow {
  * Usado tanto pelo webhook da Greenn quanto pela rota de bypass temporária.
  */
 export async function completePendingRegistration(supabase: SupabaseClient, pending: PendingRegistrationRow) {
-  const password = decryptPending(pending.password_encrypted);
+  let userId: string;
 
-  const { data: created, error: createErr } = await supabase.auth.admin.createUser({
-    email: pending.email,
-    password,
-    email_confirm: true,
-    user_metadata: { name: pending.name },
-  });
-
-  if (createErr || !created.user) {
-    throw new Error(createErr?.message ?? "Erro ao criar conta.");
+  if (pending.user_id) {
+    // Cadastro via Google: conta já existe, só falta liberar o acesso.
+    userId = pending.user_id;
+    await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
+  } else {
+    if (!pending.password_encrypted) {
+      throw new Error("Cadastro pendente sem senha nem conta vinculada.");
+    }
+    const password = decryptPending(pending.password_encrypted);
+    const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+      email: pending.email,
+      password,
+      email_confirm: true,
+      user_metadata: { name: pending.name },
+    });
+    if (createErr || !created.user) {
+      throw new Error(createErr?.message ?? "Erro ao criar conta.");
+    }
+    userId = created.user.id;
   }
 
   // Sem isso o AuthGuard bloqueia o login (checa /api/auth/verify, que exige
@@ -34,19 +47,21 @@ export async function completePendingRegistration(supabase: SupabaseClient, pend
   // faz no cadastro direto (mobile).
   await supabase
     .from("therapist_profiles")
-    .upsert({ user_id: created.user.id, email: pending.email });
+    .upsert({ user_id: userId, email: pending.email });
 
   if (pending.approaches?.length) {
+    // Evita duplicar se essa função for chamada mais de uma vez para o mesmo usuário.
+    await supabase.from("therapist_approaches").delete().eq("therapist_id", userId);
     await supabase.from("therapist_approaches").insert(
-      pending.approaches.map((approach: string) => ({ therapist_id: created.user.id, approach }))
+      pending.approaches.map((approach: string) => ({ therapist_id: userId, approach }))
     );
   }
 
   // Mantém o registro (auditoria) mas remove a senha cifrada e marca como concluído.
   await supabase
     .from("pending_registrations")
-    .update({ status: "completed", password_encrypted: "" })
+    .update({ status: "completed", password_encrypted: null })
     .eq("id", pending.id);
 
-  return { userId: created.user.id };
+  return { userId };
 }

@@ -14,12 +14,14 @@ function serviceClient() {
 // A conta real só é criada quando /api/webhooks/greenn confirma o pagamento.
 export async function POST(req: NextRequest) {
   const body = await req.json() as {
-    name?: string; email?: string; password?: string;
+    name?: string; email?: string; password?: string; userId?: string;
     approaches?: string[]; category?: string; billing?: string;
   };
-  const { name, email, password, approaches, category, billing } = body;
+  const { name, email, password, userId, approaches, category, billing } = body;
 
-  if (!name || !email || !password || !Array.isArray(approaches) || approaches.length === 0) {
+  // Cadastro via Google manda userId (conta já existe, sem senha); cadastro por
+  // e-mail/senha manda password (conta só é criada quando o pagamento confirma).
+  if (!name || !email || (!password && !userId) || !Array.isArray(approaches) || approaches.length === 0) {
     return NextResponse.json({ error: "Dados obrigatórios ausentes." }, { status: 400 });
   }
 
@@ -39,14 +41,15 @@ export async function POST(req: NextRequest) {
 
   // Pode existir um usuário "órfão" no auth (de uma tentativa anterior que não completou
   // o vínculo com therapist_profiles) — sem profile ele não consegue logar mesmo, então
-  // removemos pra liberar o e-mail para um novo cadastro.
+  // removemos pra liberar o e-mail para um novo cadastro. Não vale para o próprio userId
+  // do cadastro via Google — essa é a conta ativa dessa mesma requisição, não uma órfã.
   const { data: existingUsers } = await supabase.auth.admin.listUsers();
-  const orphanUser = existingUsers?.users.find(u => u.email?.toLowerCase() === emailLower);
+  const orphanUser = existingUsers?.users.find(u => u.email?.toLowerCase() === emailLower && u.id !== userId);
   if (orphanUser) {
     await supabase.auth.admin.deleteUser(orphanUser.id);
   }
 
-  const passwordEncrypted = encryptPending(password);
+  const passwordEncrypted = password ? encryptPending(password) : null;
 
   // Substitui um cadastro pendente anterior do mesmo e-mail (ex.: usuário tentou de novo)
   await supabase.from("pending_registrations").delete().eq("email", emailLower);
@@ -57,6 +60,7 @@ export async function POST(req: NextRequest) {
       name,
       email: emailLower,
       password_encrypted: passwordEncrypted,
+      user_id: userId ?? null,
       approaches,
       category: category ?? "individual",
       billing: billing ?? "monthly",
