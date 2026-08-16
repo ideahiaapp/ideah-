@@ -1,12 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail, User, CheckCircle2, ArrowLeft, Loader2, BookOpen, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
+import { supabase } from "@/lib/supabase";
+
+/* SVG oficial do Google (4 cores) */
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.64 9.2045c0-.6381-.0573-1.2518-.1636-1.8409H9v3.4814h4.8436c-.2086 1.125-.8427 2.0782-1.7959 2.7164v2.2581h2.9087c1.7018-1.5668 2.6836-3.874 2.6836-6.615Z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.4673-.8059 5.9564-2.1805l-2.9087-2.2581c-.8059.54-1.8368.859-3.0477.859-2.3441 0-4.3282-1.5832-5.036-3.7105H.9574v2.3318C2.4382 15.9832 5.4818 18 9 18Z" fill="#34A853"/>
+      <path d="M3.964 10.71c-.18-.54-.2822-1.1168-.2822-1.71s.1023-1.17.2823-1.71V4.9582H.9573A8.9965 8.9965 0 0 0 0 9c0 1.4523.3477 2.8259.9573 4.0418L3.964 10.71Z" fill="#FBBC05"/>
+      <path d="M9 3.5795c1.3214 0 2.5077.4541 3.4405 1.346l2.5813-2.5814C13.4632.8918 11.4259 0 9 0 5.4818 0 2.4382 2.0168.9573 4.9582L3.964 7.29C4.6718 5.1627 6.6559 3.5795 9 3.5795Z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+/** Detecta o retorno do OAuth do Google (?step=2) e pula direto para a etapa 2,
+    com nome/e-mail já preenchidos pela conta Google autenticada. */
+function GoogleReturnHandler({ onGoogleAuth }: { onGoogleAuth: (name: string, email: string, userId: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("step") !== "2") return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        const name = (data.user.user_metadata?.name ?? data.user.user_metadata?.full_name ?? "") as string;
+        onGoogleAuth(name, data.user.email ?? "", data.user.id);
+      }
+    });
+  }, [searchParams, onGoogleAuth]);
+  return null;
+}
 
 const BASES = [
   { key: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
@@ -31,7 +60,7 @@ const MONTHLY_PRICE_PER_BASE = 147.00;
 const ANNUAL_DISCOUNT = 0.2; // 20% off no plano anual
 const ANNUAL_PRICE_PER_BASE = MONTHLY_PRICE_PER_BASE * (1 - ANNUAL_DISCOUNT);
 
-export default function RegisterPage() {
+function RegisterPage() {
   const router = useRouter();
   const { login } = useAuthStore();
   const [step, setStep]           = useState<1 | 2 | 3 | 4>(1);
@@ -47,6 +76,31 @@ export default function RegisterPage() {
   const [emailSent, setEmailSent] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [viaGoogle, setViaGoogle] = useState(false);
+  const [googleUserId, setGoogleUserId] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  function handleGoogleAuth(googleName: string, googleEmail: string, userId: string) {
+    setName(googleName);
+    setEmail(googleEmail);
+    setGoogleUserId(userId);
+    setViaGoogle(true);
+    setStep(2);
+  }
+
+  async function handleGoogleSignup() {
+    setError("");
+    setGoogleLoading(true);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/register?step=2`,
+        queryParams: { access_type: "offline", prompt: "consent" },
+      },
+    });
+    // OAuth redireciona a página inteira — o loading fica ativo até lá
+    if (oauthError) { setError(oauthError.message); setGoogleLoading(false); }
+  }
 
   const pricePerBase = billing === "annual" ? ANNUAL_PRICE_PER_BASE : MONTHLY_PRICE_PER_BASE;
 
@@ -83,6 +137,12 @@ export default function RegisterPage() {
     if (selectedBases.length === 0) { setError("Selecione ao menos uma base de conhecimento."); return; }
     if (!ethicsAccepted) { setError("Confirme que está ciente do uso ético da ferramenta para continuar."); return; }
     setError("");
+
+    // Cadastro via Google: a conta (auth.users) já existe desde a autenticação —
+    // não há senha para guardar num cadastro pendente, então só avança para a
+    // tela de pagamento; o vínculo de terapeuta é criado lá (pagamento ou bypass).
+    if (viaGoogle) { setStep(4); return; }
+
     setPayLoading(true);
     try {
       // A conta só é criada de verdade quando o pagamento é confirmado (ver
@@ -125,7 +185,7 @@ export default function RegisterPage() {
         return;
       }
       const url = new URL(checkoutBaseUrl);
-      url.searchParams.set("ref", pendingId ?? "");
+      url.searchParams.set("ref", pendingId ?? googleUserId ?? "");
       url.searchParams.set("amount", total.toFixed(2));
       window.location.href = url.toString();
     } finally {
@@ -139,10 +199,24 @@ export default function RegisterPage() {
    * lá). Remover este botão junto com a rota quando o pagamento estiver pronto.
    */
   async function handleTestBypass() {
-    if (!pendingId) return;
     setError("");
     setPayLoading(true);
     try {
+      if (viaGoogle && googleUserId) {
+        // A conta (auth.users) já existe via OAuth — só falta vincular o perfil
+        // de terapeuta e as bases escolhidas. Sessão já está ativa, sem senha.
+        const res = await fetch("/api/auth/register-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: googleUserId, email, approaches: selectedBases }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Erro ao criar conta de teste.");
+        router.replace("/dashboard/home");
+        return;
+      }
+
+      if (!pendingId) return;
       const res = await fetch("/api/auth/dev-complete-registration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -181,6 +255,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-auth-gradient flex">
+      <GoogleReturnHandler onGoogleAuth={handleGoogleAuth} />
       {/* ── Painel esquerdo ── */}
       <aside className="hidden lg:flex flex-col items-center justify-center w-1/2 bg-brand-500 px-16 gap-10">
         <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={300} height={120} priority />
@@ -299,6 +374,14 @@ export default function RegisterPage() {
                   Ao criar sua conta, você concorda com os <Link href="/termos" className="text-brand-500 hover:underline">Termos de Uso</Link> e a <Link href="/privacidade" className="text-brand-500 hover:underline">Política de Privacidade</Link>.
                 </p>
               </form>
+
+              <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div><div className="relative flex justify-center text-xs text-gray-500 bg-white px-3 mx-auto w-fit">ou</div></div>
+
+              <button type="button" onClick={handleGoogleSignup} disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold rounded-xl py-3 transition-colors text-sm disabled:opacity-50">
+                {googleLoading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <GoogleIcon />}
+                Continuar com Google
+              </button>
 
               <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div><div className="relative flex justify-center text-xs text-gray-500 bg-white px-3 mx-auto w-fit">Já tem conta?</div></div>
               <Link href="/auth/login" className="block w-full text-center border border-brand-300 text-brand-600 hover:bg-brand-50 font-semibold rounded-xl py-3 transition-colors text-sm">Fazer login</Link>
@@ -495,5 +578,13 @@ export default function RegisterPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function RegisterPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterPage />
+    </Suspense>
   );
 }
