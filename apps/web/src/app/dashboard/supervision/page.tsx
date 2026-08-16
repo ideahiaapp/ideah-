@@ -1209,26 +1209,21 @@ export default function WorkspacePage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {voiceState !== "unsupported" && (
                         <button type="button" onClick={toggleVoice} disabled={!canWrite}
                           className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center transition-all border disabled:opacity-40 disabled:cursor-not-allowed",
+                            "w-11 h-11 rounded-xl flex items-center justify-center transition-all border-2 disabled:opacity-40 disabled:cursor-not-allowed",
                             isRecording
                               ? "bg-red-500 border-red-500 text-white animate-pulse"
-                              : "bg-white border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-500"
+                              : "bg-white border-gray-300 text-gray-600 hover:border-brand-400 hover:text-brand-600"
                           )}>
-                          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                          {isRecording ? <MicOff className="w-5 h-5" strokeWidth={2.5} /> : <Mic className="w-5 h-5" strokeWidth={2.5} />}
                         </button>
                       )}
                       <button onClick={sendMessage} disabled={!canWrite || !input.trim() || loading}
-                        className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                          canWrite && input.trim() && !loading
-                            ? "bg-brand-500 hover:bg-brand-600 text-white"
-                            : "bg-gray-100 text-gray-300 cursor-not-allowed"
-                        )}>
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" strokeWidth={2} />}
+                        className="w-11 h-11 rounded-xl flex items-center justify-center transition-colors bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-500">
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" strokeWidth={2.5} />}
                       </button>
                     </div>
                   </div>
