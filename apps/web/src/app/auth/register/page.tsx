@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -25,8 +25,10 @@ function GoogleIcon() {
     com nome/e-mail já preenchidos pela conta Google autenticada. */
 function GoogleReturnHandler({ onGoogleAuth }: { onGoogleAuth: (name: string, email: string, userId: string) => void }) {
   const searchParams = useSearchParams();
+  const consumed = useRef(false);
   useEffect(() => {
-    if (searchParams.get("step") !== "2") return;
+    if (consumed.current || searchParams.get("step") !== "2") return;
+    consumed.current = true;
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         const name = (data.user.user_metadata?.name ?? data.user.user_metadata?.full_name ?? "") as string;
@@ -80,13 +82,20 @@ function RegisterPage() {
   const [googleUserId, setGoogleUserId] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  function handleGoogleAuth(googleName: string, googleEmail: string, userId: string) {
+  // useCallback é essencial aqui: GoogleReturnHandler reexecuta seu efeito sempre
+  // que esta função muda de identidade — sem isso, ela era recriada a cada
+  // renderização e, como a URL fica com "?step=2" indefinidamente, o efeito
+  // disparava de novo a cada clique (ex.: ao avançar do passo 2 pro 3), forçando
+  // o usuário de volta ao passo 2.
+  const handleGoogleAuth = useCallback((googleName: string, googleEmail: string, userId: string) => {
     setName(googleName);
     setEmail(googleEmail);
     setGoogleUserId(userId);
     setViaGoogle(true);
     setStep(2);
-  }
+    // Limpa "?step=2" da URL — o efeito já foi consumido, não deve rodar de novo.
+    router.replace("/auth/register", { scroll: false });
+  }, [router]);
 
   async function handleGoogleSignup() {
     setError("");
