@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { aiHeaders } from "@/lib/api-key";
 import {
   Plus, Send, Loader2, Brain, Heart, Layers, Users, Activity,
   Circle, Compass, Flame, AlertCircle, Copy, Check, Mic, MicOff,
   ChevronDown, MessageSquare, Clock, Shield, FileText, PlayCircle, StopCircle, PauseCircle, X,
+  CheckCircle,
 } from "lucide-react";
 import {
   getClients, getSupervisionsByClient, createSupervision,
@@ -594,10 +595,40 @@ function FinishSupervisionModal({
   );
 }
 
+/* ─── Modal: o que fazer após encerrar ───────────────── */
+function PostFinishChoiceModal({ onNewSupervision, onViewEvolution }: {
+  onNewSupervision: () => void; onViewEvolution: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+            <CheckCircle className="w-5 h-5 text-emerald-600" strokeWidth={1.8} />
+          </div>
+          <h2 className="text-sm font-bold text-gray-900">Supervisão encerrada</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">O que você deseja fazer agora?</p>
+        <div className="flex flex-col gap-2">
+          <button onClick={onViewEvolution}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold bg-brand-500 hover:bg-brand-600 text-white transition-colors">
+            Ver resumo da evolução
+          </button>
+          <button onClick={onNewSupervision}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 border border-gray-200 transition-colors">
+            Realizar nova supervisão
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Página principal ───────────────────────────────── */
 export default function WorkspacePage() {
   const { user }       = useAuthStore();
   const searchParams   = useSearchParams();
+  const router         = useRouter();
 
   const [clients,      setClients]      = useState<Client[]>([]);
   const [supervisions, setSupervisions] = useState<Supervision[]>([]);
@@ -639,6 +670,7 @@ export default function WorkspacePage() {
   const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null);
   const [confirmFinishWithUnsent, setConfirmFinishWithUnsent] = useState(false);
   const [afterFinishAction,  setAfterFinishAction]  = useState<(() => void) | null>(null);
+  const [postFinishEvolutionId, setPostFinishEvolutionId] = useState<string | null>(null);
   const [sessionMeta, setSessionMeta] = useState<{ date: string; time: string; impressions: string } | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -876,6 +908,8 @@ export default function WorkspacePage() {
     const durationSeconds = elapsedSeconds;
     setElapsedSeconds(0);
 
+    let createdEvolutionId: string | null = null;
+
     if (selectedClient && user) {
       const transcript = messages
         .map(m => `${m.role === "user" ? "Terapeuta" : "IA"}: ${m.content}`)
@@ -899,6 +933,7 @@ export default function WorkspacePage() {
           duration_seconds:  durationSeconds,
         });
         setEvolutions(prev => [ev, ...prev]);
+        createdEvolutionId = ev.id;
       } catch {
         setError("Não foi possível salvar a evolução desta supervisão.");
       }
@@ -907,7 +942,30 @@ export default function WorkspacePage() {
     setSessionMeta(null);
     const action = afterFinishAction;
     setAfterFinishAction(null);
-    action?.();
+    if (action) {
+      /* Encerrou para executar outra ação (trocar de cliente, nova sessão etc.) —
+         não interrompe com a pergunta de pós-encerramento. */
+      action();
+    } else if (createdEvolutionId) {
+      setPostFinishEvolutionId(createdEvolutionId);
+    }
+  }
+
+  function handlePostFinishNewSupervision() {
+    setPostFinishEvolutionId(null);
+    setSelectedClientId(null);
+    setActiveSessionId(null);
+    setMessages([]);
+    setError(null);
+    setSupervisionActive(false);
+    setSupervisionPaused(false);
+    router.replace("/dashboard/supervision");
+  }
+
+  function handlePostFinishViewEvolution() {
+    if (!postFinishEvolutionId) return;
+    router.push(`/dashboard/evolutions/${postFinishEvolutionId}`);
+    setPostFinishEvolutionId(null);
   }
 
   /* Avisa antes de fechar/recarregar a aba com supervisão em andamento */
@@ -1339,6 +1397,13 @@ export default function WorkspacePage() {
         <FinishSupervisionModal
           onConfirm={handleConfirmFinishSupervision}
           onCancel={() => { setShowFinishModal(false); setAfterFinishAction(null); }}
+        />
+      )}
+
+      {postFinishEvolutionId && (
+        <PostFinishChoiceModal
+          onNewSupervision={handlePostFinishNewSupervision}
+          onViewEvolution={handlePostFinishViewEvolution}
         />
       )}
 
