@@ -8,7 +8,7 @@ import {
   ChevronRight, Loader2, ChevronDown, CheckCircle2, AlertTriangle, Activity,
   Download, ScrollText, ClipboardList, UserCheck, MessageSquare, DollarSign,
 } from "lucide-react";
-import { getClients, getEvolutions, getSupervisions } from "@/lib/db";
+import { getClients, getEvolutions, getSupervisions, getSessions } from "@/lib/db";
 import { aiHeaders } from "@/lib/api-key";
 import { getClinicSettings } from "@/lib/clinic-settings";
 import { useAuthStore } from "@/store/auth.store";
@@ -16,6 +16,7 @@ import { cn, formatRelative } from "@/lib/utils";
 import type { Client } from "@/lib/database.types";
 import type { EvolutionWithClient } from "@/lib/db/evolutions";
 import type { SupervisionWithClient } from "@/lib/db/supervisions";
+import type { SessionWithClient } from "@/lib/db/sessions";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const REPORTS_HOW_IT_WORKS: HowItWorksContent = {
@@ -368,24 +369,27 @@ function formatBRL(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function DrillRevenue({ onClose, clients, months, sessionPrice, evolutions }: {
+type RevenueMonth = MonthData & { billedCount: number; revenue: number };
+
+function DrillRevenue({ onClose, clients, months, sessions }: {
   onClose: () => void;
   clients: Client[];
-  months: MonthData[];
-  sessionPrice: number;
-  evolutions: EvolutionWithClient[];
+  months: RevenueMonth[];
+  sessions: SessionWithClient[];
 }) {
-  const totalSessions = months.reduce((a, m) => a + m.sessions, 0);
-  const totalRevenue  = totalSessions * sessionPrice;
+  const billedSessions = sessions.filter(s => s.status !== "cancelled");
+  const totalRevenue  = months.reduce((a, m) => a + m.revenue, 0);
+  const totalSessions = months.reduce((a, m) => a + m.billedCount, 0);
   const currentMonth  = months[months.length - 1];
-  const currentRevenue = currentMonth.sessions * sessionPrice;
+  const avgPerSession = totalSessions > 0 ? totalRevenue / totalSessions : 0;
 
   const activeClients = clients.filter(c => c.status === "ACTIVE");
   const perClient = activeClients.map(c => {
-    /* client.total_sessions nunca é incrementado após o cadastro — usa a
-       contagem real de evoluções registradas para este cliente. */
-    const sess = evolutions.filter(e => e.client_id === c.id).length;
-    return { ...c, sessions: sess, revenue: sess * sessionPrice };
+    /* Faturamento vem da Agenda: soma o valor de cada sessão agendada
+       (não cancelada) deste cliente — não um preço fixo por cliente. */
+    const clientSessions = billedSessions.filter(s => s.client_id === c.id);
+    const revenue = clientSessions.reduce((a, s) => a + (s.price ?? 0), 0);
+    return { ...c, sessions: clientSessions.length, revenue };
   }).sort((a, b) => b.revenue - a.revenue);
   const maxRevenue = Math.max(...perClient.map(c => c.revenue), 1);
 
@@ -394,8 +398,8 @@ function DrillRevenue({ onClose, clients, months, sessionPrice, evolutions }: {
       <div className="px-6 py-5 grid grid-cols-3 gap-4 border-b border-gray-50">
         {[
           { label: "Total do semestre", value: formatBRL(totalRevenue), sub: `${totalSessions} sessões` },
-          { label: "Este mês",          value: formatBRL(currentRevenue), sub: `${currentMonth.sessions} sessões` },
-          { label: "Valor por sessão",  value: formatBRL(sessionPrice), sub: "configurado em Meu Escritório" },
+          { label: "Este mês",          value: formatBRL(currentMonth.revenue), sub: `${currentMonth.billedCount} sessões` },
+          { label: "Valor médio/sessão", value: formatBRL(avgPerSession), sub: "calculado da agenda" },
         ].map(s => (
           <div key={s.label} className="bg-gray-50 rounded-xl p-3 text-center">
             <p className="text-xs text-gray-500">{s.label}</p>
@@ -409,8 +413,7 @@ function DrillRevenue({ onClose, clients, months, sessionPrice, evolutions }: {
         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Por mês</p>
         <div className="space-y-2">
           {months.map((m, i) => {
-            const revenue = m.sessions * sessionPrice;
-            const pct = totalRevenue > 0 ? Math.round(revenue / totalRevenue * 100) : 0;
+            const pct = totalRevenue > 0 ? Math.round(m.revenue / totalRevenue * 100) : 0;
             const isLast = i === months.length - 1;
             return (
               <div key={m.label} className={cn("rounded-xl p-3", isLast ? "bg-brand-50 border border-brand-100" : "bg-gray-50")}>
@@ -418,7 +421,7 @@ function DrillRevenue({ onClose, clients, months, sessionPrice, evolutions }: {
                   <span className={cn("text-xs font-semibold", isLast ? "text-brand-700" : "text-gray-700")}>
                     {m.full} {isLast && <span className="text-brand-400 font-normal">(atual)</span>}
                   </span>
-                  <span className="text-xs font-bold text-gray-700">{formatBRL(revenue)} · {m.sessions} sessões</span>
+                  <span className="text-xs font-bold text-gray-700">{formatBRL(m.revenue)} · {m.billedCount} sessões</span>
                 </div>
                 <div className="h-2 bg-white rounded-full overflow-hidden border border-gray-100">
                   <div className="h-full rounded-full transition-all"
@@ -455,7 +458,7 @@ function DrillRevenue({ onClose, clients, months, sessionPrice, evolutions }: {
 
       <div className="px-6 pb-6">
         <p className="text-[10px] text-gray-500 leading-relaxed">
-          Valores estimados a partir do preço por sessão configurado e do número de sessões registradas — não refletem pagamentos efetivamente recebidos ou pendentes.
+          Valores calculados a partir do preço de cada sessão agendada (Agenda). Sessões canceladas não são contabilizadas.
         </p>
       </div>
     </DrillDrawer>
@@ -940,6 +943,7 @@ export default function ReportsPage() {
   const [clients,     setClients]     = useState<Client[]>([]);
   const [evolutions,  setEvolutions]  = useState<EvolutionWithClient[]>([]);
   const [supervisions, setSupervisions] = useState<SupervisionWithClient[]>([]);
+  const [sessions,    setSessions]    = useState<SessionWithClient[]>([]);
   const [pendingAnamneseApproval, setPendingAnamneseApproval] = useState(0);
   const [loading,     setLoading]     = useState(true);
 
@@ -949,10 +953,12 @@ export default function ReportsPage() {
       getClients(user.id),
       getEvolutions(user.id),
       getSupervisions(user.id),
-    ]).then(([c, e, s]) => {
+      getSessions(user.id),
+    ]).then(([c, e, s, sess]) => {
       setClients(c);
       setEvolutions(e);
       setSupervisions(s);
+      setSessions(sess);
     }).finally(() => setLoading(false));
     fetch(`/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
       .then(r => r.json())
@@ -991,7 +997,6 @@ export default function ReportsPage() {
   }
 
   const clinicCfg       = getClinicSettings();
-  const sessionPrice    = clinicCfg.sessionPrice;
   const sessionDuration = clinicCfg.sessionDuration;
 
   /* ── Meses (últimos 6) calculados a partir de evoluções reais ─── */
@@ -1023,7 +1028,22 @@ export default function ReportsPage() {
     ? +(evolutions.reduce((a, e) => a + (e.mood ?? 3), 0) / evolutions.length).toFixed(1)
     : 3;
   const totalHours       = Math.round(totalSessions * sessionDuration / 60);
-  const estimatedRevenue = totalSessions * sessionPrice;
+
+  /* ── Faturamento: valor de cada sessão da Agenda, não um preço fixo ── */
+  const billedSessions = useMemo(
+    () => sessions.filter(s => s.status !== "cancelled"),
+    [sessions]
+  );
+  const REVENUE_MONTHS = useMemo(() => MONTHS.map(m => {
+    const monthSessions = billedSessions.filter(s => s.date.startsWith(m.ym));
+    return {
+      ...m,
+      billedCount: monthSessions.length,
+      revenue: monthSessions.reduce((a, s) => a + (s.price ?? 0), 0),
+    };
+  }), [MONTHS, billedSessions]);
+  const estimatedRevenue    = REVENUE_MONTHS.reduce((a, m) => a + m.revenue, 0);
+  const currentMonthRevenue = REVENUE_MONTHS[REVENUE_MONTHS.length - 1].revenue;
 
   const approachDist = useMemo(() => {
     const map: Record<string, { label: string; value: number; approach: string }> = {};
@@ -1155,7 +1175,7 @@ export default function ReportsPage() {
             <KpiCard icon={MessageSquare} label="Supervisões" value={supervisions.length}
               sub="sessões dialógicas" color="bg-blue-50 text-blue-500" />
             <KpiCard icon={DollarSign} label="Faturamento" value={formatBRL(estimatedRevenue)}
-              sub={`${formatBRL(CURRENT_MONTH.sessions * sessionPrice)} este mês`}
+              sub={`${formatBRL(currentMonthRevenue)} este mês`}
               color="bg-emerald-50 text-emerald-500"
               onClick={() => toggleDrill("revenue")} active={drillDown === "revenue"} />
           </div>
@@ -1436,7 +1456,7 @@ export default function ReportsPage() {
       {drillDown === "clients"    && <DrillClients  onClose={() => setDrillDown(null)} clients={clients} evolutions={evolutions} supervisions={supervisions} />}
       {drillDown === "hours"      && <DrillHours    onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} evolutions={evolutions} />}
       {drillDown === "evolutions" && <DrillEvolutions onClose={() => setDrillDown(null)} evolutions={evolutions} />}
-      {drillDown === "revenue"    && <DrillRevenue   onClose={() => setDrillDown(null)} clients={clients} months={MONTHS} sessionPrice={sessionPrice} evolutions={evolutions} />}
+      {drillDown === "revenue"    && <DrillRevenue   onClose={() => setDrillDown(null)} clients={clients} months={REVENUE_MONTHS} sessions={sessions} />}
     </div>
   );
 }
