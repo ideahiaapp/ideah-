@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { BarChart3, Loader2, AlertTriangle, ChevronDown, RefreshCw, Users, Smartphone } from "lucide-react";
+import { BarChart3, Loader2, AlertTriangle, ChevronDown, RefreshCw, Users, Smartphone, Download } from "lucide-react";
 import { adminHeaders } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,30 @@ function formatAnswer(v: string | string[] | undefined): string {
   if (v === undefined || v === null || v === "") return "—";
   if (Array.isArray(v)) return v.length ? v.join(", ") : "—";
   return v;
+}
+
+async function exportResponsesToExcel(responses: SurveyResponse[]) {
+  const XLSX = await import("xlsx");
+
+  const rows = responses.map(r => {
+    const row: Record<string, string> = {
+      "Nome do terapeuta": r.therapist_name ?? "",
+      "E-mail": r.therapist_email ?? "",
+      "Plataforma": r.platform ?? "web",
+      "Data da resposta": new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }),
+    };
+    for (const key of QUESTION_ORDER) {
+      row[QUESTION_LABELS[key]] = formatAnswer(r.answers[key]);
+    }
+    return row;
+  });
+
+  const sheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "Respostas");
+
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(workbook, `pesquisa-satisfacao-paideia-${today}.xlsx`);
 }
 
 function avg(nums: number[]): number | null {
@@ -201,10 +225,16 @@ export default function SurveyResultsPage() {
             <p className="text-gray-500 text-sm">Respostas agregadas do Formulário de Validação do MVP</p>
           </div>
         </div>
-        <button onClick={load} disabled={loading}
-          className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-2 rounded-xl transition-colors">
-          <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} /> Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportResponsesToExcel(responses)} disabled={loading || responses.length === 0}
+            className="flex items-center gap-1.5 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-2 rounded-xl transition-colors">
+            <Download className="w-3.5 h-3.5" /> Baixar Excel
+          </button>
+          <button onClick={load} disabled={loading}
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-2 rounded-xl transition-colors">
+            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} /> Atualizar
+          </button>
+        </div>
       </div>
 
       {error && (
