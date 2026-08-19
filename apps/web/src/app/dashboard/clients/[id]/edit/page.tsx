@@ -7,7 +7,7 @@ import {
   ArrowLeft, Save, Loader2, CheckCircle2,
   Phone, Mail, Heart, FileText,
   ChevronDown, AlertTriangle, Mic, ShieldAlert, Info, User,
-  ClipboardList,
+  ClipboardList, ExternalLink,
 } from "lucide-react";
 import { getClient, updateClient } from "@/lib/db";
 import { cn, maskCpf, maskPhone } from "@/lib/utils";
@@ -397,6 +397,16 @@ export default function EditClientPage() {
             <p className="text-xs text-gray-400 -mt-1">
               Nome, e-mail, telefone e data de nascimento usados na anamnese são os mesmos do cadastro do cliente, na seção "Dados pessoais" acima.
             </p>
+            {primaryApproachValue && (
+              <Link
+                href={`/anamnese/preencher/${id}?approach=${primaryApproachValue}`}
+                target="_blank"
+                className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 -mt-2"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Abrir o mesmo formulário enviado ao cliente
+              </Link>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="CPF">
                 <input value={anamneseForm.cpf} onChange={e => setAF("cpf", maskCpf(e.target.value))} className={inputCls} placeholder="000.000.000-00" />

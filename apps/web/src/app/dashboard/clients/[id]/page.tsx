@@ -7,7 +7,7 @@ import {
   ArrowLeft, Phone, Mail, Briefcase, Clock, Calendar, FileText,
   MessageSquare, Plus, ChevronRight, Pencil, Sparkles, Target,
   UserCheck, Hourglass, Activity, Loader2, ClipboardList,
-  ChevronDown, Save, AlertTriangle, Trash2, Link2, Copy, Check, X,
+  ChevronDown, Save, AlertTriangle, Trash2, Link2, Copy, Check, X, ExternalLink,
 } from "lucide-react";
 import { getClient, getEvolutionsByClient, getSupervisionsByClient, deleteSupervision } from "@/lib/db";
 import { formatDate, cn } from "@/lib/utils";
@@ -520,6 +520,16 @@ export default function ClientDetailPage() {
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors">
                     <Plus className="w-3.5 h-3.5" /> Preencher anamnese
                   </button>
+                  {(client.approaches?.[0] ?? client.approach) && (
+                    <Link
+                      href={`/anamnese/preencher/${client.id}?approach=${client.approaches?.[0] ?? client.approach}`}
+                      target="_blank"
+                      className="flex items-center justify-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 mt-3"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Abrir o mesmo formulário enviado ao cliente
+                    </Link>
+                  )}
                 </div>
                 {user && <SendAnamneseCard therapistId={user.id} client={client} />}
               </>
