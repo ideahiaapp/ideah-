@@ -116,14 +116,20 @@ function BackMarkdown({ text }: { text: string }) {
 }
 
 /** Verso do certificado: mesma página/tamanho do certificate-card, mas sem a faixa
-    superior nem a onda decorativa à esquerda — só o texto indicado no prompt. */
+    superior nem a onda decorativa à esquerda — só cor de fundo sólida, o texto indicado
+    no prompt de verso, e a logo do Paideia ao final da página. */
 export function CertificateBackTemplate({ text }: { text: string }) {
   return (
     <div
       className="certificate-card relative w-full aspect-[297/210] mx-auto overflow-hidden rounded-2xl border border-brand-100 shadow-xl bg-[#FDF6EF]"
     >
-      <div className="absolute inset-0 px-[12%] py-[10%] overflow-hidden">
-        <BackMarkdown text={text} />
+      <div className="absolute inset-0 px-[12%] pt-[10%] pb-[6%] flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          <BackMarkdown text={text} />
+        </div>
+        <div className="flex-shrink-0 flex justify-center pt-4">
+          <Image src="/paideia-wordmark-dark.svg" alt="Paideia" width={110} height={26} />
+        </div>
       </div>
     </div>
   );

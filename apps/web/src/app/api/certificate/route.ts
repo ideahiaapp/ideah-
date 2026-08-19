@@ -132,28 +132,20 @@ export async function GET(req: NextRequest) {
     // "||" (não "??") de propósito: user_metadata.name pode vir como string vazia, não só null/undefined.
     const therapistName = therapistUser?.user_metadata?.name?.trim() || therapistUser?.email || "—";
 
-    // Prompt cadastrado pelo admin na aba "Certificado" de Prompts, com fallback para o padrão acima.
-    const { data: promptRow } = await supabase
+    // Prompts cadastrados pelo admin na aba "Prompts" (Configurações) — frente e verso são
+    // campos INDEPENDENTES ("Certificado (frente)" / "Certificado (verso)"), cada um virando
+    // uma chamada de IA própria. Pedir para a IA reproduzir um marcador dentro de uma única
+    // resposta longa (frase natural ou delimitador rígido "===VERSO===") se mostrou pouco
+    // confiável — a IA às vezes parafraseava, reformatava ou simplesmente escrevia sua
+    // própria variação do marcador, e a tela nunca conseguia separar frente de verso mesmo
+    // com o prompt "certo". Com campos separados no admin não existe marcador para perder.
+    const { data: promptRows } = await supabase
       .from("approach_prompts")
-      .select("prompt")
-      .eq("approach", "CERTIFICATE")
-      .maybeSingle() as { data: { prompt: string } | null };
+      .select("approach, prompt")
+      .in("approach", ["CERTIFICATE", "CERTIFICATE_BACK"]) as { data: { approach: string; prompt: string }[] | null };
 
-    const basePrompt = promptRow?.prompt?.trim() || DEFAULT_CERTIFICATE_PROMPT;
-
-    // Pedir para a IA reproduzir um marcador (frase natural ou delimitador rígido tipo
-    // "===VERSO===") dentro de uma única resposta longa se mostrou pouco confiável — em
-    // ambos os formatos a IA às vezes parafraseava, reformatava ou simplesmente omitia a
-    // marcação, e a tela do certificado nunca conseguia separar frente de verso mesmo com
-    // o prompt corretamente configurado. Em vez de depender da IA reproduzir algo exato,
-    // dividimos o PRÓPRIO PROMPT do admin (string, não IA) no marcador
-    // "INFORMAÇÕES DO VERSO DO CERTIFICADO" e fazemos duas chamadas de IA separadas — uma
-    // só com as instruções da frente, outra só com as do verso — cada uma virando um campo
-    // próprio na resposta (certificateText / certificateBackText), sem qualquer split de texto.
-    const BACK_MARKER_RE = /informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado[:\s]*/i;
-    const markerMatch = BACK_MARKER_RE.exec(basePrompt);
-    const frontPrompt = (markerMatch ? basePrompt.slice(0, markerMatch.index) : basePrompt).trim();
-    const backPrompt  = markerMatch ? basePrompt.slice(markerMatch.index + markerMatch[0].length).trim() : null;
+    const frontPrompt = promptRows?.find(p => p.approach === "CERTIFICATE")?.prompt?.trim() || DEFAULT_CERTIFICATE_PROMPT;
+    const backPrompt  = promptRows?.find(p => p.approach === "CERTIFICATE_BACK")?.prompt?.trim() || null;
 
     const synthesisLines = synthesis.length > 0
       ? synthesis.map(row =>

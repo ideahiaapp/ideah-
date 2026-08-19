@@ -389,7 +389,7 @@ export default function ManualPage() {
           <P>O sistema gera um certificado por abordagem teórica utilizada nas supervisões do período (ex.: um certificado de Psicanálise e outro de TCC, se ambas tiverem sido usadas).</P>
         </SubSection>
         <SubSection title="9.2 Frente e verso">
-          <P>Cada certificado é emitido em formato A4 paisagem, com carga horária, período e número de supervisões daquela abordagem. Quando o prompt de geração inclui a marcação &quot;INFORMAÇÕES DO VERSO DO CERTIFICADO&quot; (configurável em Configurações → Prompts, ver seção 11.8), uma página de verso adicional é gerada com o conteúdo definido — por exemplo, conteúdos estudados e síntese do desenvolvimento profissional.</P>
+          <P>Cada certificado é emitido em formato A4 paisagem, com carga horária, período e número de supervisões daquela abordagem. Em Configurações → Prompts (ver seção 11.8) existem dois campos independentes: &quot;Certificado (frente)&quot; e &quot;Certificado (verso)&quot;. Preenchendo o campo de verso, uma segunda página é gerada com o conteúdo definido nesse prompt — por exemplo, conteúdos estudados e síntese do desenvolvimento profissional — com fundo sólido e a logo do Paideia ao final da página. Deixar o campo de verso em branco emite o certificado só com a frente.</P>
         </SubSection>
         <SubSection title="9.3 Baixando em PDF">
           <P>Na web, o botão &quot;Baixar PDF&quot; abre a janela de impressão do navegador — escolha &quot;Salvar como PDF&quot; como destino. O mobile exibe o certificado no mesmo layout visual, mas a exportação em PDF está disponível apenas na versão web.</P>
@@ -434,7 +434,7 @@ export default function ManualPage() {
           <AdminNote>Envio de livros e artigos (PDF ou TXT) por abordagem teórica, formando a base de conhecimento que a IA consulta durante as supervisões daquela abordagem. Os documentos ficam agrupados e podem ser removidos individualmente.</AdminNote>
         </SubSection>
         <SubSection title="11.8 Prompts">
-          <AdminNote>Permite personalizar o prompt de sistema usado pela IA em cada abordagem teórica e em funcionalidades específicas (Evolução, Certificado, Relatório de Evoluções, documentos oficiais). Deixar em branco usa o prompt padrão do sistema. É aqui que se configura a marcação &quot;INFORMAÇÕES DO VERSO DO CERTIFICADO&quot; citada na seção 9.2.</AdminNote>
+          <AdminNote>Permite personalizar o prompt de sistema usado pela IA em cada abordagem teórica e em funcionalidades específicas (Evolução, Certificado, Relatório de Evoluções, documentos oficiais). Deixar em branco usa o prompt padrão do sistema. &quot;Certificado (frente)&quot; e &quot;Certificado (verso)&quot; são campos independentes citados na seção 9.2 — o verso só é gerado se esse campo estiver preenchido.</AdminNote>
         </SubSection>
         <SubSection title="11.9 Anamnese">
           <AdminNote>Editor dos formulários de anamnese apresentados ao paciente, um por abordagem teórica. Clique na abordagem para expandir/recolher e editar o conteúdo (HTML com perguntas, campos de texto, múltipla escolha etc.) e salve.</AdminNote>
