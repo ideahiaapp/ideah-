@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,7 +13,7 @@ import { getClient, getEvolutionsByClient, getSupervisionsByClient, deleteSuperv
 import { formatDate, cn, maskCpf, isValidCpf } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client, Evolution, Supervision } from "@/lib/database.types";
-import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
+import { TemplateAnswersView, TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
 
 type Tab = "prontuario" | "anamnese" | "evolucoes" | "supervisoes";
@@ -263,6 +263,14 @@ export default function ClientDetailPage() {
   const [anamneseSaving, setAnamneseSaving] = useState(false);
   const [anamneseSaveError, setAnamneseSaveError] = useState<string | null>(null);
 
+  // Abordagem usada para decidir qual template de anamnese apresentar ao preencher no
+  // sistema — mesmo critério usado ao gerar o link enviado ao cliente.
+  const [showApproachPicker, setShowApproachPicker] = useState(false);
+  const [fillApproach,       setFillApproach]       = useState<string | null>(null);
+  const [fillTemplateHtml,   setFillTemplateHtml]   = useState<string | null>(null);
+  const [loadingFillTemplate, setLoadingFillTemplate] = useState(false);
+  const fillTemplateRef = useRef<HTMLDivElement>(null);
+
   const [client,      setClient]      = useState<Client | null>(null);
   const [evolutions,  setEvolutions]  = useState<Evolution[]>([]);
   const [supervisions,setSupervisions]= useState<Supervision[]>([]);
@@ -318,6 +326,35 @@ export default function ClientDetailPage() {
     }));
   }
 
+  /* Clique em "Preencher anamnese": se o cliente tem mais de uma abordagem cadastrada,
+     pergunta com base em qual delas a anamnese deve ser apresentada — mesmo critério do
+     link enviado ao cliente. Com uma só (ou nenhuma), segue direto. */
+  function startFillAnamnese() {
+    const approaches = client?.approaches?.length ? client.approaches : (client?.approach ? [client.approach] : []);
+    if (approaches.length > 1) {
+      setShowApproachPicker(true);
+      return;
+    }
+    setFillApproach(approaches[0] ?? null);
+    setAnamneseFormOpen(true);
+  }
+
+  function chooseFillApproach(approach: string) {
+    setFillApproach(approach);
+    setShowApproachPicker(false);
+    setAnamneseFormOpen(true);
+  }
+
+  useEffect(() => {
+    if (!fillApproach) { setFillTemplateHtml(null); return; }
+    setLoadingFillTemplate(true);
+    fetch(`/api/anamnese-templates/${fillApproach}`, { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => setFillTemplateHtml(d.content ?? null))
+      .catch(() => setFillTemplateHtml(null))
+      .finally(() => setLoadingFillTemplate(false));
+  }, [fillApproach]);
+
   async function handleSaveAnamnese() {
     if (!client || !user) return;
     setAnamneseSaving(true); setAnamneseSaveError(null);
@@ -325,7 +362,11 @@ export default function ClientDetailPage() {
       const res = await fetch("/api/anamnese/create-for-client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ therapistId: user.id, clientId: client.id, ...anamneseForm }),
+        body: JSON.stringify({
+          therapistId: user.id, clientId: client.id, ...anamneseForm,
+          approach: fillApproach ?? undefined,
+          template_answers: fillTemplateRef.current ? serializeTemplateForm(fillTemplateRef.current) : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao salvar anamnese.");
@@ -508,15 +549,19 @@ export default function ClientDetailPage() {
                 toggleCondition={toggleAFCondition}
                 saving={anamneseSaving}
                 error={anamneseSaveError}
-                onCancel={() => setAnamneseFormOpen(false)}
+                onCancel={() => { setAnamneseFormOpen(false); setFillApproach(null); }}
                 onSave={handleSaveAnamnese}
+                approach={fillApproach}
+                templateHtml={fillTemplateHtml}
+                loadingTemplate={loadingFillTemplate}
+                templateRef={fillTemplateRef}
               />
             ) : (
               <>
                 <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
                   <ClipboardList className="w-8 h-8 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
                   <p className="text-sm text-gray-400 mb-4">Nenhuma anamnese vinculada a este cliente.</p>
-                  <button onClick={() => setAnamneseFormOpen(true)}
+                  <button onClick={startFillAnamnese}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors">
                     <Plus className="w-3.5 h-3.5" /> Preencher anamnese
                   </button>
@@ -701,6 +746,42 @@ export default function ClientDetailPage() {
           )}
         </div>
       )}
+
+      {showApproachPicker && (
+        <ChooseApproachModal
+          approaches={client.approaches?.length ? client.approaches : (client.approach ? [client.approach] : [])}
+          onChoose={chooseFillApproach}
+          onCancel={() => setShowApproachPicker(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ChooseApproachModal({ approaches, onChoose, onCancel }: {
+  approaches: string[]; onChoose: (approach: string) => void; onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-sm font-bold text-gray-900">Qual abordagem?</h2>
+          <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Este cliente tem mais de uma abordagem cadastrada. Com base em qual delas a anamnese deve ser preenchida?
+        </p>
+        <div className="space-y-2">
+          {approaches.map(value => (
+            <button key={value} onClick={() => onChoose(value)}
+              className="w-full text-left px-4 py-2.5 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 text-sm font-semibold text-gray-700 transition-colors">
+              {ALL_APPROACHES.find(a => a.value === value)?.label ?? value}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -716,7 +797,10 @@ function FormField({ label, required, children }: { label: string; required?: bo
   );
 }
 
-function AnamneseFormCard({ client, form, setField, toggleCondition, saving, error, onCancel, onSave }: {
+function AnamneseFormCard({
+  client, form, setField, toggleCondition, saving, error, onCancel, onSave,
+  approach, templateHtml, loadingTemplate, templateRef,
+}: {
   client: Client;
   form: {
     cpf: string; emergency_contact: string; how_found: string;
@@ -729,8 +813,13 @@ function AnamneseFormCard({ client, form, setField, toggleCondition, saving, err
   error: string | null;
   onCancel: () => void;
   onSave: () => void;
+  approach: string | null;
+  templateHtml: string | null;
+  loadingTemplate: boolean;
+  templateRef: React.RefObject<HTMLDivElement>;
 }) {
   const canSave = true;
+  const isSomatic = approach === "SOMATIC";
 
   return (
     <div className="space-y-4">
@@ -767,60 +856,76 @@ function AnamneseFormCard({ client, form, setField, toggleCondition, saving, err
         </div>
       </ProntuarioSection>
 
-      <ProntuarioSection title="Saúde" icon={Activity}>
-        <FormField label="Condições de saúde">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-            {CONDITIONS.map(c => (
-              <label key={c} className="flex items-center gap-2.5 cursor-pointer group">
-                <div onClick={() => toggleCondition(c)}
-                  className={cn(
-                    "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
-                    form.conditions.includes(c) ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
-                  )}>
-                  {form.conditions.includes(c) && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                </div>
-                <span className="text-sm text-gray-700">{c}</span>
-              </label>
-            ))}
-          </div>
-        </FormField>
-        <FormField label="Tem alergia a látex?">
-          <div className="flex gap-4">
-            {[true, false].map(v => (
-              <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={form.latex_allergy === v}
-                  onChange={() => setField("latex_allergy", v as never)} className="accent-brand-600" />
-                <span className="text-sm">{v ? "Sim" : "Não"}</span>
-              </label>
-            ))}
-          </div>
-        </FormField>
-        <FormField label="Alergia a óleo de massagem">
-          <input value={form.oil_allergy} onChange={e => setField("oil_allergy", e.target.value as never)} className={inputCls} />
-        </FormField>
-        <FormField label="Medicamentos em uso">
-          <TextareaWithMic rows={2} value={form.medication} onValueChange={v => setField("medication", v as never)} className={inputCls + " resize-none"} />
-        </FormField>
-      </ProntuarioSection>
+      {isSomatic && (
+        <ProntuarioSection title="Saúde" icon={Activity}>
+          <FormField label="Condições de saúde">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+              {CONDITIONS.map(c => (
+                <label key={c} className="flex items-center gap-2.5 cursor-pointer group">
+                  <div onClick={() => toggleCondition(c)}
+                    className={cn(
+                      "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                      form.conditions.includes(c) ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
+                    )}>
+                    {form.conditions.includes(c) && (
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-700">{c}</span>
+                </label>
+              ))}
+            </div>
+          </FormField>
+          <FormField label="Tem alergia a látex?">
+            <div className="flex gap-4">
+              {[true, false].map(v => (
+                <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" checked={form.latex_allergy === v}
+                    onChange={() => setField("latex_allergy", v as never)} className="accent-brand-600" />
+                  <span className="text-sm">{v ? "Sim" : "Não"}</span>
+                </label>
+              ))}
+            </div>
+          </FormField>
+          <FormField label="Alergia a óleo de massagem">
+            <input value={form.oil_allergy} onChange={e => setField("oil_allergy", e.target.value as never)} className={inputCls} />
+          </FormField>
+          <FormField label="Medicamentos em uso">
+            <TextareaWithMic rows={2} value={form.medication} onValueChange={v => setField("medication", v as never)} className={inputCls + " resize-none"} />
+          </FormField>
+        </ProntuarioSection>
+      )}
 
-      <ProntuarioSection title="Estado emocional e intenção" icon={Target}>
-        <FormField label="Estado emocional atual">
-          <TextareaWithMic rows={3} value={form.emotional_state} onValueChange={v => setField("emotional_state", v as never)} className={inputCls + " resize-none"} />
-        </FormField>
-        <FormField label="Dor no corpo">
-          <TextareaWithMic rows={2} value={form.body_pain} onValueChange={v => setField("body_pain", v as never)} className={inputCls + " resize-none"} />
-        </FormField>
-        <FormField label="Intenção com a sessão / processo">
-          <TextareaWithMic rows={3} value={form.intention} onValueChange={v => setField("intention", v as never)} className={inputCls + " resize-none"} />
-        </FormField>
-        <FormField label="Incômodo na vida sexual">
-          <TextareaWithMic rows={2} value={form.sexual_discomfort} onValueChange={v => setField("sexual_discomfort", v as never)} className={inputCls + " resize-none"} />
-        </FormField>
-      </ProntuarioSection>
+      {/* Perguntas clínicas: template configurado em Configurações → Anamnese para a
+          abordagem escolhida, ou os campos padrão se não houver template. */}
+      {loadingTemplate ? (
+        <ProntuarioSection title="Estado emocional e intenção" icon={Target}>
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="w-5 h-5 text-brand-400 animate-spin" />
+          </div>
+        </ProntuarioSection>
+      ) : templateHtml ? (
+        <div ref={templateRef}>
+          <TemplateFormSection html={templateHtml} />
+        </div>
+      ) : (
+        <ProntuarioSection title="Estado emocional e intenção" icon={Target}>
+          <FormField label="Estado emocional atual">
+            <TextareaWithMic rows={3} value={form.emotional_state} onValueChange={v => setField("emotional_state", v as never)} className={inputCls + " resize-none"} />
+          </FormField>
+          <FormField label="Dor no corpo">
+            <TextareaWithMic rows={2} value={form.body_pain} onValueChange={v => setField("body_pain", v as never)} className={inputCls + " resize-none"} />
+          </FormField>
+          <FormField label="Intenção com a sessão / processo">
+            <TextareaWithMic rows={3} value={form.intention} onValueChange={v => setField("intention", v as never)} className={inputCls + " resize-none"} />
+          </FormField>
+          <FormField label="Incômodo na vida sexual">
+            <TextareaWithMic rows={2} value={form.sexual_discomfort} onValueChange={v => setField("sexual_discomfort", v as never)} className={inputCls + " resize-none"} />
+          </FormField>
+        </ProntuarioSection>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
