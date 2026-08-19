@@ -20,16 +20,25 @@ const CERTIFICATE_HOW_IT_WORKS: HowItWorksContent = {
   illustration: "certificate",
 };
 
-// Tolerante a maiúsculas/minúsculas, acentos opcionais e prefixo markdown (#, ##, **) antes do marcador,
-// já que o texto vem de uma IA e não reproduz o marcador sempre 100% literal.
-const BACK_MARKER_RE = /[#*\s]*informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado[:*#\s]*/i;
+// Marcação pedida à IA no reforço automático do prompt (veja /api/certificate) — rígida
+// e curta, para não ser parafraseada. Tolerante a espaços/markdown/maiúsculas ao redor.
+const FRONT_DELIM_RE = /[#*\s]*={2,}\s*frente\s*={2,}[:*#\s]*/i;
+const BACK_DELIM_RE  = /[#*\s]*={2,}\s*verso\s*={2,}[:*#\s]*/i;
 
-/** Separa o texto gerado pela IA em frente/verso a partir do marcador combinado no prompt. */
+// Marcador antigo (natural-language, dentro do próprio texto do prompt do admin) — mantido
+// como fallback para respostas que ainda usem esse formato ou para IAs que ignorem a marcação rígida.
+const LEGACY_BACK_MARKER_RE = /[#*\s]*informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado[:*#\s]*/i;
+
+/** Separa o texto gerado pela IA em frente/verso a partir da marcação combinada no prompt. */
 function splitCertificateText(text: string): { front: string; back: string | null } {
-  const match = BACK_MARKER_RE.exec(text);
-  if (!match) return { front: text.trim(), back: null };
-  const front = text.slice(0, match.index).trim();
-  const back = text.slice(match.index + match[0].length).trim();
+  const backMatch = BACK_DELIM_RE.exec(text) ?? LEGACY_BACK_MARKER_RE.exec(text);
+  if (!backMatch) return { front: text.trim(), back: null };
+
+  let front = text.slice(0, backMatch.index).trim();
+  const frontMatch = FRONT_DELIM_RE.exec(front);
+  if (frontMatch) front = front.slice(frontMatch.index + frontMatch[0].length).trim();
+
+  const back = text.slice(backMatch.index + backMatch[0].length).trim();
   return { front, back: back || null };
 }
 
