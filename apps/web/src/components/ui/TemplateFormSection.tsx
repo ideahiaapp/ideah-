@@ -4,10 +4,12 @@ import { useRef, useEffect } from "react";
 
 interface Props {
   html: string;
+  /** Respostas já existentes para pré-preencher os campos (editáveis, não somente leitura). */
+  initialAnswers?: Record<string, unknown>;
 }
 
 /* Injeta o HTML do template e expõe método para serializar os campos */
-export function TemplateFormSection({ html }: Props) {
+export function TemplateFormSection({ html, initialAnswers }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   /* Conecta range inputs ao seu <output> vizinho */
@@ -24,6 +26,36 @@ export function TemplateFormSection({ html }: Props) {
       }
     });
   }, [html]);
+
+  /* Pré-preenche com respostas já salvas anteriormente (edição), mantendo os campos editáveis. */
+  useEffect(() => {
+    const div = ref.current;
+    if (!div || !initialAnswers) return;
+    div.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+      "input[name], textarea[name], select[name]"
+    ).forEach(el => {
+      const name  = el.getAttribute("name");
+      const value = name ? initialAnswers[name] : undefined;
+      if (value === undefined) return;
+      if (el instanceof HTMLInputElement) {
+        if (el.type === "radio") {
+          el.checked = el.value === String(value);
+        } else if (el.type === "checkbox") {
+          const arr = Array.isArray(value) ? value as string[] : [];
+          el.checked = arr.includes(el.value);
+        } else if (el.type === "range") {
+          el.value = String(value);
+          const output = el.nextElementSibling?.querySelector("output") ??
+                         el.parentElement?.querySelector("output");
+          if (output) output.value = String(value);
+        } else {
+          el.value = String(value);
+        }
+      } else {
+        (el as HTMLTextAreaElement | HTMLSelectElement).value = String(value);
+      }
+    });
+  }, [html, initialAnswers]);
 
   return (
     <>

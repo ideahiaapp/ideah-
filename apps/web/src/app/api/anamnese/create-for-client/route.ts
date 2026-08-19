@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
         consent_touch: fields.consent_touch ?? false,
         consent_therapeutic: fields.consent_therapeutic ?? false,
         consent_payment: fields.consent_payment ?? false,
+        approach: fields.approach || null,
+        template_answers: fields.template_answers ?? null,
         status: "ACCEPTED",
       })
       .select("id")

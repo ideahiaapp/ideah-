@@ -89,6 +89,8 @@ export async function PUT(
         body_pain: fields.body_pain || null,
         intention: fields.intention || null,
         sexual_discomfort: fields.sexual_discomfort || null,
+        approach: fields.approach || null,
+        template_answers: fields.template_answers ?? null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", params.id);

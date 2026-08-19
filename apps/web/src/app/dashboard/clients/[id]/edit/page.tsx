@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,6 +13,7 @@ import { getClient, updateClient } from "@/lib/db";
 import { cn, maskCpf, maskPhone } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
+import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 import type { Client } from "@/lib/database.types";
 
 const CONDITIONS = [
@@ -104,6 +105,10 @@ export default function EditClientPage() {
 
   const [anamneseForm, setAnamneseForm] = useState<AnamneseForm>(emptyAnamneseForm());
   const [anamneseLoading, setAnamneseLoading] = useState(false);
+  const [templateAnswers, setTemplateAnswers] = useState<Record<string, unknown> | null>(null);
+  const [templateHtml,    setTemplateHtml]    = useState<string | null>(null);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
+  const templateRef = useRef<HTMLDivElement>(null);
 
   const [acquiredApproaches, setAcquiredApproaches] = useState<string[]>([]);
   const [loadingApproaches,  setLoadingApproaches]  = useState(true);
@@ -120,6 +125,21 @@ export default function EditClientPage() {
   const acquiredOptions = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
   const currentNotAcquired = ALL_APPROACHES.filter(a => form.approaches.includes(a.label) && !acquiredOptions.some(o => o.label === a.label));
   const APPROACHES = [...acquiredOptions, ...currentNotAcquired];
+
+  // Abordagem principal = primeira selecionada nos Dados pessoais/Configuração clínica —
+  // é ela que define qual template de anamnese (Configurações → Anamnese) é apresentado.
+  const primaryApproachValue = ALL_APPROACHES.find(a => a.label === form.approaches[0])?.value ?? null;
+  const isSomatic = primaryApproachValue === "SOMATIC";
+
+  useEffect(() => {
+    if (!primaryApproachValue) { setTemplateHtml(null); return; }
+    setLoadingTemplate(true);
+    fetch(`/api/anamnese-templates/${primaryApproachValue}`, { cache: "no-store" })
+      .then(r => r.json())
+      .then(d => setTemplateHtml(d.content ?? null))
+      .catch(() => setTemplateHtml(null))
+      .finally(() => setLoadingTemplate(false));
+  }, [primaryApproachValue]);
 
   useEffect(() => {
     getClient(id)
@@ -146,6 +166,7 @@ export default function EditClientPage() {
               body_pain: a.body_pain ?? "", intention: a.intention ?? "",
               sexual_discomfort: a.sexual_discomfort ?? "",
             });
+            setTemplateAnswers(a.template_answers ?? null);
           }
         })
         .finally(() => setAnamneseLoading(false));
@@ -191,17 +212,21 @@ export default function EditClientPage() {
 
   async function saveAnamnese() {
     if (!client || !user) return;
+    const templateFields = {
+      approach: primaryApproachValue ?? undefined,
+      template_answers: templateRef.current ? serializeTemplateForm(templateRef.current) : undefined,
+    };
     if (client.anamnese_id) {
       await fetch(`/api/anamnese/${client.anamnese_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(anamneseForm),
+        body: JSON.stringify({ ...anamneseForm, ...templateFields }),
       });
     } else {
       const res = await fetch("/api/anamnese/create-for-client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ therapistId: user.id, clientId: client.id, ...anamneseForm }),
+        body: JSON.stringify({ therapistId: user.id, clientId: client.id, ...anamneseForm, ...templateFields }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -384,57 +409,76 @@ export default function EditClientPage() {
               </Field>
             </div>
 
-            <Field label="Condições de saúde">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                {CONDITIONS.map(c => (
-                  <label key={c} className="flex items-center gap-2.5 cursor-pointer group">
-                    <div onClick={() => toggleAFCondition(c)}
-                      className={cn(
-                        "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
-                        anamneseForm.conditions.includes(c) ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
-                      )}>
-                      {anamneseForm.conditions.includes(c) && (
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                          <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-sm text-gray-700">{c}</span>
-                  </label>
-                ))}
-              </div>
-            </Field>
+            {isSomatic && (
+              <>
+                <Field label="Condições de saúde">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                    {CONDITIONS.map(c => (
+                      <label key={c} className="flex items-center gap-2.5 cursor-pointer group">
+                        <div onClick={() => toggleAFCondition(c)}
+                          className={cn(
+                            "w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                            anamneseForm.conditions.includes(c) ? "border-brand-500 bg-brand-500" : "border-gray-300 group-hover:border-brand-300"
+                          )}>
+                          {anamneseForm.conditions.includes(c) && (
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <polyline points="1.5 5 4 7.5 8.5 2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-700">{c}</span>
+                      </label>
+                    ))}
+                  </div>
+                </Field>
 
-            <Field label="Tem alergia a látex?">
-              <div className="flex gap-4">
-                {[true, false].map(v => (
-                  <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" checked={anamneseForm.latex_allergy === v}
-                      onChange={() => setAF("latex_allergy", v)} className="accent-brand-600" />
-                    <span className="text-sm">{v ? "Sim" : "Não"}</span>
-                  </label>
-                ))}
-              </div>
-            </Field>
+                <Field label="Tem alergia a látex?">
+                  <div className="flex gap-4">
+                    {[true, false].map(v => (
+                      <label key={String(v)} className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" checked={anamneseForm.latex_allergy === v}
+                          onChange={() => setAF("latex_allergy", v)} className="accent-brand-600" />
+                        <span className="text-sm">{v ? "Sim" : "Não"}</span>
+                      </label>
+                    ))}
+                  </div>
+                </Field>
 
-            <Field label="Alergia a óleo de massagem">
-              <input value={anamneseForm.oil_allergy} onChange={e => setAF("oil_allergy", e.target.value)} className={inputCls} />
-            </Field>
-            <Field label="Medicamentos em uso">
-              <TextareaWithMic rows={2} value={anamneseForm.medication} onValueChange={v => setAF("medication", v)} className={inputCls + " resize-none"} />
-            </Field>
-            <Field label="Estado emocional atual">
-              <TextareaWithMic rows={3} value={anamneseForm.emotional_state} onValueChange={v => setAF("emotional_state", v)} className={inputCls + " resize-none"} />
-            </Field>
-            <Field label="Dor no corpo">
-              <TextareaWithMic rows={2} value={anamneseForm.body_pain} onValueChange={v => setAF("body_pain", v)} className={inputCls + " resize-none"} />
-            </Field>
-            <Field label="Intenção com a sessão / processo">
-              <TextareaWithMic rows={3} value={anamneseForm.intention} onValueChange={v => setAF("intention", v)} className={inputCls + " resize-none"} />
-            </Field>
-            <Field label="Incômodo na vida sexual">
-              <TextareaWithMic rows={2} value={anamneseForm.sexual_discomfort} onValueChange={v => setAF("sexual_discomfort", v)} className={inputCls + " resize-none"} />
-            </Field>
+                <Field label="Alergia a óleo de massagem">
+                  <input value={anamneseForm.oil_allergy} onChange={e => setAF("oil_allergy", e.target.value)} className={inputCls} />
+                </Field>
+                <Field label="Medicamentos em uso">
+                  <TextareaWithMic rows={2} value={anamneseForm.medication} onValueChange={v => setAF("medication", v)} className={inputCls + " resize-none"} />
+                </Field>
+              </>
+            )}
+
+            {/* Perguntas clínicas: template configurado em Configurações → Anamnese para a
+                abordagem principal do cliente, ou os campos padrão se não houver template. */}
+            {loadingTemplate ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-5 h-5 text-brand-400 animate-spin" />
+              </div>
+            ) : templateHtml ? (
+              <div ref={templateRef}>
+                <TemplateFormSection html={templateHtml} initialAnswers={templateAnswers ?? undefined} />
+              </div>
+            ) : (
+              <>
+                <Field label="Estado emocional atual">
+                  <TextareaWithMic rows={3} value={anamneseForm.emotional_state} onValueChange={v => setAF("emotional_state", v)} className={inputCls + " resize-none"} />
+                </Field>
+                <Field label="Dor no corpo">
+                  <TextareaWithMic rows={2} value={anamneseForm.body_pain} onValueChange={v => setAF("body_pain", v)} className={inputCls + " resize-none"} />
+                </Field>
+                <Field label="Intenção com a sessão / processo">
+                  <TextareaWithMic rows={3} value={anamneseForm.intention} onValueChange={v => setAF("intention", v)} className={inputCls + " resize-none"} />
+                </Field>
+                <Field label="Incômodo na vida sexual">
+                  <TextareaWithMic rows={2} value={anamneseForm.sexual_discomfort} onValueChange={v => setAF("sexual_discomfort", v)} className={inputCls + " resize-none"} />
+                </Field>
+              </>
+            )}
           </div>
         )}
       </Section>
