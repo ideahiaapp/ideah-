@@ -8,6 +8,19 @@ interface Props {
   initialAnswers?: Record<string, unknown>;
 }
 
+type FieldEl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+/* Templates são HTML colado livremente pelo admin (Configurações → Anamnese) — nada garante
+   que todo input tenha um atributo "name". Quando falta, usa a posição do campo no documento
+   como chave estável (mesma ordem sempre, mesmo html) em vez de simplesmente ignorar o campo
+   silenciosamente, o que fazia respostas de campos sem "name" nunca serem salvas nem exibidas. */
+function fieldsWithKeys(container: HTMLElement): { el: FieldEl; key: string }[] {
+  const els = Array.from(
+    container.querySelectorAll<FieldEl>("input, textarea, select")
+  );
+  return els.map((el, i) => ({ el, key: el.getAttribute("name") || `field_${i}` }));
+}
+
 /* Injeta o HTML do template e expõe método para serializar os campos */
 export function TemplateFormSection({ html, initialAnswers }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -31,18 +44,15 @@ export function TemplateFormSection({ html, initialAnswers }: Props) {
   useEffect(() => {
     const div = ref.current;
     if (!div || !initialAnswers) return;
-    div.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-      "input[name], textarea[name], select[name]"
-    ).forEach(el => {
-      const name  = el.getAttribute("name");
-      const value = name ? initialAnswers[name] : undefined;
+    fieldsWithKeys(div).forEach(({ el, key }) => {
+      const value = initialAnswers[key];
       if (value === undefined) return;
       if (el instanceof HTMLInputElement) {
         if (el.type === "radio") {
           el.checked = el.value === String(value);
         } else if (el.type === "checkbox") {
           const arr = Array.isArray(value) ? value as string[] : [];
-          el.checked = arr.includes(el.value);
+          el.checked = el.getAttribute("name") ? arr.includes(el.value) : !!value;
         } else if (el.type === "range") {
           el.value = String(value);
           const output = el.nextElementSibling?.querySelector("output") ??
@@ -124,18 +134,15 @@ export function TemplateAnswersView({ html, answers }: { html: string; answers: 
   useEffect(() => {
     const div = ref.current;
     if (!div) return;
-    div.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-      "input[name], textarea[name], select[name]"
-    ).forEach(el => {
-      const name  = el.getAttribute("name");
-      const value = name ? answers[name] : undefined;
+    fieldsWithKeys(div).forEach(({ el, key }) => {
+      const value = answers[key];
       if (value === undefined) return;
       if (el instanceof HTMLInputElement) {
         if (el.type === "radio") {
           el.checked = el.value === String(value);
         } else if (el.type === "checkbox") {
           const arr = Array.isArray(value) ? value as string[] : [];
-          el.checked = arr.includes(el.value);
+          el.checked = el.getAttribute("name") ? arr.includes(el.value) : !!value;
         } else if (el.type === "range") {
           el.value = String(value);
           const output = el.nextElementSibling?.querySelector("output") ??
@@ -191,35 +198,36 @@ export function TemplateAnswersView({ html, answers }: { html: string; answers: 
   );
 }
 
-/** Serializa todos os inputs nomeados dentro do elemento para um objeto JSON */
+/** Serializa todos os campos dentro do elemento para um objeto JSON (chave = name, ou
+    posição do campo no documento quando não há "name"). */
 export function serializeTemplateForm(container: HTMLElement): Record<string, unknown> {
   const result: Record<string, unknown> = {};
-  const seen = new Set<string>();
+  const seenCheckboxGroups = new Set<string>();
 
-  container.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-    "input[name], textarea[name], select[name]"
-  ).forEach(el => {
-    const name = el.getAttribute("name");
-    if (!name) return;
-
+  fieldsWithKeys(container).forEach(({ el, key }) => {
     if (el instanceof HTMLInputElement) {
       if (el.type === "radio") {
-        if (el.checked) result[name] = el.value;
+        if (el.checked) result[key] = el.value;
       } else if (el.type === "checkbox") {
-        if (!seen.has(name)) {
-          // Collect all checkboxes with same name as array
-          const all = container.querySelectorAll<HTMLInputElement>(`input[type=checkbox][name="${name}"]`);
-          const values = Array.from(all).filter(c => c.checked).map(c => c.value);
-          result[name] = values;
-          seen.add(name);
+        const name = el.getAttribute("name");
+        if (name) {
+          // Várias checkboxes com o mesmo "name" viram um array de valores marcados.
+          if (!seenCheckboxGroups.has(name)) {
+            const all = container.querySelectorAll<HTMLInputElement>(`input[type=checkbox][name="${name}"]`);
+            result[key] = Array.from(all).filter(c => c.checked).map(c => c.value);
+            seenCheckboxGroups.add(name);
+          }
+        } else {
+          // Checkbox isolada sem "name": um booleano na sua própria chave posicional.
+          result[key] = el.checked;
         }
       } else if (el.type === "range") {
-        result[name] = Number(el.value);
+        result[key] = Number(el.value);
       } else {
-        result[name] = el.value;
+        result[key] = el.value;
       }
     } else {
-      result[name] = (el as HTMLTextAreaElement | HTMLSelectElement).value;
+      result[key] = (el as HTMLTextAreaElement | HTMLSelectElement).value;
     }
   });
 
