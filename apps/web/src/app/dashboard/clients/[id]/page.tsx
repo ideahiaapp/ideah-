@@ -604,48 +604,68 @@ export default function ClientDetailPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <AnamneseField label="Medicamentos" value={anamnese.medication} />
-                  <AnamneseField label="Alergia a óleos" value={anamnese.oil_allergy} />
-                  {anamnese.latex_allergy && (
-                    <div><p className="text-xs font-semibold text-red-400">Alergia a latex</p></div>
-                  )}
-                  <AnamneseField label="Estado emocional" value={anamnese.emotional_state} />
-                  <AnamneseField label="Dor no corpo" value={anamnese.body_pain} />
-                  <AnamneseField label="Incômodo sexual" value={anamnese.sexual_discomfort} />
-                </div>
-
-                {anamnese.intention && (
-                  <div className="mt-4 bg-brand-50 border border-brand-100 rounded-xl px-4 py-3">
-                    <p className="text-xs font-semibold text-brand-600 mb-1">Intenção da sessão</p>
-                    <p className="text-sm text-brand-900 italic">"{anamnese.intention}"</p>
+                {anamnese.approach === "SOMATIC" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <AnamneseField label="Medicamentos" value={anamnese.medication} />
+                    <AnamneseField label="Alergia a óleos" value={anamnese.oil_allergy} />
+                    {anamnese.latex_allergy && (
+                      <div><p className="text-xs font-semibold text-red-400">Alergia a latex</p></div>
+                    )}
                   </div>
                 )}
 
-                <div className="mt-4">
-                  <p className="text-xs font-semibold text-gray-400 mb-1.5">Consentimentos</p>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { label: "Nudez",       ok: anamnese.consent_nudity },
-                      { label: "Toque",       ok: anamnese.consent_touch },
-                      { label: "Terapêutico", ok: anamnese.consent_therapeutic },
-                      { label: "Pagamento",   ok: anamnese.consent_payment },
-                    ].map(({ label, ok }) => (
-                      <span key={label} className={cn("text-xs px-2.5 py-1 rounded-full border font-medium",
-                        ok ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200")}>
-                        {ok ? "✓" : "✗"} {label}
-                      </span>
-                    ))}
+                {/* Campos padrão (usados quando não há template configurado para a
+                    abordagem) — se a anamnese tem template_answers, essas perguntas foram
+                    respondidas dentro do template abaixo, não aqui. */}
+                {!anamnese.template_answers && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <AnamneseField label="Estado emocional" value={anamnese.emotional_state} />
+                      <AnamneseField label="Dor no corpo" value={anamnese.body_pain} />
+                      <AnamneseField label="Incômodo sexual" value={anamnese.sexual_discomfort} />
+                    </div>
+
+                    {anamnese.intention && (
+                      <div className="mt-4 bg-brand-50 border border-brand-100 rounded-xl px-4 py-3">
+                        <p className="text-xs font-semibold text-brand-600 mb-1">Intenção da sessão</p>
+                        <p className="text-sm text-brand-900 italic">"{anamnese.intention}"</p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {anamnese.approach === "SOMATIC" && (
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold text-gray-400 mb-1.5">Consentimentos</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: "Nudez",       ok: anamnese.consent_nudity },
+                        { label: "Toque",       ok: anamnese.consent_touch },
+                        { label: "Terapêutico", ok: anamnese.consent_therapeutic },
+                        { label: "Pagamento",   ok: anamnese.consent_payment },
+                      ].map(({ label, ok }) => (
+                        <span key={label} className={cn("text-xs px-2.5 py-1 rounded-full border font-medium",
+                          ok ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200")}>
+                          {ok ? "✓" : "✗"} {label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </ProntuarioSection>
 
-              {templateHtml && anamnese.template_answers && (
-                <ProntuarioSection title="Respostas da anamnese específica" icon={ClipboardList}>
-                  <TemplateAnswersView
-                    html={templateHtml}
-                    answers={anamnese.template_answers as Record<string, unknown>}
-                  />
+              {anamnese.template_answers && (
+                <ProntuarioSection title="Respostas da anamnese" icon={ClipboardList}>
+                  {templateHtml ? (
+                    <TemplateAnswersView
+                      html={templateHtml}
+                      answers={anamnese.template_answers as Record<string, unknown>}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="w-5 h-5 text-brand-400 animate-spin" />
+                    </div>
+                  )}
                 </ProntuarioSection>
               )}
             </>
