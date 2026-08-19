@@ -140,16 +140,20 @@ export async function GET(req: NextRequest) {
       .maybeSingle() as { data: { prompt: string } | null };
 
     const basePrompt = promptRow?.prompt?.trim() || DEFAULT_CERTIFICATE_PROMPT;
-    // Reforço automático (não editável pelo admin): se o prompt acima definir conteúdo
-    // para o verso do certificado (a partir de "INFORMAÇÕES DO VERSO DO CERTIFICADO"),
-    // a tela do certificado precisa separar programaticamente frente e verso na resposta.
-    // Pedir para a IA reproduzir literalmente aquela frase (natural, dentro de um texto
-    // institucional longo) se mostrou pouco confiável — a IA frequentemente parafraseava
-    // ou simplesmente omitia a linha. Em vez disso, pedimos uma marcação rígida e curta
-    // (===VERSO===), bem mais fácil da IA reproduzir sem alterar.
-    const systemPrompt = /informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado/i.test(basePrompt)
-      ? `${basePrompt}\n\nIMPORTANTE — formatação da resposta: as instruções acima definem conteúdo para o verso do certificado (a partir de "INFORMAÇÕES DO VERSO DO CERTIFICADO"). Estruture sua resposta em duas partes, cada uma iniciando exatamente com a marcação abaixo, sozinha em uma linha, sem markdown, sem tradução e sem nenhuma alteração no texto da marcação:\n===FRENTE===\n(conteúdo da frente do certificado)\n===VERSO===\n(conteúdo do verso do certificado)\nNão escreva nada antes de "===FRENTE===". As marcações "===FRENTE===" e "===VERSO===" devem aparecer exatamente como mostrado, sem asteriscos, sem #, sem negrito.`
-      : basePrompt;
+
+    // Pedir para a IA reproduzir um marcador (frase natural ou delimitador rígido tipo
+    // "===VERSO===") dentro de uma única resposta longa se mostrou pouco confiável — em
+    // ambos os formatos a IA às vezes parafraseava, reformatava ou simplesmente omitia a
+    // marcação, e a tela do certificado nunca conseguia separar frente de verso mesmo com
+    // o prompt corretamente configurado. Em vez de depender da IA reproduzir algo exato,
+    // dividimos o PRÓPRIO PROMPT do admin (string, não IA) no marcador
+    // "INFORMAÇÕES DO VERSO DO CERTIFICADO" e fazemos duas chamadas de IA separadas — uma
+    // só com as instruções da frente, outra só com as do verso — cada uma virando um campo
+    // próprio na resposta (certificateText / certificateBackText), sem qualquer split de texto.
+    const BACK_MARKER_RE = /informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado[:\s]*/i;
+    const markerMatch = BACK_MARKER_RE.exec(basePrompt);
+    const frontPrompt = (markerMatch ? basePrompt.slice(0, markerMatch.index) : basePrompt).trim();
+    const backPrompt  = markerMatch ? basePrompt.slice(markerMatch.index + markerMatch[0].length).trim() : null;
 
     const synthesisLines = synthesis.length > 0
       ? synthesis.map(row =>
@@ -174,13 +178,30 @@ ${synthesisLines}
 TOTAL GERAL: ${formatDuration(totalSeconds)} em ${evolutions.length} sessão(ões)
 ${detailLines ? `\nSUPERVISÕES REALIZADAS NO PERÍODO:\n${detailLines}` : ""}`;
 
-    const { text: certificateText, inputTokens, outputTokens } = await chat({
+    const frontResult = await chat({
       provider,
       apiKey,
-      system:    systemPrompt,
+      system:    frontPrompt,
       messages:  [{ role: "user", content: userPrompt }],
       maxTokens: 2000,
     });
+    const certificateText = frontResult.text;
+    let inputTokens  = frontResult.inputTokens;
+    let outputTokens = frontResult.outputTokens;
+
+    let certificateBackText: string | null = null;
+    if (backPrompt) {
+      const backResult = await chat({
+        provider,
+        apiKey,
+        system:    backPrompt,
+        messages:  [{ role: "user", content: userPrompt }],
+        maxTokens: 2000,
+      });
+      certificateBackText = backResult.text;
+      inputTokens  += backResult.inputTokens;
+      outputTokens += backResult.outputTokens;
+    }
     logAiUsage({ therapistId: requesterId, provider, feature: "certificate", inputTokens, outputTokens }).catch(() => {});
 
     const responseBody: Record<string, unknown> = {
@@ -193,6 +214,7 @@ ${detailLines ? `\nSUPERVISÕES REALIZADAS NO PERÍODO:\n${detailLines}` : ""}`;
       synthesis,
       totalSeconds,
       totalSessions: evolutions.length,
+      certificateBackText,
       certificateText,
     };
 

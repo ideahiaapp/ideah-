@@ -20,28 +20,6 @@ const CERTIFICATE_HOW_IT_WORKS: HowItWorksContent = {
   illustration: "certificate",
 };
 
-// Marcação pedida à IA no reforço automático do prompt (veja /api/certificate) — rígida
-// e curta, para não ser parafraseada. Tolerante a espaços/markdown/maiúsculas ao redor.
-const FRONT_DELIM_RE = /[#*\s]*={2,}\s*frente\s*={2,}[:*#\s]*/i;
-const BACK_DELIM_RE  = /[#*\s]*={2,}\s*verso\s*={2,}[:*#\s]*/i;
-
-// Marcador antigo (natural-language, dentro do próprio texto do prompt do admin) — mantido
-// como fallback para respostas que ainda usem esse formato ou para IAs que ignorem a marcação rígida.
-const LEGACY_BACK_MARKER_RE = /[#*\s]*informa[cç][oõ]es\s+do\s+verso\s+do\s+certificado[:*#\s]*/i;
-
-/** Separa o texto gerado pela IA em frente/verso a partir da marcação combinada no prompt. */
-function splitCertificateText(text: string): { front: string; back: string | null } {
-  const backMatch = BACK_DELIM_RE.exec(text) ?? LEGACY_BACK_MARKER_RE.exec(text);
-  if (!backMatch) return { front: text.trim(), back: null };
-
-  let front = text.slice(0, backMatch.index).trim();
-  const frontMatch = FRONT_DELIM_RE.exec(front);
-  if (frontMatch) front = front.slice(frontMatch.index + frontMatch[0].length).trim();
-
-  const back = text.slice(backMatch.index + backMatch[0].length).trim();
-  return { front, back: back || null };
-}
-
 const APPROACH_LABELS: Record<string, string> = {
   PSYCHOANALYSIS: "Psicanálise Freudiana", COGNITIVE_BEHAVIORAL: "TCC",
   JUNGIAN: "Junguiana", SOMATIC: "Somática / Corporal", TANTRA: "Sexualidade Humana e Tantra",
@@ -74,6 +52,7 @@ type CertificateReport = {
   totalSessions: number;
   evolutions?: DetailedEvolution[];
   certificateText?: string;
+  certificateBackText?: string | null;
 };
 
 function CertificateMarkdown({ text }: { text: string }) {
@@ -174,9 +153,8 @@ export default function CertificatePage() {
 
   const canGenerate = !!therapistId && !!period;
 
-  const { front: frontText, back: backText } = report?.certificateText
-    ? splitCertificateText(report.certificateText)
-    : { front: "", back: null };
+  const frontText = report?.certificateText ?? "";
+  const backText  = report?.certificateBackText ?? null;
 
   async function handleGenerate() {
     if (!canGenerate) return;
