@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { cn, maskCpf, maskPhone } from "@/lib/utils";
+import { cn, maskCpf, maskPhone, isValidCpf } from "@/lib/utils";
 import { CheckCircle2, AlertTriangle, Loader2, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
@@ -109,7 +109,7 @@ export default function AnamnesePage() {
   // Validação dos campos comuns sempre obrigatórios
   const commonValid =
     form.name.trim() && form.email.trim() && form.phone.trim() &&
-    form.cpf.trim() && form.birth_date && form.emergency_contact.trim() && form.how_found;
+    isValidCpf(form.cpf) && form.birth_date && form.emergency_contact.trim() && form.how_found;
 
   // Campos somáticos obrigatórios apenas quando não há template
   const somaticValid = hasTemplate ? true :
@@ -228,7 +228,11 @@ export default function AnamnesePage() {
             </Field>
             <Field label="CPF" required>
               <input type="text" value={form.cpf} onChange={e => set("cpf", maskCpf(e.target.value))}
-                className={inputCls} placeholder="000.000.000-00" />
+                className={cn(inputCls, form.cpf.length === 14 && !isValidCpf(form.cpf) && "border-red-300 focus:ring-red-200")}
+                placeholder="000.000.000-00" />
+              {form.cpf.length === 14 && !isValidCpf(form.cpf) && (
+                <p className="text-xs text-red-500 mt-1">CPF inválido.</p>
+              )}
             </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

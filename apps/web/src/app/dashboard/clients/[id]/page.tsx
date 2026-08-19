@@ -10,7 +10,7 @@ import {
   ChevronDown, Save, AlertTriangle, Trash2, Link2, Copy, Check, X, ExternalLink,
 } from "lucide-react";
 import { getClient, getEvolutionsByClient, getSupervisionsByClient, deleteSupervision } from "@/lib/db";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, cn, maskCpf, isValidCpf } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client, Evolution, Supervision } from "@/lib/database.types";
 import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
@@ -744,7 +744,12 @@ function AnamneseFormCard({ client, form, setField, toggleCondition, saving, err
         <p className="text-xs text-gray-400">Para alterar esses dados, edite o cadastro do cliente.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="CPF">
-            <input value={form.cpf} onChange={e => setField("cpf", e.target.value as never)} className={inputCls} />
+            <input value={form.cpf} onChange={e => setField("cpf", maskCpf(e.target.value) as never)}
+              className={cn(inputCls, form.cpf.length === 14 && !isValidCpf(form.cpf) && "border-red-300 focus:ring-red-200")}
+              placeholder="000.000.000-00" />
+            {form.cpf.length === 14 && !isValidCpf(form.cpf) && (
+              <p className="text-xs text-red-500 mt-1">CPF inválido.</p>
+            )}
           </FormField>
           <FormField label="Contato de emergência">
             <input value={form.emergency_contact} onChange={e => setField("emergency_contact", e.target.value as never)} className={inputCls} />

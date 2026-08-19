@@ -33,6 +33,24 @@ export function maskCpf(value: string): string {
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
+/** Valida CPF pelos dígitos verificadores (módulo 11) — rejeita sequências repetidas (ex.: 111.111.111-11). */
+export function isValidCpf(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+
+  const calcCheckDigit = (base: string) => {
+    let sum = 0;
+    for (let i = 0; i < base.length; i++) sum += parseInt(base[i], 10) * (base.length + 1 - i);
+    const rest = (sum * 10) % 11;
+    return rest === 10 ? 0 : rest;
+  };
+
+  const d1 = calcCheckDigit(digits.slice(0, 9));
+  const d2 = calcCheckDigit(digits.slice(0, 10));
+  return d1 === parseInt(digits[9], 10) && d2 === parseInt(digits[10], 10);
+}
+
 export function maskPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
   if (digits.length <= 10) {

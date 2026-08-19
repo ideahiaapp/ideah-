@@ -10,7 +10,7 @@ import {
   ClipboardList, ExternalLink,
 } from "lucide-react";
 import { getClient, updateClient } from "@/lib/db";
-import { cn, maskCpf, maskPhone } from "@/lib/utils";
+import { cn, maskCpf, maskPhone, isValidCpf } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
 import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
@@ -409,7 +409,12 @@ export default function EditClientPage() {
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="CPF">
-                <input value={anamneseForm.cpf} onChange={e => setAF("cpf", maskCpf(e.target.value))} className={inputCls} placeholder="000.000.000-00" />
+                <input value={anamneseForm.cpf} onChange={e => setAF("cpf", maskCpf(e.target.value))}
+                  className={cn(inputCls, anamneseForm.cpf.length === 14 && !isValidCpf(anamneseForm.cpf) && "border-red-300 focus:ring-red-200")}
+                  placeholder="000.000.000-00" />
+                {anamneseForm.cpf.length === 14 && !isValidCpf(anamneseForm.cpf) && (
+                  <p className="text-xs text-red-500 mt-1">CPF inválido.</p>
+                )}
               </Field>
               <Field label="Contato de emergência">
                 <input value={anamneseForm.emergency_contact} onChange={e => setAF("emergency_contact", e.target.value)} className={inputCls} />
