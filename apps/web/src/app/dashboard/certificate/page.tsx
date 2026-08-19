@@ -162,7 +162,7 @@ export default function CertificatePage() {
     try {
       const headers = { ...(await adminHeaders()), ...(await aiHeaders()) };
       const params = new URLSearchParams({ therapistId, period, reportType: "detalhado" });
-      const res = await fetch(`/api/certificate?${params}`, { headers });
+      const res = await fetch(`/api/certificate?${params}`, { headers, cache: "no-store" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao gerar certificado.");
       setReport(data);

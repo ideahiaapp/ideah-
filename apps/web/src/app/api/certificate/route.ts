@@ -4,6 +4,7 @@ import { getAIOptions, chat } from "@/lib/ai-client";
 import { assertUnderUsageLimit, assertUnderRateLimit, logAiUsage, UsageLimitError, RateLimitError } from "@/lib/usage";
 
 export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 function serviceClient() {
   return createClient(
