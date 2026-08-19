@@ -63,10 +63,10 @@ export default function LoginPage() {
       {/* ── Painel esquerdo (decorativo) ── */}
       <aside className="hidden lg:flex flex-col items-center justify-center w-1/2 bg-brand-500 px-16 gap-8">
         <Image
-          src="/paideia-wordmark-white.svg"
-          alt="Paideia"
+          src="/paideia-wordmark-white-tagline.svg"
+          alt="Paideia — É conversando que se aprende"
           width={320}
-          height={128}
+          height={112}
           priority
         />
         <p className="text-white/80 text-center text-lg leading-relaxed max-w-sm">
@@ -95,10 +95,10 @@ export default function LoginPage() {
         {/* Logo mobile */}
         <div className="lg:hidden mb-10">
           <Image
-            src="/paideia-wordmark-light.svg"
-            alt="Paideia"
+            src="/paideia-wordmark-light-tagline.svg"
+            alt="Paideia — É conversando que se aprende"
             width={200}
-            height={80}
+            height={70}
             priority
           />
         </div>

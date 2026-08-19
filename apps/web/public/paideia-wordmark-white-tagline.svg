@@ -1,0 +1,17 @@
+<svg width="430" height="150" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 170 L40 30"/>
+    <path d="M40 30 L108 62 L40 94"/>
+    <path d="M162 170 L206 30 L236 30 L280 170"/>
+    <path d="M190 108 L252 108"/>
+    <path d="M325 170 L325 30"/>
+    <path d="M380 170 L380 30 L440 30 L472 100 L440 170 L380 170"/>
+    <path d="M515 30 L607 30"/>
+    <path d="M537 100 L585 100"/>
+    <path d="M515 170 L607 170"/>
+    <path d="M655 170 L655 30"/>
+    <path d="M702 170 L748 30 L780 30 L822 170"/>
+    <path d="M730 108 L794 108"/>
+  </g>
+  <text x="430" y="250" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="38" fill="#ffffff" opacity="0.9">É conversando que se aprende</text>
+</svg>
