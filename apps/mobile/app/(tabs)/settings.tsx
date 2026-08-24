@@ -178,7 +178,7 @@ export default function SettingsScreen() {
             <Text style={s.cardTitle}>API Key Anthropic</Text>
           </View>
           <Text style={s.cardDesc}>
-            Necessária para usar as funcionalidades de IA (Supervisão, Relatórios).
+            Necessária para usar as funcionalidades de IA (Reflexão Clínica, Relatórios).
           </Text>
           <View style={s.inputRow}>
             <TextInput

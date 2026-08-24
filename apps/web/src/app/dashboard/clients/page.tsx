@@ -22,7 +22,7 @@ const CLIENTS_HOW_IT_WORKS: HowItWorksContent = {
   steps: [
     { title: "Cadastre o cliente", desc: "Informe os dados iniciais e a abordagem terapêutica, ou envie o link de anamnese para o próprio cliente se pré-cadastrar." },
     { title: "Aprove a anamnese", desc: "Anamneses recebidas por link aparecem em \"Aguardando aprovação\" — revise e aceite para ativar o cliente." },
-    { title: "Acompanhe o percurso", desc: "Supervisões, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
+    { title: "Acompanhe o percurso", desc: "Reflexões clínicas, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
   ],
   illustration: "clients",
 };
@@ -643,7 +643,7 @@ function ClientsPageInner() {
             </div>
             <h2 className="text-gray-700 font-bold text-lg mb-2">Nenhum cliente cadastrado ainda</h2>
             <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed mb-6">
-              Comece cadastrando seu primeiro cliente. O prontuário, as evoluções e as supervisões ficam todos aqui.
+              Comece cadastrando seu primeiro cliente. O prontuário, as evoluções e as reflexões clínicas ficam todos aqui.
             </p>
             <Link href="/dashboard/clients/new"
               className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm">

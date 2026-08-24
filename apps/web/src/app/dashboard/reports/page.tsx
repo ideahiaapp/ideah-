@@ -248,7 +248,7 @@ function DrillClients({ onClose, clients, evolutions, supervisions }: {
                   <span className="text-[10px] text-green-600">{evols} evoluções</span>
                   {sups > 0 && <>
                     <span className="text-[10px] text-gray-300">·</span>
-                    <span className="text-[10px] text-brand-500">{sups} supervisões</span>
+                    <span className="text-[10px] text-brand-500">{sups} reflexões clínicas</span>
                   </>}
                 </div>
               </div>
@@ -559,7 +559,7 @@ function EvolutionReportPanel({ clients, promptKey }: { clients: Client[]; promp
           <span className="ml-auto text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100 font-medium">IA</span>
         </div>
         <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-          Selecione um cliente e o período desejado. A IA analisará todas as evoluções e supervisões registradas e gerará um relatório clínico detalhado.
+          Selecione um cliente e o período desejado. A IA analisará todas as evoluções e reflexões clínicas registradas e gerará um relatório clínico detalhado.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -1029,7 +1029,7 @@ export default function ReportsPage() {
       {/* Ações rápidas */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {[
-          { label: "Nova supervisão", href: "/dashboard/supervision",      icon: Sparkles,     color: "bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-200" },
+          { label: "Nova reflexão clínica", href: "/dashboard/supervision", icon: Sparkles,     color: "bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-200" },
           { label: "Novo cliente",    href: "/dashboard/clients/new",      icon: Users,        color: "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200" },
           { label: "Abrir agenda",    href: "/dashboard/schedule",         icon: CalendarDays, color: "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200" },
         ].map(a => (
@@ -1080,7 +1080,7 @@ export default function ReportsPage() {
             <KpiCard icon={UserCheck} label="Aguardando aprovação" value={pendingAnamneseApproval}
               sub={pendingAnamneseApproval === 0 ? "nenhuma pendente" : "anamneses para revisar"}
               color="bg-orange-50 text-orange-500" />
-            <KpiCard icon={MessageSquare} label="Supervisões" value={supervisions.length}
+            <KpiCard icon={MessageSquare} label="Reflexões Clínicas" value={supervisions.length}
               sub="sessões dialógicas" color="bg-blue-50 text-blue-500" />
             <KpiCard icon={DollarSign} label="Faturamento" value={formatBRL(estimatedRevenue)}
               sub={`${formatBRL(currentMonthRevenue)} este mês`}
@@ -1202,7 +1202,7 @@ export default function ReportsPage() {
                 <div className="px-5 py-10 text-center">
                   <Activity className="w-8 h-8 text-gray-200 mx-auto mb-3" strokeWidth={1.5} />
                   <p className="text-sm text-gray-500">Nenhuma atividade ainda</p>
-                  <p className="text-xs text-gray-400 mt-1">Suas evoluções e supervisões aparecerão aqui</p>
+                  <p className="text-xs text-gray-400 mt-1">Suas evoluções e reflexões clínicas aparecerão aqui</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-50">
@@ -1225,7 +1225,7 @@ export default function ReportsPage() {
                             "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
                             item.type === "supervision" ? "bg-brand-50 text-brand-600" : "bg-green-50 text-green-600"
                           )}>
-                            {item.type === "supervision" ? "Supervisão" : "Evolução"}
+                            {item.type === "supervision" ? "Reflexão Clínica" : "Evolução"}
                           </span>
                           <span className="text-gray-300">·</span>
                           {formatRelative(item.date)}
@@ -1243,7 +1243,7 @@ export default function ReportsPage() {
                 </Link>
                 <Link href="/dashboard/supervision"
                   className="text-xs text-gray-400 hover:text-brand-500 font-medium flex items-center gap-1">
-                  <MessageSquare className="w-3 h-3" /> Ver supervisões
+                  <MessageSquare className="w-3 h-3" /> Ver reflexões clínicas
                 </Link>
               </div>
             </div>

@@ -98,7 +98,7 @@ Leve em conta todo esse material ao formular hipóteses e intervenções.`
       : "";
 
     const evolutionContext = lastEvolution
-      ? `\n\nÚLTIMA SESSÃO REGISTRADA (${lastEvolution.sessionDate}):\nO que aconteceu: ${lastEvolution.content}${lastEvolution.hypothesis ? `\nHipótese clínica do terapeuta: ${lastEvolution.hypothesis}` : ""}${lastEvolution.nextSessionPlan ? `\nPlano para esta sessão: ${lastEvolution.nextSessionPlan}` : ""}\n\nLeve em conta este material ao supervisionar — esta supervisão prepara a próxima sessão a partir do que foi registrado.`
+      ? `\n\nÚLTIMA SESSÃO REGISTRADA (${lastEvolution.sessionDate}):\nO que aconteceu: ${lastEvolution.content}${lastEvolution.hypothesis ? `\nHipótese clínica do terapeuta: ${lastEvolution.hypothesis}` : ""}${lastEvolution.nextSessionPlan ? `\nPlano para esta sessão: ${lastEvolution.nextSessionPlan}` : ""}\n\nLeve em conta este material nesta reflexão — esta reflexão clínica prepara a próxima sessão a partir do que foi registrado.`
       : "";
 
     const ragInstruction = ragFound
@@ -109,7 +109,7 @@ Leve em conta todo esse material ao formular hipóteses e intervenções.`
 
 REFERENCIAL TEÓRICO ATIVO NESTA MENSAGEM: ${approach}. Toda a sua resposta deve ser fundamentada EXCLUSIVAMENTE nesta abordagem. Se o terapeuta mudar a abordagem em próximas mensagens, você deve adotar o novo referencial imediatamente.
 
-Contexto desta supervisão: O terapeuta está trazendo material clínico referente ao cliente "${clientName || "cliente"}".
+Contexto desta reflexão clínica: O terapeuta está trazendo material clínico referente ao cliente "${clientName || "cliente"}".
 Responda de forma estruturada quando apropriado, usando:
 - **Negrito** para conceitos-chave
 - > Citações para referências teóricas relevantes

@@ -33,13 +33,13 @@ function formatDuration(totalSeconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-const DEFAULT_CERTIFICATE_PROMPT = `Você é responsável por redigir certificados formais de horas de supervisão clínica para terapeutas.
-Com base nos dados fornecidos, redija um certificado de supervisão em português brasileiro, em tom formal e institucional, adequado para ser impresso ou enviado ao terapeuta.
+const DEFAULT_CERTIFICATE_PROMPT = `Você é responsável por redigir certificados formais de horas de reflexão clínica para terapeutas.
+Com base nos dados fornecidos, redija um certificado de reflexão clínica em português brasileiro, em tom formal e institucional, adequado para ser impresso ou enviado ao terapeuta.
 Use markdown. Inclua obrigatoriamente:
 
-# Certificado de Supervisão
+# Certificado de Reflexão Clínica
 
-Um parágrafo formal certificando que o terapeuta realizou as horas de supervisão informadas, por abordagem teórica, no período indicado.
+Um parágrafo formal certificando que o terapeuta realizou as horas de reflexão clínica informadas, por abordagem teórica, no período indicado.
 
 ## Discriminação por Abordagem Teórica
 (Liste cada abordagem com o total de horas e número de sessões)
@@ -152,7 +152,7 @@ export async function GET(req: NextRequest) {
       ? synthesis.map(row =>
           `- ${APPROACH_LABEL[row.approach] ?? row.approach}: ${formatDuration(row.totalSeconds)} (${row.count} sessão(ões))`
         ).join("\n")
-      : "Nenhuma supervisão registrada no período.";
+      : "Nenhuma reflexão clínica registrada no período.";
 
     const detailLines = reportType === "detalhado"
       ? evolutions.map(ev =>
@@ -165,11 +165,11 @@ export async function GET(req: NextRequest) {
 Período: ${PERIOD_LABEL[period]} (${startStr} a ${endStr})
 Tipo de relatório: ${reportType}
 
-HORAS DE SUPERVISÃO POR ABORDAGEM:
+HORAS DE REFLEXÃO CLÍNICA POR ABORDAGEM:
 ${synthesisLines}
 
 TOTAL GERAL: ${formatDuration(totalSeconds)} em ${evolutions.length} sessão(ões)
-${detailLines ? `\nSUPERVISÕES REALIZADAS NO PERÍODO:\n${detailLines}` : ""}`;
+${detailLines ? `\nREFLEXÕES CLÍNICAS REALIZADAS NO PERÍODO:\n${detailLines}` : ""}`;
 
     // Versão mais enxuta dos dados para o verso: sem a tabela de horas por abordagem (que em
     // testes fazia a IA gerar uma segunda via do certificado da frente em vez de seguir um
@@ -177,7 +177,7 @@ ${detailLines ? `\nSUPERVISÕES REALIZADAS NO PERÍODO:\n${detailLines}` : ""}`;
     const backUserPrompt = `Terapeuta: ${therapistName}
 Abordagem(ns) teórica(s) no período: ${synthesis.map(row => APPROACH_LABEL[row.approach] ?? row.approach).join(", ") || "nenhuma"}
 Período: ${PERIOD_LABEL[period]} (${startStr} a ${endStr})
-${detailLines ? `\nSupervisões realizadas no período:\n${detailLines}` : ""}`;
+${detailLines ? `\nReflexões clínicas realizadas no período:\n${detailLines}` : ""}`;
 
     const frontResult = await chat({
       provider,
@@ -196,7 +196,7 @@ ${detailLines ? `\nSupervisões realizadas no período:\n${detailLines}` : ""}`;
       // certificado" — em testes, um prompt de verso curto/simples era ofuscado por essa
       // estrutura e a IA acabava gerando uma segunda via do certificado da frente em vez de
       // seguir as instruções do verso. Reforço explícito: os dados abaixo são só contexto de
-      // apoio (nome do profissional, tema das supervisões), a instrução do admin manda.
+      // apoio (nome do profissional, tema das reflexões clínicas), a instrução do admin manda.
       const backSystemPrompt = `${backPrompt}\n\nIMPORTANTE: os dados a seguir na mensagem do usuário (terapeuta, período, tabela de horas por abordagem) são apenas contexto de apoio, para o caso de as instruções acima precisarem do nome do profissional ou da abordagem teórica. Siga ESTRITA e EXCLUSIVAMENTE as instruções acima para escrever o conteúdo do verso do certificado. Não gere uma segunda via do certificado da frente, não repita cabeçalho "CERTIFICADO", não reproduza a tabela de horas por abordagem nem o texto "Certificamos que".`;
       const backResult = await chat({
         provider,

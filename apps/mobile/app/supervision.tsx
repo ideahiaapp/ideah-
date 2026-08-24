@@ -47,7 +47,7 @@ export default function SupervisionScreen() {
   const [input, setInput]           = useState("");
   const [loading, setLoading]       = useState(false);
 
-  // ── Supervisão: iniciar/pausar/retomar/finalizar ──
+  // ── Reflexão Clínica: iniciar/pausar/retomar/finalizar ──
   const [supervisionId, setSupervisionId]     = useState<string | null>(null);
   const [supervisionActive, setSupervisionActive] = useState(false);
   const [supervisionPaused, setSupervisionPaused] = useState(false);
@@ -101,7 +101,7 @@ export default function SupervisionScreen() {
     try {
       const { data: session, error } = await supabase
         .from("supervisions")
-        .insert({ therapist_id: user.id, client_id: selected.id, title: `Supervisão de ${selected.name}`, approach })
+        .insert({ therapist_id: user.id, client_id: selected.id, title: `Reflexão clínica de ${selected.name}`, approach })
         .select()
         .single();
       if (error) throw error;
@@ -147,7 +147,7 @@ export default function SupervisionScreen() {
           client_id: selected.id,
           session_date: sessionDate || new Date().toISOString().split("T")[0],
           session_time: sessionTime || null,
-          content: content || "Supervisão realizada.",
+          content: content || "Reflexão clínica realizada.",
           hypothesis: hypothesis.trim() || null,
           next_session_plan: nextSessionPlan.trim() || null,
           mood: null,
@@ -190,7 +190,7 @@ export default function SupervisionScreen() {
         }
       );
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Erro na supervisão");
+      if (!res.ok) throw new Error(json.error ?? "Erro na reflexão clínica");
       setMessages(prev => [...prev, { role: "assistant", content: json.content }]);
       if (supervisionId) {
         supabase.from("supervision_messages").insert({ supervision_id: supervisionId, role: "assistant", content: json.content }).then(() => {});
@@ -198,7 +198,7 @@ export default function SupervisionScreen() {
     } catch (e: unknown) {
       setMessages(prev => [
         ...prev,
-        { role: "assistant", content: `⚠️ ${e instanceof Error ? e.message : "Erro ao conectar com a supervisão."}` },
+        { role: "assistant", content: `⚠️ ${e instanceof Error ? e.message : "Erro ao conectar com a reflexão clínica."}` },
       ]);
     } finally {
       setLoading(false);
@@ -221,7 +221,7 @@ export default function SupervisionScreen() {
             <Ionicons name="arrow-back" size={22} color={Colors.ink} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={s.headerTitle}>Supervisão</Text>
+            <Text style={s.headerTitle}>Reflexão Clínica</Text>
             <Text style={s.headerSub}>Assistente clínico com IA</Text>
           </View>
           <View style={s.badge}>
@@ -284,7 +284,7 @@ export default function SupervisionScreen() {
           )}
         </View>
 
-        {/* Controle da supervisão */}
+        {/* Controle da reflexão clínica */}
         <View style={s.controlBar}>
           {supervisionActive ? (
             <>
@@ -315,7 +315,7 @@ export default function SupervisionScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="play-circle" size={16} color="#fff" />
-              <Text style={s.controlBtnPrimaryText}>Iniciar supervisão</Text>
+              <Text style={s.controlBtnPrimaryText}>Iniciar reflexão clínica</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -333,11 +333,11 @@ export default function SupervisionScreen() {
               <View style={s.emptyIcon}>
                 <Ionicons name="chatbubbles" size={36} color={Colors.brand[400]} />
               </View>
-              <Text style={s.emptyTitle}>Supervisão clínica</Text>
+              <Text style={s.emptyTitle}>Reflexão Clínica</Text>
               <Text style={s.emptyText}>
                 {selected
-                  ? "Toque em \"Iniciar supervisão\" para começar. Você poderá pausar e retomar quando precisar."
-                  : "Selecione um cliente para iniciar a supervisão."}
+                  ? "Toque em \"Iniciar reflexão clínica\" para começar. Você poderá pausar e retomar quando precisar."
+                  : "Selecione um cliente para iniciar a reflexão clínica."}
               </Text>
             </View>
           )}
@@ -371,7 +371,7 @@ export default function SupervisionScreen() {
             style={[s.input, !canWrite && s.inputDisabled]}
             value={input}
             onValueChange={setInput}
-            placeholder={canWrite ? "Descreva o caso ou dúvida clínica..." : supervisionPaused ? "Supervisão pausada…" : "Inicie a supervisão para escrever…"}
+            placeholder={canWrite ? "Descreva o caso ou dúvida clínica..." : supervisionPaused ? "Reflexão pausada…" : "Inicie a reflexão clínica para escrever…"}
             placeholderTextColor={Colors.gray[400]}
             multiline
             maxLength={1000}
@@ -389,7 +389,7 @@ export default function SupervisionScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Modal: iniciar supervisão */}
+      {/* Modal: iniciar reflexão clínica */}
       <Modal visible={showStartModal} transparent animationType="fade" onRequestClose={() => setShowStartModal(false)}>
         <View style={s.modalOverlay}>
           <View style={s.modalCard}>
@@ -417,18 +417,18 @@ export default function SupervisionScreen() {
                 <Text style={s.modalCancelText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.modalConfirm} onPress={confirmStart}>
-                <Text style={s.modalConfirmText}>Iniciar supervisão</Text>
+                <Text style={s.modalConfirmText}>Iniciar reflexão clínica</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Modal: finalizar supervisão */}
+      {/* Modal: finalizar reflexão clínica */}
       <Modal visible={showFinishModal} transparent animationType="fade" onRequestClose={() => setShowFinishModal(false)}>
         <View style={s.modalOverlay}>
           <View style={s.modalCard}>
-            <Text style={s.modalTitle}>Finalizar supervisão</Text>
+            <Text style={s.modalTitle}>Finalizar reflexão clínica</Text>
             <Text style={s.modalSub}>Registre a hipótese clínica e o plano para a próxima sessão.</Text>
 
             <Text style={s.fieldLabel}>Hipótese clínica</Text>

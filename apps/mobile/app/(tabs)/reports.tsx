@@ -123,7 +123,7 @@ function EvolutionAIPanel({ clients, promptKey, therapistId }: {
         <Ionicons name="sparkles" size={20} color={Colors.brand[500]} />
         <Text style={s.cardTitle}>Gerar relatório de evolução</Text>
       </View>
-      <Text style={s.cardDesc}>Selecione o cliente e o período. A IA analisa as evoluções e supervisões registradas.</Text>
+      <Text style={s.cardDesc}>Selecione o cliente e o período. A IA analisa as evoluções e reflexões clínicas registradas.</Text>
 
       <PickerField label="Selecionar cliente..." value={clientId} onChange={v => { setClientId(v); setReport(null); }}
         options={clients.map(c => ({ value: c.id, label: c.name }))} />

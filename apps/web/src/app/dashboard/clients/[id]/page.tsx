@@ -282,13 +282,13 @@ export default function ClientDetailPage() {
   const [deletingSupervisionId, setDeletingSupervisionId] = useState<string | null>(null);
 
   async function handleDeleteSupervision(sv: Supervision) {
-    if (!confirm(`Excluir a supervisão "${sv.title}"? Essa ação não pode ser desfeita.`)) return;
+    if (!confirm(`Excluir a reflexão clínica "${sv.title}"? Essa ação não pode ser desfeita.`)) return;
     setDeletingSupervisionId(sv.id);
     try {
       await deleteSupervision(sv.id);
       setSupervisions(prev => prev.filter(s => s.id !== sv.id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao excluir supervisão.");
+      alert(e instanceof Error ? e.message : "Erro ao excluir reflexão clínica.");
     } finally {
       setDeletingSupervisionId(null);
     }
@@ -494,7 +494,7 @@ export default function ClientDetailPage() {
           { id: "prontuario",  label: "Prontuário",                              icon: FileText      },
           { id: "anamnese",    label: "Anamnese",                                icon: ClipboardList },
           { id: "evolucoes",   label: `Evoluções (${evolutions.length})`,        icon: Target        },
-          { id: "supervisoes", label: `Supervisões (${supervisions.length})`,    icon: MessageSquare },
+          { id: "supervisoes", label: `Reflexões Clínicas (${supervisions.length})`, icon: MessageSquare },
         ] as { id: Tab; label: string; icon: React.ElementType }[]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={cn(
@@ -716,18 +716,18 @@ export default function ClientDetailPage() {
         </div>
       )}
 
-      {/* Tab: Supervisões */}
+      {/* Tab: Reflexões Clínicas */}
       {tab === "supervisoes" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">{supervisions.length} supervisões sobre este caso</p>
+            <p className="text-sm text-gray-500">{supervisions.length} reflexões clínicas sobre este caso</p>
             <Link href={`/dashboard/supervision?client=${client.id}`}
               className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 hover:text-brand-700">
-              <Plus className="w-3.5 h-3.5" /> Nova supervisão
+              <Plus className="w-3.5 h-3.5" /> Nova reflexão clínica
             </Link>
           </div>
           {supervisions.length === 0 ? (
-            <EmptyState icon={MessageSquare} text="Nenhuma supervisão sobre este caso ainda." />
+            <EmptyState icon={MessageSquare} text="Nenhuma reflexão clínica sobre este caso ainda." />
           ) : (
             supervisions.map(sv => (
               <div key={sv.id} className="relative group">
@@ -754,7 +754,7 @@ export default function ClientDetailPage() {
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteSupervision(sv); }}
                   disabled={deletingSupervisionId === sv.id}
-                  aria-label="Excluir supervisão"
+                  aria-label="Excluir reflexão clínica"
                   className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
                   {deletingSupervisionId === sv.id

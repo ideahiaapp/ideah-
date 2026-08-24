@@ -212,8 +212,8 @@ export default function CertificateScreen() {
           <HamburgerMenu />
           <View style={s.headerIcon}><Ionicons name="ribbon" size={22} color={Colors.brand[500]} /></View>
           <View style={{ flex: 1 }}>
-            <Text style={s.title}>Certificado de Supervisão</Text>
-            <Text style={s.subtitle}>Horas de supervisão por abordagem teórica</Text>
+            <Text style={s.title}>Certificado de Reflexão Clínica</Text>
+            <Text style={s.subtitle}>Horas de reflexão clínica por abordagem teórica</Text>
           </View>
         </View>
 
@@ -261,7 +261,7 @@ export default function CertificateScreen() {
             </View>
 
             {report.synthesis.length === 0 ? (
-              <View style={s.card}><Text style={s.emptyText}>Nenhuma supervisão registrada neste período.</Text></View>
+              <View style={s.card}><Text style={s.emptyText}>Nenhuma reflexão clínica registrada neste período.</Text></View>
             ) : (
               report.synthesis.map(row => (
                 <View key={row.approach} style={{ gap: 12, marginBottom: 16 }}>

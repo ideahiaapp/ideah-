@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Paideia — Supervisão Clínica",
-  description: "Plataforma de supervisão clínica dialógica para terapeutas",
+  title: "Paideia — Reflexão Clínica",
+  description: "Plataforma de reflexão clínica dialógica para terapeutas",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

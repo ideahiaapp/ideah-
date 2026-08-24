@@ -510,7 +510,7 @@ export default function ClientsScreen() {
   }
 
   async function deleteSupervision(sv: Supervision) {
-    Alert.alert("Excluir supervisão", `Excluir "${sv.title}"? Essa ação não pode ser desfeita.`, [
+    Alert.alert("Excluir reflexão clínica", `Excluir "${sv.title}"? Essa ação não pode ser desfeita.`, [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Excluir", style: "destructive", onPress: async () => {
@@ -666,12 +666,12 @@ export default function ClientsScreen() {
                 )}
               </View>
 
-              <Text style={s.sectionTitle}>Supervisões ({supervisions.length})</Text>
+              <Text style={s.sectionTitle}>Reflexões Clínicas ({supervisions.length})</Text>
 
               {supLoading ? (
                 <ActivityIndicator color={Colors.brand[500]} style={{ marginBottom: 20 }} />
               ) : supervisions.length === 0 ? (
-                <Text style={[s.emptyText, { marginTop: 0, marginBottom: 20 }]}>Nenhuma supervisão sobre este caso ainda.</Text>
+                <Text style={[s.emptyText, { marginTop: 0, marginBottom: 20 }]}>Nenhuma reflexão clínica sobre este caso ainda.</Text>
               ) : (
                 <View style={{ marginBottom: 20, gap: 8 }}>
                   {supervisions.map(sv => (

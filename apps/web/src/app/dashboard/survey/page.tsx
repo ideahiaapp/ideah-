@@ -205,13 +205,13 @@ const Q8_OPTIONS = [
 ];
 
 const Q18_OPTIONS = [
-  "Horas acumuladas de supervisão",
+  "Horas acumuladas de reflexão clínica",
   "Casos acompanhados",
   "Principais conteúdos estudados",
   "Temas clínicos mais recorrentes",
   "Abordagens utilizadas",
   "Evolução do meu percurso de aprendizagem",
-  "Histórico das supervisões",
+  "Histórico das reflexões clínicas",
   "Nenhuma dessas informações seria relevante para mim",
 ];
 
@@ -390,11 +390,11 @@ export default function SatisfactionSurveyPage() {
           <RadioGroup value={a.q19 ?? ""} onChange={v => set("q19", v)}
             options={["Muito alto", "Alto", "Moderado", "Baixo", "Nenhum"]} />
         </Question>
-        <Question n="20" title="Ter as horas de supervisão e os conteúdos trabalhados registrados e organizados aumentaria o valor do Paideia para você?">
+        <Question n="20" title="Ter as horas de reflexão clínica e os conteúdos trabalhados registrados e organizados aumentaria o valor do Paideia para você?">
           <RadioGroup value={a.q20 ?? ""} onChange={v => set("q20", v)}
             options={["Aumentaria muito", "Aumentaria um pouco", "Não faria diferença", "Diminuiria o interesse", "Não sei"]} />
         </Question>
-        <Question n="21" title="A possibilidade de obter um registro/certificação do percurso de formação e das horas de supervisão seria relevante para você?">
+        <Question n="21" title="A possibilidade de obter um registro/certificação do percurso de formação e das horas de reflexão clínica seria relevante para você?">
           <RadioGroup value={a.q21 ?? ""} onChange={v => set("q21", v)}
             options={["Muito relevante", "Relevante", "Pouco relevante", "Irrelevante", "Não sei"]} />
         </Question>

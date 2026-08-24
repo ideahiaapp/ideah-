@@ -94,11 +94,11 @@ const TOC = [
   { id: "primeiros-passos", label: "2. Primeiros Passos (Cadastro e Login)" },
   { id: "navegacao",      label: "3. Navegação Geral da Versão Web" },
   { id: "home",           label: "4. Home" },
-  { id: "supervisao",     label: "5. Supervisão com Inteligência Artificial" },
+  { id: "supervisao",     label: "5. Reflexão Clínica com Inteligência Artificial" },
   { id: "clientes",       label: "6. Clientes" },
   { id: "agenda",         label: "7. Agenda" },
   { id: "escritorio",     label: "8. Meu Escritório (Relatórios e Documentos)" },
-  { id: "certificado",    label: "9. Certificado de Supervisão" },
+  { id: "certificado",    label: "9. Certificado de Reflexão Clínica" },
   { id: "pesquisa",       label: "10. Pesquisa de Satisfação" },
   { id: "configuracoes",  label: "11. Configurações" },
   { id: "mobile",         label: "12. Aplicativo Mobile" },
@@ -161,8 +161,8 @@ export default function ManualPage() {
         </P>
         <SubSection title="1.1 O que o Paideia faz">
           <Bullets items={[
-            "Supervisão dialógica com IA: conversas orientadas por perguntas, não por respostas prontas, para ajudar o terapeuta a pensar sobre seus próprios casos.",
-            "Registro de evoluções clínicas geradas a partir das supervisões.",
+            "Reflexão Clínica dialógica com IA: conversas orientadas por perguntas, não por respostas prontas, para ajudar o terapeuta a pensar sobre seus próprios casos.",
+            "Registro de evoluções clínicas geradas a partir das reflexões clínicas.",
             "Gestão de clientes, anamneses, agenda e documentos do consultório.",
             "Emissão de certificado de horas de Formação Clínica Continuada, por abordagem teórica.",
             "Disponível na web (navegador) e em aplicativo mobile (iOS/Android).",
@@ -178,7 +178,7 @@ export default function ManualPage() {
         <SubSection title="1.3 Para quem é este manual">
           <P>Este manual cobre o uso da plataforma por dois perfis:</P>
           <Bullets items={[
-            <>Terapeuta: uso diário do sistema — supervisão, clientes, agenda, certificado, configurações pessoais.</>,
+            <>Terapeuta: uso diário do sistema — reflexão clínica, clientes, agenda, certificado, configurações pessoais.</>,
             <>Administrador: além de tudo o que o terapeuta acessa, funções de gestão da plataforma — terapeutas, base de conhecimento (RAG), prompts de IA, formulários de anamnese e resultados da pesquisa de satisfação.</>,
           ]} />
           <Note>Seções e telas exclusivas de administrador estão sinalizadas ao longo do manual com a marcação &quot;Somente administrador&quot;.</Note>
@@ -209,7 +209,7 @@ export default function ManualPage() {
           <P>Após o primeiro login, vale revisar antes de começar a usar o sistema no dia a dia:</P>
           <Bullets items={[
             "Configurações → Perfil: nome, foto, CRP, dados de contato e configurações clínicas (valor de sessão, duração padrão, dias de atendimento).",
-            "Configurações → API Key: necessária para as funcionalidades de Inteligência Artificial (supervisão, relatórios, certificado). Veja a seção 11.4.",
+            "Configurações → API Key: necessária para as funcionalidades de Inteligência Artificial (reflexão clínica, relatórios, certificado). Veja a seção 11.4.",
             "Configurações → Minhas Bases: confirme quais abordagens teóricas estão liberadas para você.",
             "Configurações → Ética e uso responsável da IA: leia e confirme as declarações de ciência relacionadas ao uso responsável da Inteligência Artificial, ao sigilo profissional, à proteção de dados e à responsabilidade do profissional pelas decisões tomadas em sua prática.",
           ]} />
@@ -222,7 +222,7 @@ export default function ManualPage() {
         <SubSection title="3.1 Menu lateral">
           <Bullets items={[
             "Home — visão geral do dia.",
-            "Supervisão — iniciar/continuar uma supervisão dialógica com IA.",
+            "Reflexão Clínica — iniciar/continuar uma reflexão clínica dialógica com IA.",
             "Clientes — cadastro, anamnese, prontuário e histórico de cada caso.",
             "Agenda — calendário de sessões.",
             "Meu escritório — relatórios e documentos oficiais.",
@@ -243,20 +243,20 @@ export default function ManualPage() {
       <Section id="home" title="4. Home">
         <P>A tela inicial cumprimenta o terapeuta pelo nome e mostra a data atual, funcionando como ponto de partida rápido para as duas ações mais frequentes do dia a dia:</P>
         <Bullets items={[
-          "Iniciar supervisão — abre a tela de Supervisão.",
+          "Iniciar reflexão clínica — abre a tela de Reflexão Clínica.",
           "Cadastrar cliente — abre o formulário de cadastro de um novo cliente.",
         ]} />
       </Section>
 
-      {/* 5. Supervisão */}
-      <Section id="supervisao" title="5. Supervisão com Inteligência Artificial">
-        <P>A Supervisão é o núcleo do Paideia: uma conversa dialógica com a IA sobre um caso clínico específico, feita para estimular a reflexão do terapeuta — não para entregar respostas prontas.</P>
-        <SubSection title="5.1 Como iniciar uma supervisão">
+      {/* 5. Reflexão Clínica */}
+      <Section id="supervisao" title="5. Reflexão Clínica com Inteligência Artificial">
+        <P>A Reflexão Clínica é o núcleo do Paideia: uma conversa dialógica com a IA sobre um caso clínico específico, feita para estimular a reflexão do terapeuta — não para entregar respostas prontas.</P>
+        <SubSection title="5.1 Como iniciar uma reflexão clínica">
           <Steps items={[
-            "Acesse Supervisão no menu lateral (ou clique em \"Iniciar supervisão\" na Home).",
-            "Selecione o cliente que deseja supervisionar.",
-            "Selecione a abordagem teórica sob a qual a supervisão será conduzida.",
-            "Clique em \"Iniciar supervisão\" — a partir desse momento a duração da sessão passa a ser cronometrada.",
+            "Acesse Reflexão Clínica no menu lateral (ou clique em \"Iniciar reflexão clínica\" na Home).",
+            "Selecione o cliente sobre o qual deseja refletir.",
+            "Selecione a abordagem teórica sob a qual a reflexão clínica será conduzida.",
+            "Clique em \"Iniciar reflexão clínica\" — a partir desse momento a duração da sessão passa a ser cronometrada.",
           ]} />
         </SubSection>
         <SubSection title="5.2 Durante a conversa">
@@ -264,17 +264,17 @@ export default function ManualPage() {
             "Digite (ou dite por voz — ver seção 13) a descrição do caso, dúvida ou situação clínica.",
             "A IA responde com perguntas e reflexões baseadas na abordagem teórica escolhida e na base de conhecimento (RAG) cadastrada para aquela abordagem.",
             "A conversa é salva automaticamente, mensagem a mensagem.",
-            "É possível pausar a supervisão (o cronômetro para) e retomar depois.",
+            "É possível pausar a reflexão clínica (o cronômetro para) e retomar depois.",
           ]} />
         </SubSection>
-        <SubSection title="5.3 Finalizando a supervisão">
+        <SubSection title="5.3 Finalizando a reflexão clínica">
           <Steps items={[
             "Clique em \"Finalizar\".",
             "Preencha a data e o horário da sessão relacionada (se ainda não preenchidos automaticamente).",
             "Registre impressões da sessão, hipótese clínica e plano para a próxima sessão.",
-            "Confirme — o sistema gera automaticamente um registro de Evolução Clínica vinculado a esse cliente, com a duração total da supervisão.",
+            "Confirme — o sistema gera automaticamente um registro de Evolução Clínica vinculado a esse cliente, com a duração total da reflexão clínica.",
           ]} />
-          <Note>Após finalizada, a supervisão pode ser excluída (com sua transcrição completa) pela aba &quot;Supervisões&quot; no detalhe do cliente — ver seção 6.5. A exclusão da supervisão não apaga a evolução clínica gerada, que é um registro independente.</Note>
+          <Note>Após finalizada, a reflexão clínica pode ser excluída (com sua transcrição completa) pela aba &quot;Reflexões Clínicas&quot; no detalhe do cliente — ver seção 6.5. A exclusão da reflexão clínica não apaga a evolução clínica gerada, que é um registro independente.</Note>
         </SubSection>
         <SubSection title="5.4 Diferencial: Inteligência Dialógica">
           <P>Ao contrário de uma IA generalista, o Paideia é desenhado para não entregar respostas prontas. As perguntas feitas ao longo da conversa têm o objetivo de ajudar o terapeuta a construir seu próprio raciocínio clínico, revisitar hipóteses e perceber aspectos do caso que talvez não tivessem sido considerados.</P>
@@ -283,7 +283,7 @@ export default function ManualPage() {
 
       {/* 6. Clientes */}
       <Section id="clientes" title="6. Clientes">
-        <P>A tela de Clientes centraliza o cadastro, a anamnese, o prontuário e o histórico (evoluções e supervisões) de cada caso acompanhado.</P>
+        <P>A tela de Clientes centraliza o cadastro, a anamnese, o prontuário e o histórico (evoluções e reflexões clínicas) de cada caso acompanhado.</P>
         <SubSection title="6.1 Enviar anamnese">
           <P>No topo da tela de Clientes, o card &quot;Enviar anamnese&quot; gera um link para o preenchimento da anamnese inicial pelo próprio cliente, em dois modos:</P>
           <Bullets items={[
@@ -327,8 +327,8 @@ export default function ManualPage() {
           <Bullets items={[
             "Prontuário — dados cadastrais e clínicos.",
             "Anamnese — respostas completas da anamnese vinculada.",
-            "Evoluções — histórico de evoluções clínicas geradas a partir das supervisões e sessões registradas.",
-            "Supervisões — todas as supervisões dialógicas realizadas sobre aquele caso, com título, abordagem, data e nº de mensagens; cada uma pode ser excluída (ícone de lixeira, com confirmação).",
+            "Evoluções — histórico de evoluções clínicas geradas a partir das reflexões clínicas e sessões registradas.",
+            "Reflexões Clínicas — todas as reflexões clínicas dialógicas realizadas sobre aquele caso, com título, abordagem, data e nº de mensagens; cada uma pode ser excluída (ícone de lixeira, com confirmação).",
           ]} />
         </SubSection>
       </Section>
@@ -377,8 +377,8 @@ export default function ManualPage() {
       </Section>
 
       {/* 9. Certificado */}
-      <Section id="certificado" title="9. Certificado de Supervisão">
-        <P>Emite o certificado de Formação Clínica Continuada do terapeuta, com base nas horas de supervisão dialógica realizadas no sistema.</P>
+      <Section id="certificado" title="9. Certificado de Reflexão Clínica">
+        <P>Emite o certificado de Formação Clínica Continuada do terapeuta, com base nas horas de reflexão clínica dialógica realizadas no sistema.</P>
         <SubSection title="9.1 Gerando o certificado">
           <Steps items={[
             "Acesse Certificado no menu lateral.",
@@ -386,10 +386,10 @@ export default function ManualPage() {
             "Selecione o período (1 mês, 3 meses, 6 meses ou 1 ano).",
             "Clique em \"Gerar certificado\".",
           ]} />
-          <P>O sistema gera um certificado por abordagem teórica utilizada nas supervisões do período (ex.: um certificado de Psicanálise e outro de TCC, se ambas tiverem sido usadas).</P>
+          <P>O sistema gera um certificado por abordagem teórica utilizada nas reflexões clínicas do período (ex.: um certificado de Psicanálise e outro de TCC, se ambas tiverem sido usadas).</P>
         </SubSection>
         <SubSection title="9.2 Frente e verso">
-          <P>Cada certificado é emitido em formato A4 paisagem, com carga horária, período e número de supervisões daquela abordagem. Em Configurações → Prompts (ver seção 11.8) existem dois campos independentes: &quot;Certificado (frente)&quot; e &quot;Certificado (verso)&quot;. Preenchendo o campo de verso, uma segunda página é gerada com o conteúdo definido nesse prompt — por exemplo, conteúdos estudados e síntese do desenvolvimento profissional — com fundo sólido e a logo do Paideia ao final da página. Deixar o campo de verso em branco emite o certificado só com a frente.</P>
+          <P>Cada certificado é emitido em formato A4 paisagem, com carga horária, período e número de reflexões clínicas daquela abordagem. Em Configurações → Prompts (ver seção 11.8) existem dois campos independentes: &quot;Certificado (frente)&quot; e &quot;Certificado (verso)&quot;. Preenchendo o campo de verso, uma segunda página é gerada com o conteúdo definido nesse prompt — por exemplo, conteúdos estudados e síntese do desenvolvimento profissional — com fundo sólido e a logo do Paideia ao final da página. Deixar o campo de verso em branco emite o certificado só com a frente.</P>
         </SubSection>
         <SubSection title="9.3 Baixando em PDF">
           <P>Na web, o botão &quot;Baixar PDF&quot; abre a janela de impressão do navegador — escolha &quot;Salvar como PDF&quot; como destino. O mobile exibe o certificado no mesmo layout visual, mas a exportação em PDF está disponível apenas na versão web.</P>
@@ -416,7 +416,7 @@ export default function ManualPage() {
           <P>Visualização do plano atual, comparação entre planos (Pro / Clínica) e histórico de cobrança.</P>
         </SubSection>
         <SubSection title="11.4 API Key">
-          <P>As funcionalidades de Inteligência Artificial do Paideia (supervisão, relatórios, certificado) dependem de uma chave de API de um provedor de IA.</P>
+          <P>As funcionalidades de Inteligência Artificial do Paideia (reflexão clínica, relatórios, certificado) dependem de uma chave de API de um provedor de IA.</P>
           <Bullets items={[
             "Escolha o provedor: Anthropic (Claude), Google Gemini ou Ollama (local).",
             "Cole a chave obtida no site do provedor e clique em \"Salvar e ativar chave\".",
@@ -431,7 +431,7 @@ export default function ManualPage() {
           <P>Apresenta orientações para o uso responsável da Inteligência Artificial na prática profissional. A seção solicita que o usuário confirme sua ciência quanto aos limites da ferramenta, à responsabilidade humana pelas decisões profissionais, ao sigilo, à proteção de dados e à necessidade de informar adequadamente as pessoas atendidas sobre o tratamento de seus dados.</P>
         </SubSection>
         <SubSection title="11.7 Base RAG">
-          <AdminNote>Envio de livros e artigos (PDF ou TXT) por abordagem teórica, formando a base de conhecimento que a IA consulta durante as supervisões daquela abordagem. Os documentos ficam agrupados e podem ser removidos individualmente.</AdminNote>
+          <AdminNote>Envio de livros e artigos (PDF ou TXT) por abordagem teórica, formando a base de conhecimento que a IA consulta durante as reflexões clínicas daquela abordagem. Os documentos ficam agrupados e podem ser removidos individualmente.</AdminNote>
         </SubSection>
         <SubSection title="11.8 Prompts">
           <AdminNote>Permite personalizar o prompt de sistema usado pela IA em cada abordagem teórica e em funcionalidades específicas (Evolução, Certificado, Relatório de Evoluções, documentos oficiais). Deixar em branco usa o prompt padrão do sistema. &quot;Certificado (frente)&quot; e &quot;Certificado (verso)&quot; são campos independentes citados na seção 9.2 — o verso só é gerado se esse campo estiver preenchido.</AdminNote>
@@ -458,13 +458,13 @@ export default function ManualPage() {
           <P>A barra inferior dá acesso rápido a: Início, Clientes, Agenda, Meu escritório, Certificado e Configurações. O menu hambúrguer (ícone no topo das telas) reúne também Evoluções e Pesquisa de Satisfação, além dos mesmos atalhos da barra inferior.</P>
         </SubSection>
         <SubSection title="12.2 Home">
-          <P>Saudação, data e dois atalhos principais: &quot;Iniciar supervisão&quot; e &quot;Cadastrar cliente&quot;, cada um com seu próprio &quot;Como funciona?&quot;.</P>
+          <P>Saudação, data e dois atalhos principais: &quot;Iniciar reflexão clínica&quot; e &quot;Cadastrar cliente&quot;, cada um com seu próprio &quot;Como funciona?&quot;.</P>
         </SubSection>
-        <SubSection title="12.3 Supervisão">
+        <SubSection title="12.3 Reflexão Clínica">
           <P>Mesmo fluxo da web: selecionar cliente e abordagem, iniciar, pausar/retomar, conversar (com suporte a voz) e finalizar gerando a evolução clínica.</P>
         </SubSection>
         <SubSection title="12.4 Clientes">
-          <P>Mesmas três abas da web (Sem anamnese / Ativos / Aguardando aprovação), card &quot;Enviar anamnese&quot; no topo (copiar link, WhatsApp ou e-mail), botão &quot;+&quot; para cadastro manual de um novo cliente e, no detalhe do cliente, as seções Supervisões (com exclusão) e Evoluções recentes.</P>
+          <P>Mesmas três abas da web (Sem anamnese / Ativos / Aguardando aprovação), card &quot;Enviar anamnese&quot; no topo (copiar link, WhatsApp ou e-mail), botão &quot;+&quot; para cadastro manual de um novo cliente e, no detalhe do cliente, as seções Reflexões Clínicas (com exclusão) e Evoluções recentes.</P>
         </SubSection>
         <SubSection title="12.5 Agenda">
           <P>Calendário mensal (navegação entre meses, indicador de dias com sessão) com a lista de sessões do dia selecionado, botão &quot;+ Nova sessão&quot; e os mesmos atalhos de Google Calendar e WhatsApp da web.</P>
@@ -485,7 +485,7 @@ export default function ManualPage() {
 
       {/* 13. Voz */}
       <Section id="voz" title="13. Entrada por Voz (Ditado)">
-        <P>Os campos de conteúdo do sistema (textos livres como demanda principal, observações, mensagens de supervisão etc.) aceitam ditado por voz, identificado pelo ícone de microfone.</P>
+        <P>Os campos de conteúdo do sistema (textos livres como demanda principal, observações, mensagens de reflexão clínica etc.) aceitam ditado por voz, identificado pelo ícone de microfone.</P>
         <Steps items={[
           "Toque/clique no ícone de microfone ao lado do campo.",
           "Fale normalmente — o texto aparece em tempo real conforme você fala.",
@@ -505,7 +505,7 @@ export default function ManualPage() {
           <P>Verifique a caixa de spam do destinatário e confirme se o e-mail informado está correto. Alternativamente, use &quot;Copiar link&quot; ou &quot;WhatsApp&quot; no card de Enviar anamnese.</P>
         </SubSection>
         <SubSection title="Meu certificado saiu sem uma abordagem que eu esperava">
-          <P>O certificado só é gerado para abordagens efetivamente usadas em supervisões dentro do período selecionado. Amplie o período ou confirme que a supervisão foi registrada com a abordagem correta.</P>
+          <P>O certificado só é gerado para abordagens efetivamente usadas em reflexões clínicas dentro do período selecionado. Amplie o período ou confirme que a reflexão clínica foi registrada com a abordagem correta.</P>
         </SubSection>
         <SubSection title="Uma resposta da IA não fez sentido ou pareceu estranha">
           <P>A IA é uma ferramenta de apoio à reflexão — o julgamento clínico final é sempre do terapeuta. Se algo pareceu incorreto ou incoerente, isso pode e deve ser relatado na Pesquisa de Satisfação (pergunta 29 do questionário), que existe justamente para identificar esse tipo de falha.</P>

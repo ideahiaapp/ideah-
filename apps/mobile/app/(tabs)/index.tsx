@@ -29,14 +29,14 @@ type HowItWorksContent = {
 
 const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
   supervision: {
-    title: "Supervisão clínica",
+    title: "Reflexão Clínica",
     subtitle: "Um espaço de reflexão dialógica para investigar seus casos a partir da abordagem teórica escolhida.",
     steps: [
-      { title: "Escolha o cliente", desc: "Selecione o caso que deseja supervisionar." },
-      { title: "Escolha a abordagem", desc: "Defina a base teórica que orientará a supervisão." },
+      { title: "Escolha o cliente", desc: "Selecione o caso sobre o qual deseja refletir." },
+      { title: "Escolha a abordagem", desc: "Defina a base teórica que orientará a reflexão clínica." },
       { title: "Inicie a reflexão", desc: "Traga suas impressões, dúvidas ou situações da sessão. O Paideia dialogará com você por meio de perguntas e reflexões para apoiar a construção do seu raciocínio clínico." },
     ],
-    ctaLabel: "Iniciar supervisão",
+    ctaLabel: "Iniciar reflexão clínica",
     ctaHref: "/supervision",
   },
   client: {
@@ -45,7 +45,7 @@ const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
     steps: [
       { title: "Cadastre o cliente", desc: "Informe os dados iniciais e a abordagem terapêutica." },
       { title: "Realize a anamnese", desc: "Preencha a anamnese ou envie um link para que o próprio cliente responda." },
-      { title: "Acompanhe o percurso", desc: "Supervisões, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
+      { title: "Acompanhe o percurso", desc: "Reflexões clínicas, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
     ],
     ctaLabel: "Cadastrar cliente",
     ctaHref: "/new-client",
@@ -110,11 +110,11 @@ export default function HomeScreen() {
             <View style={[s.cardIcon, { backgroundColor: Colors.brand[500] }]}>
               <Ionicons name="chatbubbles" size={22} color="#fff" />
             </View>
-            <Text style={s.cardTitle}>Iniciar supervisão</Text>
+            <Text style={s.cardTitle}>Iniciar reflexão clínica</Text>
             <Text style={s.cardDesc}>Investigue um caso em acompanhamento e aprofunde seu raciocínio clínico.</Text>
             <View style={s.cardActions}>
               <TouchableOpacity style={s.cardCta} onPress={() => router.push("/supervision")} activeOpacity={0.85}>
-                <Text style={s.cardCtaText}>Iniciar supervisão</Text>
+                <Text style={s.cardCtaText}>Iniciar reflexão clínica</Text>
                 <Ionicons name="arrow-forward" size={14} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setHowItWorks("supervision")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

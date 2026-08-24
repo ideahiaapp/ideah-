@@ -25,14 +25,14 @@ function clientApproachLabels(c: Client): string[] {
 
 const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
   supervision: {
-    title: "Supervisão clínica",
+    title: "Reflexão Clínica",
     subtitle: "Um espaço de reflexão dialógica para investigar seus casos a partir da abordagem teórica escolhida.",
     steps: [
-      { title: "Escolha o cliente", desc: "Selecione o caso que deseja supervisionar." },
-      { title: "Escolha a abordagem", desc: "Defina a base teórica que orientará a supervisão." },
-      { title: "Inicie a reflexão", desc: "Traga suas impressões, dúvidas ou situações da sessão. O Paideia dialogará com você por meio de perguntas e reflexões para apoiar a construção do seu raciocínio clínico." },
+      { title: "Escolha o cliente", desc: "Selecione, na lista à esquerda, o caso sobre o qual deseja refletir." },
+      { title: "Escolha a abordagem", desc: "Defina a base teórica que orientará a reflexão clínica." },
+      { title: "Inicie a reflexão", desc: "Traga suas impressões, dúvidas ou situações da sessão. O Paideia dialoga com você por meio de perguntas, não de respostas prontas." },
     ],
-    ctaLabel: "Iniciar supervisão",
+    ctaLabel: "Iniciar reflexão clínica",
     ctaHref: "/dashboard/supervision",
     illustration: "supervision",
   },
@@ -42,7 +42,7 @@ const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
     steps: [
       { title: "Cadastre o cliente", desc: "Informe os dados iniciais e a abordagem terapêutica." },
       { title: "Realize a anamnese", desc: "Preencha a anamnese ou envie um link para que o próprio cliente responda." },
-      { title: "Acompanhe o percurso", desc: "Supervisões, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
+      { title: "Acompanhe o percurso", desc: "Reflexões clínicas, evoluções e registros ficam vinculados ao cliente ao longo do acompanhamento." },
     ],
     ctaLabel: "Cadastrar cliente",
     ctaHref: "/dashboard/clients/new",
@@ -100,7 +100,7 @@ export default function HomePage() {
           <div className="w-11 h-11 rounded-xl bg-brand-500 flex items-center justify-center mb-4">
             <MessageSquare className="w-5 h-5 text-white" strokeWidth={1.8} />
           </div>
-          <h2 className="font-serif text-xl text-ink">Iniciar supervisão</h2>
+          <h2 className="font-serif text-xl text-ink">Iniciar reflexão clínica</h2>
           <p className="text-sm text-gray-500 mt-1.5 flex-1">
             Investigue um caso em acompanhamento e aprofunde seu raciocínio clínico.
           </p>
@@ -109,7 +109,7 @@ export default function HomePage() {
               href="/dashboard/supervision"
               className="inline-flex items-center justify-center bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors w-fit"
             >
-              Iniciar supervisão
+              Iniciar reflexão clínica
             </Link>
             <HowItWorksTrigger content={HOW_IT_WORKS.supervision} />
           </div>

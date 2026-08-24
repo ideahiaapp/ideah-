@@ -101,10 +101,10 @@ export default function EvolutionsPage() {
                 <FileText className="w-7 h-7 text-brand-300" strokeWidth={1.5} />
               </div>
               <p className="text-gray-700 font-bold mb-1">Nenhuma evolução registrada</p>
-              <p className="text-gray-400 text-sm mb-6">Evoluções são registradas automaticamente ao finalizar uma supervisão.</p>
+              <p className="text-gray-400 text-sm mb-6">Evoluções são registradas automaticamente ao finalizar uma reflexão clínica.</p>
               <Link href="/dashboard/supervision"
                 className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-sm">
-                <Sparkles className="w-4 h-4" strokeWidth={2.5} /> Iniciar supervisão
+                <Sparkles className="w-4 h-4" strokeWidth={2.5} /> Iniciar reflexão clínica
               </Link>
             </div>
           ) : (

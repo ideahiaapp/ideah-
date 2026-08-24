@@ -21,7 +21,7 @@ const SETTINGS_HOW_IT_WORKS: HowItWorksContent = {
   subtitle: "Personalize sua conta e as integrações do Paideia. As abas visíveis variam conforme seu perfil (terapeuta ou administrador).",
   steps: [
     { title: "Perfil e Segurança", desc: "Dados pessoais, configurações clínicas (valor de sessão, horários) e alteração de senha." },
-    { title: "API Key", desc: "Cadastre a chave do provedor de IA (Anthropic, Gemini ou Ollama) para usar Supervisão, Certificado e Relatórios." },
+    { title: "API Key", desc: "Cadastre a chave do provedor de IA (Anthropic, Gemini ou Ollama) para usar Reflexão Clínica, Certificado e Relatórios." },
     { title: "Minhas Bases e Ética, privacidade e uso responsável da IA", desc: "Veja suas abordagens contratadas e confirme os compromissos éticos exigidos pela Res. CFP nº 21/2025." },
   ],
   illustration: "settings",
@@ -441,7 +441,7 @@ function TabPlano() {
       price: { monthly: "R$ 49,90", annual: "R$ 39,90" },
       priceSub: { monthly: "/mês", annual: "/mês (cobrado anualmente)" },
       description: "Para terapeutas em plena atividade",
-      features: ["Clientes ilimitados", "Supervisões IA ilimitadas", "8 abordagens teóricas", "Evoluções e prontuários", "Acesso web + mobile", "Exportar prontuários (PDF)"],
+      features: ["Clientes ilimitados", "Reflexões Clínicas IA ilimitadas", "8 abordagens teóricas", "Evoluções e prontuários", "Acesso web + mobile", "Exportar prontuários (PDF)"],
       current: true,
       cta: "Plano atual",
       highlight: true,
@@ -1039,7 +1039,7 @@ function TabBase() {
         <div>
           <p className="text-sm font-bold text-indigo-800">Base de Conhecimento — RAG</p>
           <p className="text-xs text-indigo-600 mt-1 leading-relaxed">
-            Envie livros e artigos por abordagem teórica. O supervisor IA consultará automaticamente os materiais da abordagem selecionada em cada supervisão.
+            Envie livros e artigos por abordagem teórica. A IA consultará automaticamente os materiais da abordagem selecionada em cada reflexão clínica.
           </p>
         </div>
       </div>
@@ -1857,7 +1857,7 @@ function TabMinhasBases() {
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-700">Bases de conhecimento</p>
-          <p className="text-xs text-gray-500">Abordagens teóricas disponíveis na supervisão</p>
+          <p className="text-xs text-gray-500">Abordagens teóricas disponíveis na reflexão clínica</p>
         </div>
       </div>
       <div className="p-5 space-y-2">
