@@ -10,8 +10,8 @@ import { CertificateTemplate, CertificateBackTemplate } from "@/components/certi
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
 
 const CERTIFICATE_HOW_IT_WORKS: HowItWorksContent = {
-  title: "Certificado de Reflexão Clínica",
-  subtitle: "Emite o certificado de Formação Clínica Continuada com base nas horas de reflexão clínica realizadas no sistema.",
+  title: "Certificado de Formação Clínica Continuada",
+  subtitle: "Emite o certificado de Formação Clínica Continuada com base nas horas de formação clínica continuada realizadas no sistema.",
   steps: [
     { title: "Selecione o período", desc: "1 mês, 3 meses, 6 meses ou 1 ano." },
     { title: "Gere o certificado", desc: "Um certificado é criado para cada abordagem teórica usada em reflexões clínicas dentro do período." },
@@ -181,10 +181,10 @@ export default function CertificatePage() {
         </div>
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-ink">Certificado de Reflexão Clínica</h1>
+            <h1 className="text-xl font-bold text-ink">Certificado de Formação Clínica Continuada</h1>
             <HowItWorksTrigger content={CERTIFICATE_HOW_IT_WORKS} />
           </div>
-          <p className="text-gray-500 text-sm">Relatório de horas de reflexão clínica por abordagem teórica</p>
+          <p className="text-gray-500 text-sm">Relatório de horas de formação clínica continuada por abordagem teórica</p>
         </div>
       </div>
 

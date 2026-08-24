@@ -666,7 +666,7 @@ export default function ClientsScreen() {
                 )}
               </View>
 
-              <Text style={s.sectionTitle}>Reflexões Clínicas ({supervisions.length})</Text>
+              <Text style={s.sectionTitle}>Atividades Dialógicas ({supervisions.length})</Text>
 
               {supLoading ? (
                 <ActivityIndicator color={Colors.brand[500]} style={{ marginBottom: 20 }} />

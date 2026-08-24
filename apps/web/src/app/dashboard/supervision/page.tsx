@@ -440,7 +440,7 @@ function StartSupervisionModal({
             <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
               <PlayCircle className="w-5 h-5 text-brand-500" strokeWidth={1.8} />
             </div>
-            <h2 className="text-sm font-bold text-gray-900">Iniciar reflexão clínica</h2>
+            <h2 className="text-sm font-bold text-gray-900">Iniciar reflexão dialógica</h2>
           </div>
           <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors">
             <X className="w-4 h-4" />
@@ -510,9 +510,9 @@ function ConfirmEndSupervisionModal({ onConfirm, onCancel, title, message }: {
           <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
             <StopCircle className="w-5 h-5 text-amber-500" strokeWidth={1.8} />
           </div>
-          <h2 className="text-sm font-bold text-gray-900">{title ?? "Deseja finalizar a reflexão clínica?"}</h2>
+          <h2 className="text-sm font-bold text-gray-900">{title ?? "Deseja finalizar a atividade?"}</h2>
         </div>
-        <p className="text-sm text-gray-500 mb-4">{message ?? "A reflexão clínica em andamento será encerrada."}</p>
+        <p className="text-sm text-gray-500 mb-4">{message ?? "A reflexão dialógica em andamento será encerrada."}</p>
         <div className="flex items-center gap-2">
           <button onClick={onCancel}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors">
@@ -546,7 +546,7 @@ function FinishSupervisionModal({
             <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
               <FileText className="w-5 h-5 text-emerald-600" strokeWidth={1.8} />
             </div>
-            <h2 className="text-sm font-bold text-gray-900">Encerrar reflexão clínica</h2>
+            <h2 className="text-sm font-bold text-gray-900">Finalizar atividade</h2>
           </div>
           <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors">
             <X className="w-4 h-4" />
@@ -880,7 +880,7 @@ export default function WorkspacePage() {
     sendMessageText(text);
   }
 
-  /* Clique direto no botão "Encerrar Reflexão Clínica" — sem ação pendente após salvar */
+  /* Clique direto no botão "Finalizar atividade" — sem ação pendente após salvar */
   function handleFinishSupervision() {
     if (input.trim()) {
       setConfirmFinishWithUnsent(true);
@@ -904,7 +904,7 @@ export default function WorkspacePage() {
     setSupervisionPaused(false);
   }
 
-  /* Confirmação de "Deseja finalizar a reflexão clínica?" ao tentar sair da tela —
+  /* Confirmação de "Deseja finalizar a atividade?" ao tentar sair da tela —
      abre o mesmo popup de encerramento, e roda a ação pendente depois de salvar. */
   function handleConfirmLeave() {
     const action = pendingLeaveAction;
@@ -981,7 +981,7 @@ export default function WorkspacePage() {
     setPostFinishEvolutionId(null);
   }
 
-  /* Avisa antes de fechar/recarregar a aba com supervisão em andamento */
+  /* Avisa antes de fechar/recarregar a aba com reflexão dialógica em andamento */
   useEffect(() => {
     if (!supervisionActive) return;
     function handler(e: BeforeUnloadEvent) { e.preventDefault(); e.returnValue = ""; }
@@ -989,7 +989,7 @@ export default function WorkspacePage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [supervisionActive]);
 
-  /* Temporizador da supervisão em andamento — pausa sem avançar o tempo */
+  /* Temporizador da reflexão dialógica em andamento — pausa sem avançar o tempo */
   useEffect(() => {
     if (!supervisionActive || supervisionPaused) return;
     const interval = setInterval(() => {
@@ -1358,14 +1358,14 @@ export default function WorkspacePage() {
                       <button onClick={handleFinishSupervision}
                         className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl transition-colors shadow-sm">
                         <StopCircle className="w-4 h-4" strokeWidth={1.8} />
-                        Encerrar Reflexão Clínica
+                        Finalizar atividade
                       </button>
                     </div>
                   ) : (
                     <button onClick={handleStartSupervision}
                       className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
                       <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
-                      Iniciar reflexão clínica
+                      Iniciar reflexão dialógica
                     </button>
                   )}
                 </div>
@@ -1400,7 +1400,7 @@ export default function WorkspacePage() {
       {confirmFinishWithUnsent && (
         <ConfirmEndSupervisionModal
           title="Deseja realmente finalizar a sessão?"
-          message="A reflexão clínica ainda está em andamento."
+          message="A reflexão dialógica ainda está em andamento."
           onConfirm={handleConfirmFinishWithUnsent}
           onCancel={() => setConfirmFinishWithUnsent(false)}
         />

@@ -33,13 +33,13 @@ function formatDuration(totalSeconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-const DEFAULT_CERTIFICATE_PROMPT = `Você é responsável por redigir certificados formais de horas de reflexão clínica para terapeutas.
-Com base nos dados fornecidos, redija um certificado de reflexão clínica em português brasileiro, em tom formal e institucional, adequado para ser impresso ou enviado ao terapeuta.
+const DEFAULT_CERTIFICATE_PROMPT = `Você é responsável por redigir certificados formais de horas de formação clínica continuada para terapeutas.
+Com base nos dados fornecidos, redija um certificado de formação clínica continuada em português brasileiro, em tom formal e institucional, adequado para ser impresso ou enviado ao terapeuta.
 Use markdown. Inclua obrigatoriamente:
 
-# Certificado de Reflexão Clínica
+# Certificado de Formação Clínica Continuada
 
-Um parágrafo formal certificando que o terapeuta realizou as horas de reflexão clínica informadas, por abordagem teórica, no período indicado.
+Um parágrafo formal certificando que o terapeuta realizou as horas de formação clínica continuada informadas, por abordagem teórica, no período indicado.
 
 ## Discriminação por Abordagem Teórica
 (Liste cada abordagem com o total de horas e número de sessões)
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
 Período: ${PERIOD_LABEL[period]} (${startStr} a ${endStr})
 Tipo de relatório: ${reportType}
 
-HORAS DE REFLEXÃO CLÍNICA POR ABORDAGEM:
+HORAS DE FORMAÇÃO CLÍNICA CONTINUADA POR ABORDAGEM:
 ${synthesisLines}
 
 TOTAL GERAL: ${formatDuration(totalSeconds)} em ${evolutions.length} sessão(ões)

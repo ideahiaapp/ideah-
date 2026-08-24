@@ -104,7 +104,7 @@ export default function EvolutionsPage() {
               <p className="text-gray-400 text-sm mb-6">Evoluções são registradas automaticamente ao finalizar uma reflexão clínica.</p>
               <Link href="/dashboard/supervision"
                 className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-sm">
-                <Sparkles className="w-4 h-4" strokeWidth={2.5} /> Iniciar reflexão clínica
+                <Sparkles className="w-4 h-4" strokeWidth={2.5} /> Iniciar reflexão dialógica
               </Link>
             </div>
           ) : (

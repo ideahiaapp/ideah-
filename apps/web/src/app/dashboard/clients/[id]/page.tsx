@@ -494,7 +494,7 @@ export default function ClientDetailPage() {
           { id: "prontuario",  label: "Prontuário",                              icon: FileText      },
           { id: "anamnese",    label: "Anamnese",                                icon: ClipboardList },
           { id: "evolucoes",   label: `Evoluções (${evolutions.length})`,        icon: Target        },
-          { id: "supervisoes", label: `Reflexões Clínicas (${supervisions.length})`, icon: MessageSquare },
+          { id: "supervisoes", label: `Atividades Dialógicas (${supervisions.length})`, icon: MessageSquare },
         ] as { id: Tab; label: string; icon: React.ElementType }[]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={cn(
@@ -716,11 +716,11 @@ export default function ClientDetailPage() {
         </div>
       )}
 
-      {/* Tab: Reflexões Clínicas */}
+      {/* Tab: Atividades Dialógicas */}
       {tab === "supervisoes" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">{supervisions.length} reflexões clínicas sobre este caso</p>
+            <p className="text-sm text-gray-500">{supervisions.length} atividades dialógicas sobre este caso</p>
             <Link href={`/dashboard/supervision?client=${client.id}`}
               className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 hover:text-brand-700">
               <Plus className="w-3.5 h-3.5" /> Nova reflexão clínica

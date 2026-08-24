@@ -36,7 +36,7 @@ const HOW_IT_WORKS: Record<"supervision" | "client", HowItWorksContent> = {
       { title: "Escolha a abordagem", desc: "Defina a base teórica que orientará a reflexão clínica." },
       { title: "Inicie a reflexão", desc: "Traga suas impressões, dúvidas ou situações da sessão. O Paideia dialogará com você por meio de perguntas e reflexões para apoiar a construção do seu raciocínio clínico." },
     ],
-    ctaLabel: "Iniciar reflexão clínica",
+    ctaLabel: "Iniciar reflexão dialógica",
     ctaHref: "/supervision",
   },
   client: {
@@ -110,11 +110,11 @@ export default function HomeScreen() {
             <View style={[s.cardIcon, { backgroundColor: Colors.brand[500] }]}>
               <Ionicons name="chatbubbles" size={22} color="#fff" />
             </View>
-            <Text style={s.cardTitle}>Iniciar reflexão clínica</Text>
+            <Text style={s.cardTitle}>Iniciar reflexão dialógica</Text>
             <Text style={s.cardDesc}>Investigue um caso em acompanhamento e aprofunde seu raciocínio clínico.</Text>
             <View style={s.cardActions}>
               <TouchableOpacity style={s.cardCta} onPress={() => router.push("/supervision")} activeOpacity={0.85}>
-                <Text style={s.cardCtaText}>Iniciar reflexão clínica</Text>
+                <Text style={s.cardCtaText}>Iniciar reflexão dialógica</Text>
                 <Ionicons name="arrow-forward" size={14} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setHowItWorks("supervision")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

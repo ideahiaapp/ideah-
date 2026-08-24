@@ -94,11 +94,11 @@ const TOC = [
   { id: "primeiros-passos", label: "2. Primeiros Passos (Cadastro e Login)" },
   { id: "navegacao",      label: "3. Navegação Geral da Versão Web" },
   { id: "home",           label: "4. Home" },
-  { id: "supervisao",     label: "5. Reflexão Clínica com Inteligência Artificial" },
+  { id: "supervisao",     label: "5. Apoio Dialógico à Prática Clínica" },
   { id: "clientes",       label: "6. Clientes" },
   { id: "agenda",         label: "7. Agenda" },
   { id: "escritorio",     label: "8. Meu Escritório (Relatórios e Documentos)" },
-  { id: "certificado",    label: "9. Certificado de Reflexão Clínica" },
+  { id: "certificado",    label: "9. Certificado de Formação Clínica Continuada" },
   { id: "pesquisa",       label: "10. Pesquisa de Satisfação" },
   { id: "configuracoes",  label: "11. Configurações" },
   { id: "mobile",         label: "12. Aplicativo Mobile" },
@@ -243,20 +243,20 @@ export default function ManualPage() {
       <Section id="home" title="4. Home">
         <P>A tela inicial cumprimenta o terapeuta pelo nome e mostra a data atual, funcionando como ponto de partida rápido para as duas ações mais frequentes do dia a dia:</P>
         <Bullets items={[
-          "Iniciar reflexão clínica — abre a tela de Reflexão Clínica.",
+          "Iniciar reflexão dialógica — abre a tela de Reflexão Clínica.",
           "Cadastrar cliente — abre o formulário de cadastro de um novo cliente.",
         ]} />
       </Section>
 
       {/* 5. Reflexão Clínica */}
-      <Section id="supervisao" title="5. Reflexão Clínica com Inteligência Artificial">
+      <Section id="supervisao" title="5. Apoio Dialógico à Prática Clínica">
         <P>A Reflexão Clínica é o núcleo do Paideia: uma conversa dialógica com a IA sobre um caso clínico específico, feita para estimular a reflexão do terapeuta — não para entregar respostas prontas.</P>
         <SubSection title="5.1 Como iniciar uma reflexão clínica">
           <Steps items={[
-            "Acesse Reflexão Clínica no menu lateral (ou clique em \"Iniciar reflexão clínica\" na Home).",
+            "Acesse Reflexão Clínica no menu lateral (ou clique em \"Iniciar reflexão dialógica\" na Home).",
             "Selecione o cliente sobre o qual deseja refletir.",
             "Selecione a abordagem teórica sob a qual a reflexão clínica será conduzida.",
-            "Clique em \"Iniciar reflexão clínica\" — a partir desse momento a duração da sessão passa a ser cronometrada.",
+            "Clique em \"Iniciar reflexão dialógica\" — a partir desse momento a duração da sessão passa a ser cronometrada.",
           ]} />
         </SubSection>
         <SubSection title="5.2 Durante a conversa">
@@ -377,8 +377,8 @@ export default function ManualPage() {
       </Section>
 
       {/* 9. Certificado */}
-      <Section id="certificado" title="9. Certificado de Reflexão Clínica">
-        <P>Emite o certificado de Formação Clínica Continuada do terapeuta, com base nas horas de reflexão clínica dialógica realizadas no sistema.</P>
+      <Section id="certificado" title="9. Certificado de Formação Clínica Continuada">
+        <P>Emite o certificado de Formação Clínica Continuada do terapeuta, com base nas horas de formação clínica continuada realizadas no sistema.</P>
         <SubSection title="9.1 Gerando o certificado">
           <Steps items={[
             "Acesse Certificado no menu lateral.",
@@ -458,7 +458,7 @@ export default function ManualPage() {
           <P>A barra inferior dá acesso rápido a: Início, Clientes, Agenda, Meu escritório, Certificado e Configurações. O menu hambúrguer (ícone no topo das telas) reúne também Evoluções e Pesquisa de Satisfação, além dos mesmos atalhos da barra inferior.</P>
         </SubSection>
         <SubSection title="12.2 Home">
-          <P>Saudação, data e dois atalhos principais: &quot;Iniciar reflexão clínica&quot; e &quot;Cadastrar cliente&quot;, cada um com seu próprio &quot;Como funciona?&quot;.</P>
+          <P>Saudação, data e dois atalhos principais: &quot;Iniciar reflexão dialógica&quot; e &quot;Cadastrar cliente&quot;, cada um com seu próprio &quot;Como funciona?&quot;.</P>
         </SubSection>
         <SubSection title="12.3 Reflexão Clínica">
           <P>Mesmo fluxo da web: selecionar cliente e abordagem, iniciar, pausar/retomar, conversar (com suporte a voz) e finalizar gerando a evolução clínica.</P>

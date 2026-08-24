@@ -212,8 +212,8 @@ export default function CertificateScreen() {
           <HamburgerMenu />
           <View style={s.headerIcon}><Ionicons name="ribbon" size={22} color={Colors.brand[500]} /></View>
           <View style={{ flex: 1 }}>
-            <Text style={s.title}>Certificado de Reflexão Clínica</Text>
-            <Text style={s.subtitle}>Horas de reflexão clínica por abordagem teórica</Text>
+            <Text style={s.title}>Certificado de Formação Clínica Continuada</Text>
+            <Text style={s.subtitle}>Horas de formação clínica continuada por abordagem teórica</Text>
           </View>
         </View>
 

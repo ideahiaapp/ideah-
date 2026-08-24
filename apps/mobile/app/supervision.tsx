@@ -315,7 +315,7 @@ export default function SupervisionScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="play-circle" size={16} color="#fff" />
-              <Text style={s.controlBtnPrimaryText}>Iniciar reflexão clínica</Text>
+              <Text style={s.controlBtnPrimaryText}>Iniciar reflexão dialógica</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -336,7 +336,7 @@ export default function SupervisionScreen() {
               <Text style={s.emptyTitle}>Reflexão Clínica</Text>
               <Text style={s.emptyText}>
                 {selected
-                  ? "Toque em \"Iniciar reflexão clínica\" para começar. Você poderá pausar e retomar quando precisar."
+                  ? "Toque em \"Iniciar reflexão dialógica\" para começar. Você poderá pausar e retomar quando precisar."
                   : "Selecione um cliente para iniciar a reflexão clínica."}
               </Text>
             </View>
@@ -417,7 +417,7 @@ export default function SupervisionScreen() {
                 <Text style={s.modalCancelText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.modalConfirm} onPress={confirmStart}>
-                <Text style={s.modalConfirmText}>Iniciar reflexão clínica</Text>
+                <Text style={s.modalConfirmText}>Iniciar reflexão dialógica</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -428,7 +428,7 @@ export default function SupervisionScreen() {
       <Modal visible={showFinishModal} transparent animationType="fade" onRequestClose={() => setShowFinishModal(false)}>
         <View style={s.modalOverlay}>
           <View style={s.modalCard}>
-            <Text style={s.modalTitle}>Finalizar reflexão clínica</Text>
+            <Text style={s.modalTitle}>Finalizar atividade</Text>
             <Text style={s.modalSub}>Registre a hipótese clínica e o plano para a próxima sessão.</Text>
 
             <Text style={s.fieldLabel}>Hipótese clínica</Text>

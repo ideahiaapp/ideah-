@@ -30,7 +30,7 @@ export function HowItWorksProvider({ children }: { children: React.ReactNode }) 
   const close = useCallback(() => setContent(null), []);
 
   // Fecha o painel automaticamente ao trocar de página, já que o conteúdo
-  // (ex.: "Iniciar reflexão clínica") deixa de fazer sentido para a nova rota.
+  // (ex.: "Iniciar reflexão dialógica") deixa de fazer sentido para a nova rota.
   useEffect(() => {
     if (prevPathname.current !== pathname) {
       prevPathname.current = pathname;

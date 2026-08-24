@@ -77,7 +77,7 @@ export function CertificateTemplate({
         <div className="flex items-center justify-center gap-12 mt-6">
           <Stat icon={Calendar} label="PERÍODO" value={periodLabel} />
           <Stat icon={Clock} label="CARGA HORÁRIA" value={totalHoursLabel} />
-          <Stat icon={Users} label="SUPERVISÕES CLÍNICAS" value={`${totalSessions} sessões`} />
+          <Stat icon={Users} label="ATIVIDADES FORMATIVAS" value={`${totalSessions} atividades`} />
         </div>
 
         {/* Assinatura */}
