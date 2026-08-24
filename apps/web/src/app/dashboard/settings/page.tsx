@@ -22,7 +22,7 @@ const SETTINGS_HOW_IT_WORKS: HowItWorksContent = {
   steps: [
     { title: "Perfil e Segurança", desc: "Dados pessoais, configurações clínicas (valor de sessão, horários) e alteração de senha." },
     { title: "API Key", desc: "Cadastre a chave do provedor de IA (Anthropic, Gemini ou Ollama) para usar Supervisão, Certificado e Relatórios." },
-    { title: "Minhas Bases e Ética CFP", desc: "Veja suas abordagens contratadas e confirme os compromissos éticos exigidos pela Res. CFP nº 21/2025." },
+    { title: "Minhas Bases e Ética, privacidade e uso responsável da IA", desc: "Veja suas abordagens contratadas e confirme os compromissos éticos exigidos pela Res. CFP nº 21/2025." },
   ],
   illustration: "settings",
 };
@@ -789,7 +789,7 @@ function TabAPI() {
   );
 }
 
-/* ─── Aba Ética CFP ──────────────────────────────── */
+/* ─── Aba Ética, privacidade e uso responsável da IA ──────────────────────────────── */
 function TabEtica() {
   const [confirmed, setConfirmed] = useState({
     nodiag: false,
@@ -2106,7 +2106,7 @@ export default function SettingsPage() {
     { id: "base"        as Tab, label: "Base RAG",      icon: BookOpen,      adminOnly: true  },
     { id: "prompts"     as Tab, label: "Prompts",       icon: MessageSquare, adminOnly: true  },
     { id: "anamnese"    as Tab, label: "Anamnese",      icon: FileText,      adminOnly: true  },
-    { id: "etica"       as Tab, label: "Ética CFP",     icon: Scale,         adminOnly: false },
+    { id: "etica"       as Tab, label: "Ética, privacidade e uso responsável da IA", icon: Scale, adminOnly: false },
     { id: "terapeutas"  as Tab, label: "Terapeutas",    icon: Users,         adminOnly: true  },
     { id: "usoapi"      as Tab, label: "Uso de API",    icon: Zap,           adminOnly: true  },
   ];

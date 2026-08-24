@@ -427,7 +427,7 @@ export default function ManualPage() {
         <SubSection title="11.5 Minhas Bases">
           <P>Mostra as abordagens teóricas contratadas pelo terapeuta e o material de conhecimento (RAG) disponível para cada uma.</P>
         </SubSection>
-        <SubSection title="11.6 Ética CFP">
+        <SubSection title="11.6 Ética, privacidade e uso responsável da IA">
           <P>Apresenta a Resolução CFP nº 21/2025 sobre uso de IA na prática profissional e exige a confirmação de quatro compromissos éticos: ausência de diagnóstico automático, juízo clínico humano, sigilo/pseudonimização de dados e consentimento (TCLE) dos pacientes.</P>
         </SubSection>
         <SubSection title="11.7 Base RAG">
