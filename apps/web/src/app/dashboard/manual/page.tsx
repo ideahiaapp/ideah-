@@ -211,7 +211,7 @@ export default function ManualPage() {
             "Configurações → Perfil: nome, foto, CRP, dados de contato e configurações clínicas (valor de sessão, duração padrão, dias de atendimento).",
             "Configurações → API Key: necessária para as funcionalidades de Inteligência Artificial (supervisão, relatórios, certificado). Veja a seção 11.4.",
             "Configurações → Minhas Bases: confirme quais abordagens teóricas estão liberadas para você.",
-            "Configurações → Ética CFP: leia e confirme os compromissos éticos exigidos pela Resolução CFP nº 21/2025.",
+            "Configurações → Ética e uso responsável da IA: leia e confirme as declarações de ciência relacionadas ao uso responsável da Inteligência Artificial, ao sigilo profissional, à proteção de dados e à responsabilidade do profissional pelas decisões tomadas em sua prática.",
           ]} />
         </SubSection>
       </Section>
