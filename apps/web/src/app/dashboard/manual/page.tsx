@@ -517,7 +517,7 @@ export default function ManualPage() {
 
       {/* 15. Ética */}
       <Section id="etica" title="15. Ética, Privacidade e Segurança (CFP e LGPD)">
-        <P>O Paideia foi desenhado em conformidade com a Resolução CFP nº 21/2025, que regula o uso de Inteligência Artificial na prática profissional da Psicologia, e com a Lei Geral de Proteção de Dados (LGPD).</P>
+        <P>O Paideia foi desenvolvido para apoiar o uso responsável de tecnologias digitais e Inteligência Artificial na prática profissional. Sua utilização deve observar a Lei Geral de Proteção de Dados, o Código de Ética aplicável à profissão do usuário e, no caso de psicólogas e psicólogos, as normas do Conselho Federal de Psicologia pertinentes ao exercício profissional mediado por tecnologias digitais, ao sigilo, aos registros e à produção de documentos psicológicos.</P>
         <SubSection title="15.1 Responsabilidades do profissional">
           <Bullets items={[
             "A IA não realiza diagnósticos — toda hipótese diagnóstica é de responsabilidade exclusiva do terapeuta.",
