@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/auth.store";
 import type { Client, Evolution, Supervision } from "@/lib/database.types";
 import { TemplateAnswersView, TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
+import { API_BASE } from "@/lib/api-base";
 
 type Tab = "prontuario" | "anamnese" | "evolucoes" | "supervisoes";
 
@@ -63,7 +64,7 @@ function SendAnamneseCard({ therapistId, client }: { therapistId: string; client
   const [loadingApproaches,  setLoadingApproaches]  = useState(true);
 
   useEffect(() => {
-    fetch(`/api/therapist-approaches?therapistId=${therapistId}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${therapistId}`)
       .then(r => r.json())
       .then(d => setAcquiredApproaches(d.approaches ?? []))
       .catch(() => {})
@@ -91,7 +92,7 @@ function SendAnamneseCard({ therapistId, client }: { therapistId: string; client
   async function sendEmail() {
     setSending(true); setEmailError(null);
     try {
-      const res = await fetch("/api/anamnese/invite", {
+      const res = await fetch(`${API_BASE}/api/anamnese/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ therapistId, clientId: client.id }),
@@ -348,7 +349,7 @@ export default function ClientDetailPage() {
   useEffect(() => {
     if (!fillApproach) { setFillTemplateHtml(null); return; }
     setLoadingFillTemplate(true);
-    fetch(`/api/anamnese-templates/${fillApproach}`, { cache: "no-store" })
+    fetch(`${API_BASE}/api/anamnese-templates/${fillApproach}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setFillTemplateHtml(d.content ?? null))
       .catch(() => setFillTemplateHtml(null))
@@ -359,7 +360,7 @@ export default function ClientDetailPage() {
     if (!client || !user) return;
     setAnamneseSaving(true); setAnamneseSaveError(null);
     try {
-      const res = await fetch("/api/anamnese/create-for-client", {
+      const res = await fetch(`${API_BASE}/api/anamnese/create-for-client`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -383,13 +384,13 @@ export default function ClientDetailPage() {
   useEffect(() => {
     if (!client?.anamnese_id) return;
     setAnamneseLoading(true);
-    fetch(`/api/anamnese/${client.anamnese_id}`)
+    fetch(`${API_BASE}/api/anamnese/${client.anamnese_id}`)
       .then(r => r.json())
       .then(d => {
         const a: Anamnese | null = d.anamnese ?? null;
         setAnamnese(a);
         if (a?.approach && a?.template_answers) {
-          fetch(`/api/anamnese-templates/${a.approach}`, { cache: "no-store" })
+          fetch(`${API_BASE}/api/anamnese-templates/${a.approach}`, { cache: "no-store" })
             .then(r => r.json())
             .then(t => setTemplateHtml(t.content ?? null))
             .catch(() => {});

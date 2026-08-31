@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
 import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 import type { Client } from "@/lib/database.types";
+import { API_BASE } from "@/lib/api-base";
 
 const CONDITIONS = [
   "Gravidez", "Diabetes", "Problemas cardíacos", "Cirurgia recente",
@@ -115,7 +116,7 @@ export default function EditClientPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${user.id}`)
       .then(r => r.json())
       .then(d => setAcquiredApproaches(d.approaches ?? []))
       .catch(() => {})
@@ -134,7 +135,7 @@ export default function EditClientPage() {
   useEffect(() => {
     if (!primaryApproachValue) { setTemplateHtml(null); return; }
     setLoadingTemplate(true);
-    fetch(`/api/anamnese-templates/${primaryApproachValue}`, { cache: "no-store" })
+    fetch(`${API_BASE}/api/anamnese-templates/${primaryApproachValue}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setTemplateHtml(d.content ?? null))
       .catch(() => setTemplateHtml(null))
@@ -152,7 +153,7 @@ export default function EditClientPage() {
     if (!client) return;
     if (client.anamnese_id) {
       setAnamneseLoading(true);
-      fetch(`/api/anamnese/${client.anamnese_id}`)
+      fetch(`${API_BASE}/api/anamnese/${client.anamnese_id}`)
         .then(r => r.json())
         .then(d => {
           if (d.anamnese) {
@@ -217,13 +218,13 @@ export default function EditClientPage() {
       template_answers: templateRef.current ? serializeTemplateForm(templateRef.current) : undefined,
     };
     if (client.anamnese_id) {
-      await fetch(`/api/anamnese/${client.anamnese_id}`, {
+      await fetch(`${API_BASE}/api/anamnese/${client.anamnese_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...anamneseForm, ...templateFields }),
       });
     } else {
-      const res = await fetch("/api/anamnese/create-for-client", {
+      const res = await fetch(`${API_BASE}/api/anamnese/create-for-client`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ therapistId: user.id, clientId: client.id, ...anamneseForm, ...templateFields }),

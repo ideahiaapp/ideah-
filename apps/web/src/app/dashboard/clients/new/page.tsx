@@ -13,6 +13,7 @@ import { cn, maskPhone } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea } from "@/components/ui/VoiceField";
 import { createClient, generateInitials, generateColor } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
+import { API_BASE } from "@/lib/api-base";
 
 const ALL_APPROACHES = [
   { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
@@ -41,7 +42,7 @@ function AnamneseLinkCard({ therapistId }: { therapistId: string }) {
   const [loadingApproaches,  setLoadingApproaches]  = useState(true);
 
   useEffect(() => {
-    fetch(`/api/therapist-approaches?therapistId=${therapistId}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${therapistId}`)
       .then(r => r.json())
       .then(d => setAcquiredApproaches(d.approaches ?? []))
       .catch(() => {})
@@ -71,7 +72,7 @@ function AnamneseLinkCard({ therapistId }: { therapistId: string }) {
     if (!newEmail.trim()) return;
     setSending(true); setEmailError(null);
     try {
-      const res = await fetch("/api/anamnese/invite", {
+      const res = await fetch(`${API_BASE}/api/anamnese/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ therapistId, patientEmail: newEmail.trim() }),
@@ -223,7 +224,7 @@ export default function NewClientPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${user.id}`)
       .then(r => r.json())
       .then(d => setAcquiredApproaches(d.approaches ?? []))
       .catch(() => {})

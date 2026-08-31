@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ClipboardList, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { adminHeaders } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api-base";
 
 /* ── Tipos de campo ──────────────────────────────────────
    - Opções terminadas em ":" são "abertas" (ex.: "Outro:") — ao selecionar,
@@ -241,7 +242,7 @@ export default function SatisfactionSurveyPage() {
     setSaving(true); setError(null);
     try {
       const answers = { ...a, q5: multi.q5, q8: multi.q8, q18: multi.q18 };
-      const res = await fetch("/api/satisfaction-survey", {
+      const res = await fetch(`${API_BASE}/api/satisfaction-survey`, {
         method: "POST",
         headers: await adminHeaders(),
         body: JSON.stringify({ answers, platform: "web" }),

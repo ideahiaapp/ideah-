@@ -7,6 +7,7 @@ import { getClients } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client } from "@/lib/database.types";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { API_BASE } from "@/lib/api-base";
 
 const ALL_APPROACHES = [
   { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
@@ -65,7 +66,7 @@ export default function HomePage() {
   }, [user]);
 
   useEffect(() => {
-    fetch("/api/geo")
+    fetch(`${API_BASE}/api/geo`)
       .then(r => r.json())
       .then(d => setCity(d.city ?? null))
       .catch(() => setCity(null));

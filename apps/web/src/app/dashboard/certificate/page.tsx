@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { CertificateTemplate, CertificateBackTemplate } from "@/components/certificate/CertificateTemplate";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { API_BASE } from "@/lib/api-base";
 
 const CERTIFICATE_HOW_IT_WORKS: HowItWorksContent = {
   title: "Certificado de Supervisão",
@@ -143,7 +144,7 @@ export default function CertificatePage() {
       return;
     }
     adminHeaders().then(headers =>
-      fetch("/api/admin/therapists", { headers })
+      fetch(`${API_BASE}/api/admin/therapists`, { headers })
         .then(r => r.json())
         .then(d => setTherapists(Array.isArray(d) ? d : []))
         .catch(() => setError("Não foi possível carregar a lista de terapeutas."))
@@ -162,7 +163,7 @@ export default function CertificatePage() {
     try {
       const headers = { ...(await adminHeaders()), ...(await aiHeaders()) };
       const params = new URLSearchParams({ therapistId, period, reportType: "detalhado" });
-      const res = await fetch(`/api/certificate?${params}`, { headers, cache: "no-store" });
+      const res = await fetch(`${API_BASE}/api/certificate?${params}`, { headers, cache: "no-store" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao gerar certificado.");
       setReport(data);

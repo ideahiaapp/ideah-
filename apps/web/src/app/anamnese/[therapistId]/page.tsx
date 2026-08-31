@@ -7,6 +7,7 @@ import { CheckCircle2, AlertTriangle, Loader2, ChevronDown } from "lucide-react"
 import Image from "next/image";
 import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
+import { API_BASE } from "@/lib/api-base";
 
 type Therapist = { id: string; name: string; email: string };
 
@@ -82,7 +83,7 @@ export default function AnamnesePage() {
   });
 
   useEffect(() => {
-    fetch(`/api/anamnese/therapist/${therapistId}`)
+    fetch(`${API_BASE}/api/anamnese/therapist/${therapistId}`)
       .then(r => r.json())
       .then(d => { if (d.therapist) setTherapist(d.therapist); else setNotFound(true); })
       .catch(() => setNotFound(true))
@@ -92,7 +93,7 @@ export default function AnamnesePage() {
   useEffect(() => {
     if (!approach) return;
     setLoadingTemplate(true);
-    fetch(`/api/anamnese-templates/${approach}`, { cache: "no-store" })
+    fetch(`${API_BASE}/api/anamnese-templates/${approach}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setTemplateHtml(d.content ?? null))
       .catch(() => setTemplateHtml(null))
@@ -131,7 +132,7 @@ export default function AnamnesePage() {
         ? serializeTemplateForm(templateRef.current)
         : undefined;
 
-      const res = await fetch("/api/anamnese/submit", {
+      const res = await fetch(`${API_BASE}/api/anamnese/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

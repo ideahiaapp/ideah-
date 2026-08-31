@@ -7,6 +7,7 @@ import { CheckCircle2, AlertTriangle, Loader2, ChevronDown } from "lucide-react"
 import Image from "next/image";
 import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
+import { API_BASE } from "@/lib/api-base";
 
 const HOW_FOUND_OPTIONS = [
   "Indicação de amigo(a)", "Redes sociais", "Google", "Evento ou palestra",
@@ -78,7 +79,7 @@ export default function PreencherAnamnesePage() {
   });
 
   useEffect(() => {
-    fetch(`/api/anamnese/client-public/${clientId}`)
+    fetch(`${API_BASE}/api/anamnese/client-public/${clientId}`)
       .then(r => r.json())
       .then(d => {
         if (d.client) {
@@ -99,7 +100,7 @@ export default function PreencherAnamnesePage() {
   useEffect(() => {
     if (!approach) return;
     setLoadingTemplate(true);
-    fetch(`/api/anamnese-templates/${approach}`, { cache: "no-store" })
+    fetch(`${API_BASE}/api/anamnese-templates/${approach}`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setTemplateHtml(d.content ?? null))
       .catch(() => setTemplateHtml(null))
@@ -136,7 +137,7 @@ export default function PreencherAnamnesePage() {
         ? serializeTemplateForm(templateRef.current)
         : undefined;
 
-      const res = await fetch(`/api/anamnese/client-public/${clientId}`, {
+      const res = await fetch(`${API_BASE}/api/anamnese/client-public/${clientId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

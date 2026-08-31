@@ -15,6 +15,7 @@ import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Client } from "@/lib/database.types";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { API_BASE } from "@/lib/api-base";
 
 const CLIENTS_HOW_IT_WORKS: HowItWorksContent = {
   title: "Acompanhamento do cliente",
@@ -98,7 +99,7 @@ function SendAnamneseModal({ therapistId, onClose }: { therapistId: string; onCl
   const [loadingApproaches,  setLoadingApproaches]  = useState(true);
 
   useEffect(() => {
-    fetch(`/api/therapist-approaches?therapistId=${therapistId}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${therapistId}`)
       .then(r => r.json())
       .then(d => setAcquiredApproaches(d.approaches ?? []))
       .catch(() => {})
@@ -127,7 +128,7 @@ function SendAnamneseModal({ therapistId, onClose }: { therapistId: string; onCl
     if (!newEmail.trim()) return;
     setSending(true); setEmailError(null);
     try {
-      const res = await fetch("/api/anamnese/invite", {
+      const res = await fetch(`${API_BASE}/api/anamnese/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ therapistId, patientEmail: newEmail.trim() }),
@@ -272,7 +273,7 @@ function AnamneseCard({ anamnese, onDecision }: { anamnese: Anamnese; onDecision
   async function decide(status: "ACCEPTED" | "REJECTED") {
     setDeciding(status);
     try {
-      const res = await fetch(`/api/anamnese/${anamnese.id}`, {
+      const res = await fetch(`${API_BASE}/api/anamnese/${anamnese.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -491,7 +492,7 @@ function ClientsPageInner() {
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
 
-    fetch(`/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
+    fetch(`${API_BASE}/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
       .then(r => r.json())
       .then(d => setPendingAnamneses(d.anamneses ?? []))
       .catch(() => {})
