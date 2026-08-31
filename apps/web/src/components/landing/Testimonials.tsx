@@ -22,7 +22,7 @@ export function TestimonialsSection() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-4">
           <h2 className="font-serif text-3xl md:text-4xl text-ink leading-tight">
-            O que profissionais diriam sobre o Paideia
+            O que profissionais dizem sobre o Paideia
           </h2>
         </div>
         <p className="text-center text-xs text-gray-400 max-w-lg mx-auto mb-16 leading-relaxed">
