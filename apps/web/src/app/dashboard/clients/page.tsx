@@ -27,7 +27,7 @@ const CLIENTS_HOW_IT_WORKS: HowItWorksContent = {
   illustration: "clients",
 };
 
-type TabId = "sem-anamnese" | "ativos" | "aguardando";
+type TabId = "sem-anamnese" | "ativos" | "aguardando" | "inativos";
 
 interface Anamnese {
   id: string;
@@ -503,6 +503,7 @@ function ClientsPageInner() {
   }
 
   const activeClients    = clients.filter(c => c.status === "ACTIVE");
+  const inactiveClients  = clients.filter(c => c.status === "INACTIVE");
   const semAnamnese      = activeClients.filter(c => !c.anamnese_id);
   const comAnamnese      = activeClients.filter(c => !!c.anamnese_id);
 
@@ -518,6 +519,7 @@ function ClientsPageInner() {
     { id: "sem-anamnese" as TabId, label: "Sem anamnese",        icon: ClipboardList,  count: semAnamnese.length,       badge: semAnamnese.length > 0 ? "bg-amber-500" : undefined },
     { id: "ativos"       as TabId, label: "Clientes ativos",    icon: UserCheck,      count: comAnamnese.length,       badge: undefined },
     { id: "aguardando"   as TabId, label: "Aguardando aprovação", icon: ClipboardCheck, count: pendingAnamneses.length,  badge: pendingAnamneses.length > 0 ? "bg-amber-500" : undefined },
+    { id: "inativos"     as TabId, label: "Inativos",           icon: UserX,          count: inactiveClients.length,   badge: undefined },
   ];
 
   if (loading) return (
@@ -598,7 +600,7 @@ function ClientsPageInner() {
       </div>
 
       {/* Busca (tabs que mostram lista de clientes) */}
-      {(tab === "sem-anamnese" || tab === "ativos") && (
+      {(tab === "sem-anamnese" || tab === "ativos" || tab === "inativos") && (
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -663,6 +665,27 @@ function ClientsPageInner() {
             }
           />
         )
+      )}
+
+      {tab === "inativos" && (
+        <ClientTable
+          clients={filterClients(inactiveClients)}
+          emptyMessage={
+            inactiveClients.length === 0 ? (
+              <>
+                <UserX className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">Nenhum cliente inativo</p>
+                <p className="text-gray-400 text-sm mt-1">Clientes inativados aparecerão aqui.</p>
+              </>
+            ) : (
+              <>
+                <UserX className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">Nenhum cliente encontrado</p>
+                <button onClick={() => setSearch("")} className="mt-3 text-sm text-brand-500 underline">Limpar busca</button>
+              </>
+            )
+          }
+        />
       )}
 
       {tab === "aguardando" && (
