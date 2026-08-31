@@ -4,6 +4,7 @@
   "workspaces": [
     "apps/web",
     "apps/api",
+    "apps/site-instituto",
     "packages/*"
   ],
   "scripts": {
