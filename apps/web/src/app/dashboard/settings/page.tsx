@@ -15,6 +15,7 @@ import { adminHeaders } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { VoiceInput, VoiceTextarea, TextareaWithMic } from "@/components/ui/VoiceField";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { API_BASE } from "@/lib/api-base";
 
 const SETTINGS_HOW_IT_WORKS: HowItWorksContent = {
   title: "Configurações",
@@ -587,7 +588,7 @@ function TabAPI() {
   async function handleTest() {
     setTesting(true); setTestResult(null);
     try {
-      const res = await fetch("/api/supervision/chat", {
+      const res = await fetch(`${API_BASE}/api/supervision/chat`, {
         method: "POST",
         headers: await aiHeaders(),
         body: JSON.stringify({
@@ -952,7 +953,7 @@ function TabBase() {
 
   function loadDocs() {
     if (!user) return;
-    fetch(`/api/rag/documents?therapistId=${user.id}`)
+    fetch(`${API_BASE}/api/rag/documents?therapistId=${user.id}`)
       .then(r => r.json())
       .then(d => setDocs(d.documents ?? []))
       .catch(() => {})
@@ -977,7 +978,7 @@ function TabBase() {
         fd.append("file", file);
         fd.append("therapistId", user.id);
         fd.append("approach", approach);
-        const res = await fetch("/api/rag/upload", { method: "POST", body: fd });
+        const res = await fetch(`${API_BASE}/api/rag/upload`, { method: "POST", body: fd });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         results.ok++;
@@ -1007,7 +1008,7 @@ function TabBase() {
     if (!user) return;
     setDeleting(docId);
     try {
-      await fetch("/api/rag/documents", {
+      await fetch(`${API_BASE}/api/rag/documents`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ documentId: docId, therapistId: user.id }),
@@ -1178,7 +1179,7 @@ function ApproachManager({ therapist }: { therapist: TherapistRow }) {
   const [error,    setError]    = useState("");
 
   useEffect(() => {
-    fetch(`/api/therapist-approaches?therapistId=${therapist.userId}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${therapist.userId}`)
       .then(r => r.json())
       .then(d => setAcquired(d.approaches ?? []))
       .catch(() => {})
@@ -1189,7 +1190,7 @@ function ApproachManager({ therapist }: { therapist: TherapistRow }) {
     const next = acquired.includes(key) ? acquired.filter(a => a !== key) : [...acquired, key];
     setSaving(key); setError("");
     try {
-      const res = await fetch("/api/therapist-approaches", {
+      const res = await fetch(`${API_BASE}/api/therapist-approaches`, {
         method: "PUT",
         headers: await adminHeaders(),
         body: JSON.stringify({ therapistId: therapist.userId, approaches: next }),
@@ -1258,7 +1259,7 @@ function AddTherapistForm({ onCreated }: { onCreated: () => void }) {
     if (!canSave) return;
     setSaving(true); setError("");
     try {
-      const res = await fetch("/api/admin/therapists", {
+      const res = await fetch(`${API_BASE}/api/admin/therapists`, {
         method: "POST",
         headers: await adminHeaders(),
         body: JSON.stringify({ name: name.trim(), email: email.trim(), password, approaches }),
@@ -1355,7 +1356,7 @@ function TabTerapeutas() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch("/api/admin/therapists", {
+    const res = await fetch(`${API_BASE}/api/admin/therapists`, {
       headers: await adminHeaders(),
     });
     if (res.ok) setList(await res.json());
@@ -1367,7 +1368,7 @@ function TabTerapeutas() {
 
   async function toggle(userId: string, blocked: boolean) {
     setToggling(userId);
-    const res = await fetch("/api/admin/therapists", {
+    const res = await fetch(`${API_BASE}/api/admin/therapists`, {
       method: "PATCH",
       headers: await adminHeaders(),
       body: JSON.stringify({ userId, blocked }),
@@ -1476,7 +1477,7 @@ function TabPrompts() {
   const [msg,       setMsg]       = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
-    fetch("/api/approach-prompts", { cache: "no-store" })
+    fetch(`${API_BASE}/api/approach-prompts`, { cache: "no-store" })
       .then(async r => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error ?? "Erro ao carregar prompts.");
@@ -1500,7 +1501,7 @@ function TabPrompts() {
     setSaving(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/approach-prompts", {
+      const res = await fetch(`${API_BASE}/api/approach-prompts`, {
         method: "PUT",
         headers: await adminHeaders(),
         body: JSON.stringify({ approach: selected, prompt: draft }),
@@ -1646,8 +1647,8 @@ function TabApiUsage() {
     setLoading(true);
     const headers = await adminHeaders();
     Promise.all([
-      fetch("/api/admin/plan-limits", { cache: "no-store", headers }).then(r => r.json()),
-      fetch("/api/admin/usage-summary", { cache: "no-store", headers }).then(r => r.json()),
+      fetch(`${API_BASE}/api/admin/plan-limits`, { cache: "no-store", headers }).then(r => r.json()),
+      fetch(`${API_BASE}/api/admin/usage-summary`, { cache: "no-store", headers }).then(r => r.json()),
     ]).then(([limitsData, usageData]) => {
       const rows: PlanLimitRow[] = limitsData.limits ?? [];
       setLimits(rows);
@@ -1664,7 +1665,7 @@ function TabApiUsage() {
     setSavingPlan(plan);
     setMsg(null);
     try {
-      const res = await fetch("/api/admin/plan-limits", {
+      const res = await fetch(`${API_BASE}/api/admin/plan-limits`, {
         method: "PUT",
         headers: await adminHeaders(),
         body: JSON.stringify({ plan, monthlyTokenLimit: value }),
@@ -1809,7 +1810,7 @@ function TabMinhasBases() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${user.id}`)
       .then(r => r.json())
       .then(d => {
         const list: string[] = d.approaches ?? [];
@@ -1828,7 +1829,7 @@ function TabMinhasBases() {
     if (!user) return;
     setSaving(true); setError("");
     try {
-      const res = await fetch("/api/therapist-approaches-self", {
+      const res = await fetch(`${API_BASE}/api/therapist-approaches-self`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, approaches: selected }),
@@ -1931,7 +1932,7 @@ function AnamneseApproachRow({ approach, label, updatedAt, hasTemplate, onSaved 
     setExpanded(next);
     if (next && !loaded) {
       setLoading(true);
-      fetch(`/api/anamnese-templates/${approach}`, { cache: "no-store" })
+      fetch(`${API_BASE}/api/anamnese-templates/${approach}`, { cache: "no-store" })
         .then(r => r.json())
         .then(d => setContent(d.content ?? ""))
         .catch(() => {})
@@ -1943,7 +1944,7 @@ function AnamneseApproachRow({ approach, label, updatedAt, hasTemplate, onSaved 
     setSaving(true);
     setMsg(null);
     try {
-      const res = await fetch(`/api/anamnese-templates/${approach}`, {
+      const res = await fetch(`${API_BASE}/api/anamnese-templates/${approach}`, {
         method: "PUT",
         headers: await adminHeaders(),
         body: JSON.stringify({ content }),
@@ -2027,7 +2028,7 @@ function TabAnamnese() {
   const [loading,   setLoading]   = useState(true);
 
   function loadTemplates() {
-    fetch("/api/anamnese-templates", { cache: "no-store" })
+    fetch(`${API_BASE}/api/anamnese-templates`, { cache: "no-store" })
       .then(r => r.json())
       .then(d => setTemplates(d.templates ?? []))
       .catch(() => {})

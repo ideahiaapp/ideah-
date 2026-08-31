@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore, checkIsAdmin } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
+import { API_BASE } from "@/lib/api-base";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -20,7 +21,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         // Verifica se o terapeuta está cadastrado e não bloqueado no Paideia
         let allowed = false;
         try {
-          const res = await fetch(`/api/auth/verify?email=${encodeURIComponent(email)}`);
+          const res = await fetch(`${API_BASE}/api/auth/verify?email=${encodeURIComponent(email)}`);
           if (res.ok) ({ allowed } = await res.json() as { allowed: boolean });
         } catch { /* rede falhou — bloqueia por segurança */ }
 

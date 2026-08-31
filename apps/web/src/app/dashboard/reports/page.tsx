@@ -19,6 +19,7 @@ import type { EvolutionWithClient } from "@/lib/db/evolutions";
 import type { SupervisionWithClient } from "@/lib/db/supervisions";
 import type { SessionWithClient } from "@/lib/db/sessions";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { API_BASE } from "@/lib/api-base";
 
 const REPORTS_HOW_IT_WORKS: HowItWorksContent = {
   title: "Meu Escritório",
@@ -532,7 +533,7 @@ function EvolutionReportPanel({ clients, promptKey }: { clients: Client[]; promp
     setReport(null);
     setError(null);
     try {
-      const res = await fetch("/api/reports/clinical-evolution", {
+      const res = await fetch(`${API_BASE}/api/reports/clinical-evolution`, {
         method:  "POST",
         headers: await aiHeaders(),
         body:    JSON.stringify({ clientId, therapistId: user.id, period, promptKey }),
@@ -696,7 +697,7 @@ function OfficialDocumentPanel({ clients }: { clients: Client[] }) {
     setResult(null);
     setError(null);
     try {
-      const res = await fetch("/api/reports/official-document", {
+      const res = await fetch(`${API_BASE}/api/reports/official-document`, {
         method:  "POST",
         headers: await aiHeaders(),
         body:    JSON.stringify({ clientId, therapistId: user.id, documentType }),
@@ -866,7 +867,7 @@ export default function ReportsPage() {
       setSupervisions(s);
       setSessions(sess);
     }).finally(() => setLoading(false));
-    fetch(`/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
+    fetch(`${API_BASE}/api/anamnese/list?therapistId=${user.id}&status=PENDING`)
       .then(r => r.json())
       .then(d => setPendingAnamneseApproval((d.anamneses ?? []).length))
       .catch(() => {});

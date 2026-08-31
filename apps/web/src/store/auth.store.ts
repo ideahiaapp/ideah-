@@ -11,6 +11,7 @@ export type User = {
   createdAt: Date;
 };
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { API_BASE } from "@/lib/api-base";
 
 /* Consulta a tabela `admins` no Supabase — fonte única de verdade
  * (a autorização real das rotas admin é feita no servidor via requireAdmin()). */
@@ -87,7 +88,7 @@ export const useAuthStore = create<AuthState>()(
 
         // Registra o terapeuta como autorizado no Paideia (mesmo antes de confirmar email)
         if (data.user) {
-          await fetch("/api/auth/register-profile", {
+          await fetch(`${API_BASE}/api/auth/register-profile`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: data.user.id, email }),

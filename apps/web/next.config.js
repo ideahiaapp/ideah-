@@ -2,6 +2,9 @@ const { withSentryConfig } = require("@sentry/nextjs");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Permite montar este app sob um subcaminho (ex.: "/paideia") quando hospedado
+  // atrás de outro site via Next.js Multi Zones. Vazio localmente (roda na raiz).
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
   transpilePackages: ["@paideia/types", "@paideia/utils"],
   experimental: {
     serverComponentsExternalPackages: ["pdf-parse", "@napi-rs/canvas", "pdfjs-dist", "tesseract.js"],

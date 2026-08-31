@@ -8,6 +8,7 @@ import { Eye, EyeOff, Lock, Mail, User, CheckCircle2, ArrowLeft, Loader2, BookOp
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { supabase } from "@/lib/supabase";
+import { API_BASE } from "@/lib/api-base";
 
 /* SVG oficial do Google (4 cores) */
 function GoogleIcon() {
@@ -58,7 +59,7 @@ const CATEGORIES: { key: Category; label: string; description: string; feature: 
   { key: "individual", label: "Individual", description: "Para terapeutas autônomos", feature: "1 terapeuta" },
 ];
 
-const MONTHLY_PRICE_PER_BASE = 147.00;
+const MONTHLY_PRICE_PER_BASE = 97.00;
 const ANNUAL_DISCOUNT = 0.2; // 20% off no plano anual
 const ANNUAL_PRICE_PER_BASE = MONTHLY_PRICE_PER_BASE * (1 - ANNUAL_DISCOUNT);
 
@@ -151,7 +152,7 @@ function RegisterPage() {
       // A conta só é liberada (therapist_profiles) quando o pagamento é confirmado
       // (ver /api/webhooks/greenn) — mesmo no cadastro via Google, onde a conta em
       // auth.users já existe desde o OAuth, mas ainda sem acesso ao painel.
-      const res = await fetch("/api/auth/pending-registration", {
+      const res = await fetch(`${API_BASE}/api/auth/pending-registration`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -206,7 +207,7 @@ function RegisterPage() {
     setError("");
     setPayLoading(true);
     try {
-      const res = await fetch("/api/auth/dev-complete-registration", {
+      const res = await fetch(`${API_BASE}/api/auth/dev-complete-registration`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pendingId }),

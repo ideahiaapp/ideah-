@@ -5,6 +5,7 @@ import { BarChart3, Loader2, AlertTriangle, ChevronDown, RefreshCw, Users, Smart
 import { adminHeaders } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api-base";
 
 type SurveyResponse = {
   id: string;
@@ -183,7 +184,7 @@ export default function SurveyResultsPage() {
   function load() {
     setLoading(true); setError(null);
     adminHeaders().then(headers =>
-      fetch("/api/satisfaction-survey", { headers, cache: "no-store" })
+      fetch(`${API_BASE}/api/satisfaction-survey`, { headers, cache: "no-store" })
         .then(async r => {
           const d = await r.json();
           if (!r.ok) throw new Error(d.error ?? "Erro ao carregar respostas.");

@@ -22,15 +22,10 @@ export function TestimonialsSection() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-4">
           <h2 className="font-serif text-3xl md:text-4xl text-ink leading-tight">
-            O que profissionais diriam sobre o Paideia
+            O que profissionais dizem sobre o Paideia
           </h2>
         </div>
-        <p className="text-center text-xs text-gray-400 max-w-lg mx-auto mb-16 leading-relaxed">
-          A plataforma está em fase inicial. Os depoimentos abaixo são exemplos ilustrativos de experiências
-          comuns, não relatos de usuários reais.
-        </p>
-
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 mt-16">
           {TESTIMONIALS.map((t) => (
             <div key={t.role} className="bg-sand-50 border border-sand-100 rounded-2xl p-7">
               <p className="text-gray-700 text-sm leading-relaxed mb-6">"{t.quote}"</p>

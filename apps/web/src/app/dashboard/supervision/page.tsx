@@ -20,6 +20,7 @@ import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
 import type { Client, Supervision, SupervisionMessage, Evolution } from "@/lib/database.types";
 import { HowItWorksTrigger, type HowItWorksContent } from "@/components/dashboard/HowItWorksModal";
+import { API_BASE } from "@/lib/api-base";
 
 const ALL_APPROACHES = [
   { value: "PSYCHOANALYSIS",       label: "Psicanálise Freudiana" },
@@ -705,7 +706,7 @@ export default function WorkspacePage() {
   /* ── Load acquired approaches ── */
   useEffect(() => {
     if (!user?.id) return;
-    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${user.id}`)
       .then(r => r.json())
       .then(d => {
         const list: string[] = d.approaches ?? [];
@@ -772,14 +773,14 @@ export default function WorkspacePage() {
     if (!client?.anamnese_id) {
       setClientIntention(null); setClientAnamnese(null); setTemplateHtml(null); return;
     }
-    fetch(`/api/anamnese/${client.anamnese_id}`)
+    fetch(`${API_BASE}/api/anamnese/${client.anamnese_id}`)
       .then(r => r.json())
       .then(d => {
         if (d.anamnese) {
           setClientIntention(d.anamnese.intention ?? null);
           setClientAnamnese(d.anamnese);
           if (d.anamnese.approach && d.anamnese.template_answers) {
-            fetch(`/api/anamnese-templates/${d.anamnese.approach}`, { cache: "no-store" })
+            fetch(`${API_BASE}/api/anamnese-templates/${d.anamnese.approach}`, { cache: "no-store" })
               .then(r => r.json())
               .then(t => setTemplateHtml(t.content ?? null))
               .catch(() => setTemplateHtml(null));
@@ -1031,7 +1032,7 @@ export default function WorkspacePage() {
       await addMessage({ supervision_id: sessionId, role: "user", content: text });
 
       const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/supervision/chat", {
+      const res = await fetch(`${API_BASE}/api/supervision/chat`, {
         method: "POST",
         headers: await aiHeaders(),
         body: JSON.stringify({

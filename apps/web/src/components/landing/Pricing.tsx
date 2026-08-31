@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 
-const MONTHLY_PRICE_PER_BASE = 147.0;
+const MONTHLY_PRICE_PER_BASE = 97.0;
 const ANNUAL_PRICE_PER_BASE = MONTHLY_PRICE_PER_BASE * 0.8; // 20% off no anual
 
 const INCLUDES = [

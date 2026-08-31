@@ -13,6 +13,7 @@ import { createClient, generateInitials, generateColor } from "@/lib/db";
 import { useAuthStore } from "@/store/auth.store";
 import { TemplateAnswersView } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
+import { API_BASE } from "@/lib/api-base";
 
 /* ── Tipos ── */
 interface Anamnese {
@@ -123,7 +124,7 @@ export default function AnamneseReviewPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`/api/therapist-approaches?therapistId=${user.id}`)
+    fetch(`${API_BASE}/api/therapist-approaches?therapistId=${user.id}`)
       .then(r => r.json())
       .then(d => setAcquiredApproaches(d.approaches ?? []))
       .catch(() => {})
@@ -133,7 +134,7 @@ export default function AnamneseReviewPage() {
   const APPROACHES = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
 
   useEffect(() => {
-    fetch(`/api/anamnese/${id}`)
+    fetch(`${API_BASE}/api/anamnese/${id}`)
       .then(r => r.json())
       .then(d => {
         if (d.anamnese) {
@@ -144,7 +145,7 @@ export default function AnamneseReviewPage() {
             ...(d.anamnese.approach ? { approach: d.anamnese.approach } : {}),
           }));
           if (d.anamnese.approach && d.anamnese.template_answers) {
-            fetch(`/api/anamnese-templates/${d.anamnese.approach}`, { cache: "no-store" })
+            fetch(`${API_BASE}/api/anamnese-templates/${d.anamnese.approach}`, { cache: "no-store" })
               .then(r => r.json())
               .then(t => setTemplateHtml(t.content ?? null))
               .catch(() => {});
@@ -188,7 +189,7 @@ export default function AnamneseReviewPage() {
         total_sessions:    0,
       });
 
-      await fetch(`/api/anamnese/${id}`, {
+      await fetch(`${API_BASE}/api/anamnese/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "ACCEPTED" }),
