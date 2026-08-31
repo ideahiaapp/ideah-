@@ -59,7 +59,7 @@ const CATEGORIES: { key: Category; label: string; description: string; feature: 
   { key: "individual", label: "Individual", description: "Para terapeutas autônomos", feature: "1 terapeuta" },
 ];
 
-const MONTHLY_PRICE_PER_BASE = 147.00;
+const MONTHLY_PRICE_PER_BASE = 97.00;
 const ANNUAL_DISCOUNT = 0.2; // 20% off no plano anual
 const ANNUAL_PRICE_PER_BASE = MONTHLY_PRICE_PER_BASE * (1 - ANNUAL_DISCOUNT);
 
