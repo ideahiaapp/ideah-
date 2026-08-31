@@ -531,6 +531,24 @@ export default function ClientsScreen() {
     if (selected?.id === c.id) setSelected({ ...c, status: next });
   }
 
+  async function deleteClient(c: Client) {
+    const { error } = await supabase.from("clients").delete().eq("id", c.id);
+    if (error) { Alert.alert("Erro", error.message); return; }
+    setClients(prev => prev.filter(cl => cl.id !== c.id));
+    setSelected(null);
+  }
+
+  function confirmDeleteClient(c: Client) {
+    Alert.alert(
+      "Excluir cliente",
+      `Excluir "${c.name}"? Essa ação não pode ser desfeita e removerá também suas evoluções clínicas.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Excluir", style: "destructive", onPress: () => deleteClient(c) },
+      ]
+    );
+  }
+
   const renderClient = ({ item }: { item: Client }) => {
     const st = STATUS_MAP[item.status] ?? STATUS_MAP.INACTIVE;
     return (
@@ -635,9 +653,10 @@ export default function ClientsScreen() {
                 <Ionicons name="close" size={24} color={Colors.gray[700]} />
               </TouchableOpacity>
               <Text style={s.modalTitle} numberOfLines={1}>{selected.name}</Text>
-              <TouchableOpacity onPress={() => Alert.alert("Status", "Alterar status?", [
+              <TouchableOpacity onPress={() => Alert.alert("Cliente", "O que deseja fazer?", [
                 { text: "Cancelar", style: "cancel" },
                 { text: selected.status === "ACTIVE" ? "Inativar" : "Ativar", onPress: () => toggleStatus(selected) },
+                { text: "Excluir", style: "destructive", onPress: () => confirmDeleteClient(selected) },
               ])}>
                 <Ionicons name="ellipsis-horizontal" size={22} color={Colors.gray[500]} />
               </TouchableOpacity>

@@ -6,10 +6,10 @@ import Link from "next/link";
 import {
   ArrowLeft, Phone, Mail, Briefcase, Clock, Calendar, FileText,
   MessageSquare, Plus, ChevronRight, Pencil, Sparkles, Target,
-  UserCheck, Hourglass, Activity, Loader2, ClipboardList,
+  UserCheck, UserX, Hourglass, Activity, Loader2, ClipboardList,
   ChevronDown, Save, AlertTriangle, Trash2, Link2, Copy, Check, X, ExternalLink,
 } from "lucide-react";
-import { getClient, getEvolutionsByClient, getSupervisionsByClient, deleteSupervision } from "@/lib/db";
+import { getClient, updateClient, deleteClient, getEvolutionsByClient, getSupervisionsByClient, deleteSupervision } from "@/lib/db";
 import { formatDate, cn, maskCpf, isValidCpf } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import type { Client, Evolution, Supervision } from "@/lib/database.types";
@@ -280,6 +280,35 @@ export default function ClientDetailPage() {
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
   const [deletingSupervisionId, setDeletingSupervisionId] = useState<string | null>(null);
+  const [savingStatus,   setSavingStatus]   = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
+
+  async function handleToggleStatus() {
+    if (!client) return;
+    const next = client.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    setSavingStatus(true);
+    try {
+      const updated = await updateClient(client.id, { status: next });
+      setClient(updated);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao atualizar status do cliente.");
+    } finally {
+      setSavingStatus(false);
+    }
+  }
+
+  async function handleDeleteClient() {
+    if (!client) return;
+    if (!confirm(`Excluir o cliente "${client.name}"? Essa ação não pode ser desfeita e removerá também suas evoluções clínicas.`)) return;
+    setDeletingClient(true);
+    try {
+      await deleteClient(client.id);
+      router.push("/dashboard/clients");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Erro ao excluir cliente.");
+      setDeletingClient(false);
+    }
+  }
 
   async function handleDeleteSupervision(sv: Supervision) {
     if (!confirm(`Excluir a reflexão clínica "${sv.title}"? Essa ação não pode ser desfeita.`)) return;
@@ -432,10 +461,24 @@ export default function ClientDetailPage() {
             <p className="text-gray-400 text-sm mt-0.5">{approachLabels(client).join(", ")} · {client.total_sessions} sessões</p>
           </div>
         </div>
-        <Link href={`/dashboard/clients/${client.id}/edit`}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-          <Pencil className="w-3.5 h-3.5" /> Editar
-        </Link>
+        <div className="flex items-center gap-2">
+          <button onClick={handleToggleStatus} disabled={savingStatus}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">
+            {savingStatus
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : client.status === "ACTIVE" ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+            {client.status === "ACTIVE" ? "Inativar" : "Ativar"}
+          </button>
+          <Link href={`/dashboard/clients/${client.id}/edit`}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+            <Pencil className="w-3.5 h-3.5" /> Editar
+          </Link>
+          <button onClick={handleDeleteClient} disabled={deletingClient}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
+            {deletingClient ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            Excluir
+          </button>
+        </div>
       </div>
 
       {/* Card de identidade */}
