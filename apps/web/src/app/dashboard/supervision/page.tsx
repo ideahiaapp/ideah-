@@ -1087,7 +1087,7 @@ export default function WorkspacePage() {
 
         <div className="overflow-y-auto flex-1 pb-3">
           <p className="text-[10.5px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-4 pb-2">Clientes</p>
-          {clients.filter(c => c.status !== "WAITLIST").map(client => {
+          {clients.filter(c => c.status === "ACTIVE").map(client => {
             const isSelected = selectedClientId === client.id;
             const evCount    = isSelected ? evolutions.length : 0;
             const svCount    = isSelected ? supervisions.length : 0;
