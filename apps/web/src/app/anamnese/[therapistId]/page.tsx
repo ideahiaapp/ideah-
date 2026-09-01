@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { cn, maskCpf, maskPhone, isValidCpf } from "@/lib/utils";
 import { CheckCircle2, AlertTriangle, Loader2, ChevronDown } from "lucide-react";
 import Image from "next/image";
-import { TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
+import { TemplateFormSection, serializeTemplateForm, isTemplateValid } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
 import { API_BASE } from "@/lib/api-base";
 
@@ -65,6 +65,7 @@ export default function AnamnesePage() {
   const [notFound,         setNotFound]         = useState(false);
   const [templateHtml,     setTemplateHtml]     = useState<string | null>(null);
   const [loadingTemplate,  setLoadingTemplate]  = useState(false);
+  const [templateValid,    setTemplateValid]    = useState(true);
 
   const [submitted,   setSubmitted]   = useState(false);
   const [submitting,  setSubmitting]  = useState(false);
@@ -100,6 +101,21 @@ export default function AnamnesePage() {
       .finally(() => setLoadingTemplate(false));
   }, [approach]);
 
+  /* Reavalia os campos "required" do template (HTML livre do admin) a cada mudança,
+     pra manter o botão de envio em sincronia sem exigir controlar cada campo via React. */
+  useEffect(() => {
+    const div = templateRef.current;
+    if (!div || !templateHtml) { setTemplateValid(true); return; }
+    const recompute = () => setTemplateValid(isTemplateValid(div));
+    recompute();
+    div.addEventListener("input", recompute);
+    div.addEventListener("change", recompute);
+    return () => {
+      div.removeEventListener("input", recompute);
+      div.removeEventListener("change", recompute);
+    };
+  }, [templateHtml]);
+
   function set<K extends keyof typeof form>(key: K, value: typeof form[K]) {
     setForm(prev => ({ ...prev, [key]: value }));
   }
@@ -120,11 +136,17 @@ export default function AnamnesePage() {
     form.consent_nudity && form.consent_touch &&
     form.consent_therapeutic && form.consent_payment;
 
-  const canSubmit = commonValid && somaticValid;
+  const canSubmit = commonValid && somaticValid && templateValid;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
+    // Reconfere na hora do envio (defesa extra — o estado templateValid já bloqueia o botão,
+    // mas o template é HTML livre do admin, então revalida direto no DOM antes de enviar).
+    if (templateRef.current && !isTemplateValid(templateRef.current)) {
+      setSubmitError("Preencha todos os campos obrigatórios (*) para enviar.");
+      return;
+    }
     setSubmitting(true); setSubmitError(null);
     try {
       const templateAnswers = templateRef.current
