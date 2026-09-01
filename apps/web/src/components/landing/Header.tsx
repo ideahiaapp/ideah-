@@ -22,7 +22,7 @@ export function LandingHeader() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/landing" className="flex-shrink-0">
-          <Image src={`${API_BASE}/logoPaideia.png`} alt="Paideia" width={130} height={65} className="rounded-md" priority />
+          <Image src={`${API_BASE}/paideia-wordmark-light.svg`} alt="Paideia" width={140} height={32} priority />
         </Link>
 
         {/* Nav desktop */}
