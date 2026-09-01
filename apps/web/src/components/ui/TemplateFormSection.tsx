@@ -21,6 +21,13 @@ function fieldsWithKeys(container: HTMLElement): { el: FieldEl; key: string }[] 
   return els.map((el, i) => ({ el, key: el.getAttribute("name") || `field_${i}` }));
 }
 
+/* No ponto médio da escala (ex.: 3 de 1 a 5), mostra "Média" em vez do número —
+   mais legível que um número solto entre dois rótulos de texto (ex.: "Péssima ... Ótima"). */
+function rangeOutputLabel(range: HTMLInputElement, value: string): string {
+  const mid = (Number(range.min || 0) + Number(range.max || 100)) / 2;
+  return Number(value) === mid ? "Média" : value;
+}
+
 /* Injeta o HTML do template e expõe método para serializar os campos */
 export function TemplateFormSection({ html, initialAnswers }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -34,8 +41,8 @@ export function TemplateFormSection({ html, initialAnswers }: Props) {
       const output = range.nextElementSibling?.querySelector("output") ??
                      range.parentElement?.querySelector("output");
       if (output) {
-        output.value = range.value;
-        range.addEventListener("input", () => { output.value = range.value; });
+        output.value = rangeOutputLabel(range, range.value);
+        range.addEventListener("input", () => { output.value = rangeOutputLabel(range, range.value); });
       }
     });
   }, [html]);
@@ -57,7 +64,7 @@ export function TemplateFormSection({ html, initialAnswers }: Props) {
           el.value = String(value);
           const output = el.nextElementSibling?.querySelector("output") ??
                          el.parentElement?.querySelector("output");
-          if (output) output.value = String(value);
+          if (output) output.value = rangeOutputLabel(el, String(value));
         } else {
           el.value = String(value);
         }
@@ -147,7 +154,7 @@ export function TemplateAnswersView({ html, answers }: { html: string; answers: 
           el.value = String(value);
           const output = el.nextElementSibling?.querySelector("output") ??
                          el.parentElement?.querySelector("output");
-          if (output) output.value = String(value);
+          if (output) output.value = rangeOutputLabel(el, String(value));
         } else {
           el.value = String(value);
         }
