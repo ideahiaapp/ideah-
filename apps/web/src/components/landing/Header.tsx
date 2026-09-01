@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { API_BASE } from "@/lib/api-base";
 
 const NAV_LINKS = [
   { label: "Como funciona", href: "#como-funciona" },
@@ -20,7 +21,7 @@ export function LandingHeader() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/landing" className="flex-shrink-0">
-          <Image src="/logoPaideia.png" alt="Paideia" width={130} height={65} className="rounded-md" priority />
+          <Image src={`${API_BASE}/logoPaideia.png`} alt="Paideia" width={130} height={65} className="rounded-md" priority />
         </Link>
 
         {/* Nav desktop */}

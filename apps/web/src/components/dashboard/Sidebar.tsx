@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
+import { API_BASE } from "@/lib/api-base";
 
 const NAV = [
   { href: "/dashboard/home",         icon: Home,            label: "Home",                     adminOnly: false },
@@ -41,7 +42,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-5 py-6 border-b border-white/15">
         <Link href="/dashboard/home">
-          <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={170} height={40} priority />
+          <Image src={`${API_BASE}/paideia-wordmark-white.svg`} alt="Paideia" width={170} height={40} priority />
         </Link>
       </div>
 

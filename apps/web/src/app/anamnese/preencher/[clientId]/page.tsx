@@ -202,7 +202,7 @@ export default function PreencherAnamnesePage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
       <div className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col items-center gap-3">
-          <Image src="/paideia-icon.svg" alt="Paideia" width={72} height={72} className="rounded-2xl" />
+          <Image src={`${API_BASE}/paideia-icon.svg`} alt="Paideia" width={72} height={72} className="rounded-2xl" />
           <span className="text-2xl font-bold text-purple-800">{therapistName}</span>
           {approach && APPROACH_LABELS[approach] && (
             <span className="text-xs font-semibold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
