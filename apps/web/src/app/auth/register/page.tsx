@@ -250,7 +250,7 @@ function RegisterPage() {
       <GoogleReturnHandler onGoogleAuth={handleGoogleAuth} />
       {/* ── Painel esquerdo ── */}
       <aside className="hidden lg:flex flex-col items-center justify-center w-1/2 bg-brand-500 px-16 gap-10">
-        <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={300} height={120} priority />
+        <Image src={`${API_BASE}/paideia-wordmark-white.svg`} alt="Paideia" width={300} height={120} priority />
         <div className="bg-white/10 border border-white/20 rounded-2xl p-6 w-full max-w-sm space-y-4">
           <p className="text-white font-bold text-sm uppercase tracking-widest">Bases disponíveis</p>
           {BASES.map(b => (
@@ -269,7 +269,7 @@ function RegisterPage() {
       {/* ── Formulário ── */}
       <main className="flex flex-col items-center justify-center w-full lg:w-1/2 px-6 py-12 overflow-y-auto">
         <div className="lg:hidden mb-8">
-          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={180} height={72} priority />
+          <Image src={`${API_BASE}/paideia-wordmark-light.svg`} alt="Paideia" width={180} height={72} priority />
         </div>
 
         <div className="w-full max-w-md">

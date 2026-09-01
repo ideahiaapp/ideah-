@@ -15,6 +15,7 @@ import {
   type Plan, type SaleStatus,
 } from "@/lib/mock-admin-data";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api-base";
 
 /* ─── helpers ─────────────────────────────────── */
 const PLAN_LABEL: Record<Plan, string> = {
@@ -155,7 +156,7 @@ export default function AdminPage() {
       {/* ── Header admin ── */}
       <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={110} height={44} className="opacity-80" />
+          <Image src={`${API_BASE}/paideia-wordmark-white.svg`} alt="Paideia" width={110} height={44} className="opacity-80" />
           <div className="w-px h-6 bg-gray-800" />
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-brand-400" />

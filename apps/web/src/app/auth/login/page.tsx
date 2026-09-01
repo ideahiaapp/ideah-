@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/auth.store";
 import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
+import { API_BASE } from "@/lib/api-base";
 
 /* SVG oficial do Google (4 cores) */
 function GoogleIcon() {
@@ -63,7 +64,7 @@ export default function LoginPage() {
       {/* ── Painel esquerdo (decorativo) ── */}
       <aside className="hidden lg:flex flex-col items-center justify-center w-1/2 bg-brand-500 px-16 gap-8">
         <Image
-          src="/paideia-wordmark-white-tagline.svg"
+          src={`${API_BASE}/paideia-wordmark-white-tagline.svg`}
           alt="Paideia — É conversando que se aprende"
           width={320}
           height={112}
@@ -95,7 +96,7 @@ export default function LoginPage() {
         {/* Logo mobile */}
         <div className="lg:hidden mb-10">
           <Image
-            src="/paideia-wordmark-light-tagline.svg"
+            src={`${API_BASE}/paideia-wordmark-light-tagline.svg`}
             alt="Paideia — É conversando que se aprende"
             width={200}
             height={70}

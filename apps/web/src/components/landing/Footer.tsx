@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { API_BASE } from "@/lib/api-base";
 
 export function LandingFooter() {
   return (
@@ -27,7 +28,7 @@ export function LandingFooter() {
       <div className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-8">
         <div>
           <Image
-            src="/paideia-wordmark-white.svg"
+            src={`${API_BASE}/paideia-wordmark-white.svg`}
             alt="Paideia"
             width={120}
             height={48}

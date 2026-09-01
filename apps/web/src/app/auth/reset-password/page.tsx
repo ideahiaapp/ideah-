@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, CheckCircle2, AlertTriangle, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { API_BASE } from "@/lib/api-base";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -54,7 +55,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-auth-gradient flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-10">
-          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={180} height={72} priority />
+          <Image src={`${API_BASE}/paideia-wordmark-light.svg`} alt="Paideia" width={180} height={72} priority />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

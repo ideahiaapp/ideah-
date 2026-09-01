@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-10">
-          <Image src="/paideia-wordmark-light.svg" alt="Paideia" width={180} height={72} priority />
+          <Image src={`${API_BASE}/paideia-wordmark-light.svg`} alt="Paideia" width={180} height={72} priority />
         </div>
 
         <Link

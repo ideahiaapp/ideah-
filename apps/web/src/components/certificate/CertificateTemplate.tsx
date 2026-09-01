@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Calendar, Clock, Users } from "lucide-react";
+import { API_BASE } from "@/lib/api-base";
 
 interface CertificateTemplateProps {
   therapistName: string;
@@ -39,7 +40,7 @@ export function CertificateTemplate({
 
       {/* Faixa superior */}
       <div className="absolute top-0 left-0 right-0 h-[13%] bg-brand-500 flex items-center justify-center z-10">
-        <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={140} height={33} />
+        <Image src={`${API_BASE}/paideia-wordmark-white.svg`} alt="Paideia" width={140} height={33} />
       </div>
 
       {/* Conteúdo */}
@@ -128,7 +129,7 @@ export function CertificateBackTemplate({ text }: { text: string }) {
           <BackMarkdown text={text} />
         </div>
         <div className="flex-shrink-0 flex justify-center pt-4">
-          <Image src="/paideia-wordmark-dark.svg" alt="Paideia" width={110} height={26} />
+          <Image src={`${API_BASE}/paideia-wordmark-dark.svg`} alt="Paideia" width={110} height={26} />
         </div>
       </div>
     </div>

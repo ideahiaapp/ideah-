@@ -7,6 +7,7 @@ import { Eye, EyeOff, Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 import { useAdminStore } from "@/store/admin.store";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api-base";
 
 export default function AdminLoginPage() {
   const router   = useRouter();
@@ -39,7 +40,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
           <div className="bg-gray-900 rounded-2xl p-4 border border-gray-800">
-            <Image src="/paideia-wordmark-white.svg" alt="Paideia" width={150} height={60} />
+            <Image src={`${API_BASE}/paideia-wordmark-white.svg`} alt="Paideia" width={150} height={60} />
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-900 border border-gray-800 rounded-full px-3 py-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
