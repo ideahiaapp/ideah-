@@ -1,27 +1,38 @@
 "use client";
 
 import Image from "next/image";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
 import { getInitials } from "@/lib/utils";
 
-export function TopBar() {
+export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const { user } = useAuthStore();
   const firstName = user?.name?.split(" ")[0] ?? "Terapeuta";
   const initials  = user?.name ? getInitials(user.name) : "?";
   const role      = user?.role === "admin" ? "Administrador" : "Terapeuta";
 
   return (
-    <header className="print-hide h-14 bg-brand-500 border-b border-black/10 flex items-center justify-between px-6 flex-shrink-0">
-      {/* Busca */}
-      <div className="relative w-72">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
-        <input
-          type="text"
-          aria-label="Buscar cliente, supervisão"
-          placeholder="Buscar cliente, supervisão..."
-          className="w-full pl-9 pr-4 py-2 text-sm bg-white/10 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
-        />
+    <header className="print-hide h-14 bg-brand-500 border-b border-black/10 flex items-center justify-between gap-3 px-4 md:px-6 flex-shrink-0">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        {/* Hambúrguer — só em telas pequenas, abre o drawer do menu lateral */}
+        <button
+          onClick={onMenuClick}
+          aria-label="Abrir menu"
+          className="md:hidden -ml-1 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors flex-shrink-0"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Busca */}
+        <div className="relative w-full max-w-72 hidden sm:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+          <input
+            type="text"
+            aria-label="Buscar cliente, supervisão"
+            placeholder="Buscar cliente, supervisão..."
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white/10 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
