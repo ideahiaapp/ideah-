@@ -8,6 +8,7 @@ import { API_BASE } from "@/lib/api-base";
 
 const NAV_LINKS = [
   { label: "Como funciona", href: "#como-funciona" },
+  { label: "Inteligência Dialógica", href: "#inteligencia-dialogica" },
   { label: "Benefícios", href: "#beneficios" },
   { label: "O Programa", href: "#programa" },
   { label: "Dúvidas", href: "#faq" },
@@ -49,7 +50,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2 rounded-xl transition-colors"
           >
-            Conhecer o Programa
+            Começar minha formação
           </Link>
         </div>
 
@@ -84,7 +85,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 px-5 py-2.5 rounded-xl text-center"
           >
-            Conhecer o Programa
+            Começar minha formação
           </Link>
         </div>
       )}

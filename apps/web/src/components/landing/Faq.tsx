@@ -5,20 +5,36 @@ import { ChevronDown } from "lucide-react";
 
 const FAQS = [
   {
-    q: "O Paideia substitui minha supervisão com outro profissional?",
-    a: "Não. É um espaço complementar de supervisão e reflexão contínua. A responsabilidade técnica e o juízo clínico continuam sendo sempre seus.",
+    q: "O Paideia substitui a supervisão com outro profissional?",
+    a: "Não. É um espaço complementar de supervisão e reflexão contínua. A responsabilidade técnica e o julgamento clínico continuam sempre com você.",
+  },
+  {
+    q: "Por que usar o Paideia em vez de uma IA generalista?",
+    a: "Porque o Paideia não entrega respostas prontas. Sua Inteligência Dialógica conduz um processo de reflexão ancorado na abordagem clínica que você escolheu, ajudando a examinar hipóteses e desenvolver seu próprio raciocínio — não a substituí-lo.",
   },
   {
     q: "Como funciona a Formação Clínica Continuada?",
-    a: "A cada supervisão realizada, o Paideia organiza o conteúdo estudado e acumula horas dentro da abordagem escolhida, reconhecidas por meio de certificação.",
+    a: "A cada supervisão realizada, o Paideia organiza o conteúdo trabalhado e acumula horas dentro da abordagem escolhida. Ao completar a carga horária prevista, você pode obter a certificação correspondente.",
   },
   {
-    q: "Preciso escolher uma abordagem específica?",
-    a: "Sim. O programa é organizado por abordagem teórica, para manter a coerência e a profundidade da sua formação.",
+    q: "Preciso escolher uma abordagem clínica?",
+    a: "Sim. O programa é organizado por abordagem teórica, para manter a coerência e a profundidade da sua formação — sem misturar paradigmas diferentes.",
   },
   {
-    q: "Meus dados e os dos meus clientes estão protegidos?",
+    q: "Como são contabilizadas as horas para certificação?",
+    a: "As horas de supervisão são registradas automaticamente na abordagem escolhida. Ao completar a carga horária prevista para aquele percurso, você pode solicitar a certificação correspondente.",
+  },
+  {
+    q: "Posso acompanhar mais de uma abordagem?",
+    a: "Sim. Cada abordagem é contratada e acompanhada separadamente, com seu próprio percurso e acúmulo de horas.",
+  },
+  {
+    q: "Meus dados e os dados dos meus clientes estão protegidos?",
     a: "Sim. Você controla o que é registrado e exportado, em conformidade com a LGPD.",
+  },
+  {
+    q: "O Paideia realiza diagnósticos ou toma decisões clínicas?",
+    a: "Não. O Paideia apoia o raciocínio profissional, organiza hipóteses e favorece a reflexão clínica fundamentada — mas não diagnostica, não prescreve condutas e não substitui o julgamento ou a supervisão humana.",
   },
 ];
 
@@ -50,7 +66,7 @@ export function FaqSection() {
     <section id="faq" className="py-24 md:py-32 bg-white">
       <div className="max-w-2xl mx-auto px-6">
         <div className="text-center mb-12">
-          <span className="text-brand-500 text-sm font-semibold uppercase tracking-widest">Dúvidas</span>
+          <span className="text-brand-600 text-xs font-semibold uppercase tracking-widest">Dúvidas</span>
           <h2 className="font-serif text-3xl text-ink mt-3">Perguntas frequentes</h2>
         </div>
 
