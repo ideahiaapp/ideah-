@@ -105,7 +105,6 @@ export default function AnamnesePage() {
   }
 
   const hasTemplate = !!templateHtml;
-  const isSomatic   = approach === "SOMATIC" || !approach;
 
   // Validação dos campos comuns sempre obrigatórios
   const commonValid =
@@ -302,8 +301,9 @@ export default function AnamnesePage() {
           )
         )}
 
-        {/* Saúde e consentimentos — apenas para Somática */}
-        {isSomatic && (
+        {/* Saúde e consentimentos — sempre que não há template próprio da abordagem
+            (a validação em somaticValid já exige estes campos nesse caso) */}
+        {!hasTemplate && (
           <>
             <Section title="Saúde">
               <Field label="Condições de saúde" required>

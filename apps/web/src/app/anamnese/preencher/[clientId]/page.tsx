@@ -112,7 +112,6 @@ export default function PreencherAnamnesePage() {
   }
 
   const hasTemplate = !!templateHtml;
-  const isSomatic   = approach === "SOMATIC" || !approach;
 
   const commonValid =
     form.name.trim() && form.email.trim() && form.phone.trim() &&
@@ -292,8 +291,9 @@ export default function PreencherAnamnesePage() {
           )
         )}
 
-        {/* Saúde e consentimentos — apenas para Somática */}
-        {isSomatic && (
+        {/* Saúde e consentimentos — sempre que não há template próprio da abordagem
+            (a validação em somaticValid já exige estes campos nesse caso) */}
+        {!hasTemplate && (
           <>
             <Section title="Saúde">
               <Field label="Condições de saúde" required>
