@@ -198,6 +198,35 @@ export function TemplateAnswersView({ html, answers }: { html: string; answers: 
   );
 }
 
+/** Verifica se todos os campos marcados com `required` no template (HTML colado pelo admin)
+    estão preenchidos. Grupos de rádio: basta uma opção marcada, a menos que o input tenha
+    `data-require-value="..."` — nesse caso a opção marcada precisa ser exatamente esse valor
+    (usado em consentimentos que exigem "Estou de acordo", não qualquer escolha do grupo). */
+export function isTemplateValid(container: HTMLElement): boolean {
+  const requiredEls = Array.from(container.querySelectorAll<FieldEl>("[required]"));
+  const seenRadioGroups = new Set<string>();
+
+  for (const el of requiredEls) {
+    if (el instanceof HTMLInputElement && el.type === "radio") {
+      const name = el.getAttribute("name");
+      if (!name || seenRadioGroups.has(name)) continue;
+      seenRadioGroups.add(name);
+      const group = container.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${name}"]`);
+      const checked = Array.from(group).find(r => r.checked);
+      if (!checked) return false;
+      const requireValue = el.getAttribute("data-require-value");
+      if (requireValue && checked.value !== requireValue) return false;
+    } else if (el instanceof HTMLInputElement && el.type === "checkbox") {
+      if (!el.checked) return false;
+    } else if (el instanceof HTMLInputElement) {
+      if (!el.value.trim()) return false;
+    } else {
+      if (!(el as HTMLTextAreaElement | HTMLSelectElement).value.trim()) return false;
+    }
+  }
+  return true;
+}
+
 /** Serializa todos os campos dentro do elemento para um objeto JSON (chave = name, ou
     posição do campo no documento quando não há "name"). */
 export function serializeTemplateForm(container: HTMLElement): Record<string, unknown> {
