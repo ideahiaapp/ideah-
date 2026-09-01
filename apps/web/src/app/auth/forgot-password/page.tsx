@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { API_BASE } from "@/lib/api-base";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail]   = useState("");
@@ -22,7 +23,7 @@ export default function ForgotPasswordPage() {
       // tela sempre mostrava sucesso. Usa direto o Supabase Auth, que já cuida do
       // e-mail de recuperação (mesmo provedor usado em login/cadastro).
       await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}${API_BASE}/auth/reset-password`,
       });
       setSent(true);
     } catch {

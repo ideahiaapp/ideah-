@@ -72,7 +72,7 @@ function SendAnamneseCard({ therapistId, client }: { therapistId: string; client
   }, [therapistId]);
 
   const approachOptions = ALL_APPROACHES.filter(a => acquiredApproaches.includes(a.value));
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl = typeof window !== "undefined" ? `${window.location.origin}${API_BASE}` : "";
 
   const ready = !!approach;
   const approachParam = approach ? `?approach=${approach}` : "";

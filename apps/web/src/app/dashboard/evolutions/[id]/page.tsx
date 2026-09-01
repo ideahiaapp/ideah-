@@ -11,6 +11,7 @@ import { getEvolution } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { EvolutionWithClient } from "@/lib/db/evolutions";
+import { API_BASE } from "@/lib/api-base";
 
 const MOOD_LABELS: Record<number, { label: string; color: string; emoji: string }> = {
   1: { label: "Muito difícil", color: "text-red-600 bg-red-50 border-red-200",     emoji: "😟" },
@@ -22,7 +23,7 @@ const MOOD_LABELS: Record<number, { label: string; color: string; emoji: string 
 
 function exportPdf(ev: EvolutionWithClient, mood: { label: string; emoji: string }) {
   const date      = new Date(ev.session_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
-  const logoUrl   = `${window.location.origin}/paideia-wordmark-light.svg`;
+  const logoUrl   = `${window.location.origin}${API_BASE}/paideia-wordmark-light.svg`;
   const client    = ev.clients;
   const clientName = client?.name ?? "Cliente";
   const initials   = client?.initials ?? clientName[0];
