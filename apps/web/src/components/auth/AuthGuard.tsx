@@ -74,7 +74,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       .eq("user_id", user.id)
       .eq("term_version", PILOT_TERM_VERSION)
       .maybeSingle()
-      .then(({ data }) => { if (!cancelled) setTermAccepted(!!data); });
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        // Falha ao consultar (ex.: migração da tabela ainda não rodou) não deve travar
+        // todo mundo fora do dashboard — libera o acesso e loga pra investigar depois.
+        if (error) { console.error("[pilot term] falha ao verificar aceite:", error.message); setTermAccepted(true); return; }
+        setTermAccepted(!!data);
+      });
     return () => { cancelled = true; };
   }, [user]);
 
