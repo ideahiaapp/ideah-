@@ -88,6 +88,9 @@ export function LandingFooter() {
         <p className="text-white/60 text-xs">
           © {new Date().getFullYear()} Paideia — Formação Clínica Continuada. Todos os direitos reservados.
         </p>
+        <p className="text-white/40 text-xs mt-1">
+          Instituto Paideia LTDA — CNPJ 68.650.901/0001-62 — Brasília/DF
+        </p>
       </div>
     </footer>
   );
