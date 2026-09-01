@@ -104,7 +104,7 @@ function RegisterPage() {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/register?step=2`,
+        redirectTo: `${window.location.origin}${API_BASE}/auth/register?step=2`,
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });
