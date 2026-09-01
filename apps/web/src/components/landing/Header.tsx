@@ -8,6 +8,7 @@ import { API_BASE } from "@/lib/api-base";
 
 const NAV_LINKS = [
   { label: "Como funciona", href: "#como-funciona" },
+  { label: "Inteligência Dialógica", href: "#inteligencia-dialogica" },
   { label: "Benefícios", href: "#beneficios" },
   { label: "O Programa", href: "#programa" },
   { label: "Dúvidas", href: "#faq" },
@@ -21,7 +22,7 @@ export function LandingHeader() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/landing" className="flex-shrink-0">
-          <Image src={`${API_BASE}/logoPaideia.png`} alt="Paideia" width={130} height={65} className="rounded-md" priority />
+          <Image src={`${API_BASE}/paideia-wordmark-light.svg`} alt="Paideia" width={140} height={32} priority />
         </Link>
 
         {/* Nav desktop */}
@@ -49,7 +50,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2 rounded-xl transition-colors"
           >
-            Conhecer o Programa
+            Começar minha formação
           </Link>
         </div>
 
@@ -84,7 +85,7 @@ export function LandingHeader() {
             href="/auth/register"
             className="text-sm font-semibold text-white bg-brand-500 px-5 py-2.5 rounded-xl text-center"
           >
-            Conhecer o Programa
+            Começar minha formação
           </Link>
         </div>
       )}

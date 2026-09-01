@@ -1,25 +1,25 @@
-import { MessageSquare, TrendingUp, FileText, GraduationCap } from "lucide-react";
+import { MessageSquare, TrendingUp, FileText, BookOpen } from "lucide-react";
 
 const CARDS = [
   {
     icon: MessageSquare,
     title: "Supervisão Clínica",
-    description: "Discuta casos reais dentro da sua abordagem e fortaleça seu raciocínio clínico.",
+    description: "Discuta situações reais dentro da abordagem que orienta sua prática e fortaleça seu raciocínio clínico.",
   },
   {
     icon: TrendingUp,
     title: "Evolução Clínica",
-    description: "Organize longitudinalmente a evolução dos casos e acompanhe o percurso terapêutico de cada cliente.",
+    description: "Organize longitudinalmente o percurso dos casos a partir do trabalho desenvolvido nas supervisões.",
   },
   {
     icon: FileText,
-    title: "Relatórios Inteligentes",
-    description: "Produza documentos clínicos consistentes, organizados e fundamentados.",
+    title: "Registros e Relatórios",
+    description: "Transforme conteúdos trabalhados nas supervisões em registros clínicos estruturados e organizados.",
   },
   {
-    icon: GraduationCap,
+    icon: BookOpen,
     title: "Formação Clínica Continuada",
-    description: "Cada supervisão amplia seu repertório clínico e fortalece sua prática profissional.",
+    description: "Reconheça o conhecimento desenvolvido na própria prática e acompanhe seu percurso de desenvolvimento profissional.",
   },
 ];
 
@@ -29,7 +29,7 @@ export function FeaturesSection() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="font-serif text-3xl md:text-4xl text-ink leading-tight max-w-2xl mx-auto">
-            Transforme cada supervisão em desenvolvimento profissional.
+            Tudo o que acontece na sua prática pode construir conhecimento.
           </h2>
         </div>
 
