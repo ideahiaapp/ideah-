@@ -195,8 +195,7 @@ export default function AnamnesePage() {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-800">Anamnese enviada!</h1>
         <p className="text-gray-500 mt-2 max-w-sm leading-relaxed">
-          Obrigado, <strong>{form.name}</strong>. Suas informações foram recebidas e{" "}
-          <strong>{therapist?.name}</strong> entrará em contato em breve.
+          Obrigado, <strong>{form.name}</strong>. Suas informações foram recebidas!
         </p>
       </div>
     </div>
