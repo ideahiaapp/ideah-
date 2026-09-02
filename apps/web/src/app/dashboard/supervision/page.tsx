@@ -1074,7 +1074,7 @@ export default function WorkspacePage() {
       <h1 className="sr-only">Supervisão e Evolução</h1>
 
       {/* ══ SIDEBAR ══ */}
-      <aside aria-label="Lista de clientes" className="w-[248px] flex-shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
+      <aside aria-label="Lista de clientes" className="hidden md:flex w-[248px] flex-shrink-0 bg-white border-r border-gray-100 flex-col overflow-hidden">
         <div className="p-3 border-b border-gray-100">
           <button onClick={newSession} disabled={!selectedClientId}
             className={cn(
@@ -1128,6 +1128,32 @@ export default function WorkspacePage() {
 
       {/* ══ WORKSPACE ══ */}
       <section className="flex-1 flex flex-col min-w-0 bg-gray-50">
+
+        {/* Seletor de cliente — mobile, substitui a lista lateral escondida abaixo de md */}
+        <div className="md:hidden flex items-center gap-2 px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
+          <select
+            aria-label="Selecionar cliente"
+            value={selectedClientId ?? ""}
+            onChange={e => e.target.value && selectClient(e.target.value)}
+            className="flex-1 min-w-0 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-800"
+          >
+            <option value="" disabled>Selecione um cliente</option>
+            {clients.filter(c => c.status !== "WAITLIST").map(client => (
+              <option key={client.id} value={client.id}>{client.name}</option>
+            ))}
+          </select>
+          <button
+            onClick={newSession}
+            disabled={!selectedClientId}
+            aria-label="Nova supervisão"
+            className={cn(
+              "flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
+              selectedClientId ? "bg-brand-500 hover:bg-brand-600 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            )}
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+        </div>
 
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 bg-white border-b border-gray-100 flex-shrink-0">
