@@ -88,7 +88,7 @@ export default function HomePage() {
   return (
     <div className="-m-6 min-h-[calc(100vh-4rem)] bg-brand-50/60 px-10 py-10 space-y-10">
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-0.5 sm:gap-4">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-start justify-between gap-0.5 sm:gap-4">
           <p className="text-gray-600 text-sm">{greeting},</p>
           <p className="text-gray-500 text-xs sm:text-sm sm:text-right">{dateLine}</p>
         </div>
