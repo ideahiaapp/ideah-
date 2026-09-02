@@ -539,7 +539,7 @@ function ClientsPageInner() {
     <div className="max-w-5xl mx-auto space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-ink">Clientes</h1>
           <div className="flex items-center gap-3 mt-1">
@@ -547,19 +547,19 @@ function ClientsPageInner() {
             <HowItWorksTrigger content={CLIENTS_HOW_IT_WORKS} />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setSendAnamneseOpen(true)}
-            className="flex items-center gap-2 bg-white hover:bg-brand-50 border border-gray-200 text-brand-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white hover:bg-brand-50 border border-gray-200 text-brand-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm"
           >
-            <Link2 className="w-4 h-4" strokeWidth={2} />
+            <Link2 className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
             Enviar anamnese
           </button>
           <Link
             href="/dashboard/clients/new"
-            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm"
           >
-            <Plus className="w-4 h-4" strokeWidth={2.5} />
+            <Plus className="w-4 h-4 flex-shrink-0" strokeWidth={2.5} />
             Novo cliente
           </Link>
         </div>
