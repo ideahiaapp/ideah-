@@ -798,7 +798,7 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     const ta = textareaRef.current; if (!ta) return;
-    ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+    ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 260) + "px";
   }, [input]);
 
   useEffect(() => {
@@ -1294,7 +1294,7 @@ export default function WorkspacePage() {
                       "w-full bg-transparent px-4 pt-3 pb-2 text-sm text-gray-800 placeholder-gray-400 resize-none focus:outline-none disabled:cursor-not-allowed",
                       isRecording && "italic text-gray-600"
                     )}
-                    style={{ maxHeight: 120 }}
+                    style={{ maxHeight: 260 }}
                   />
 
                   {isRecording && interimText && (
@@ -1372,20 +1372,21 @@ export default function WorkspacePage() {
                       </button>
                     </div>
                   ) : supervisionActive ? (
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1.5 rounded-lg tabular-nums">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <span className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-mono font-semibold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg tabular-nums">
                         <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
                         {formatDuration(elapsedSeconds)}
                       </span>
                       <button onClick={handlePauseSupervision}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-white border border-amber-200 hover:bg-amber-50 px-3.5 py-2 rounded-xl transition-colors">
-                        <PauseCircle className="w-4 h-4" strokeWidth={1.8} />
+                        className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold text-amber-700 bg-white border border-amber-200 hover:bg-amber-50 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition-colors">
+                        <PauseCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.8} />
                         Pausar
                       </button>
                       <button onClick={handleFinishSupervision}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl transition-colors shadow-sm">
-                        <StopCircle className="w-4 h-4" strokeWidth={1.8} />
-                        Encerrar Supervisão
+                        className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-colors shadow-sm">
+                        <StopCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.8} />
+                        <span className="sm:hidden">Encerrar</span>
+                        <span className="hidden sm:inline">Encerrar Supervisão</span>
                       </button>
                     </div>
                   ) : (
