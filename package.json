@@ -5,7 +5,6 @@
     "apps/web",
     "apps/api",
     "apps/site-instituto",
-    "apps/daricha",
     "packages/*"
   ],
   "scripts": {

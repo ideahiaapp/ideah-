@@ -12,10 +12,7 @@
         "SUPABASE_SERVICE_ROLE_KEY",
         "ANTHROPIC_API_KEY",
         "VOYAGE_API_KEY",
-        "RESEND_API_KEY",
-        "INTERESSADOS_PASSWORD",
-        "INTERESSADOS_COOKIE_SECRET",
-        "NEXT_PUBLIC_WHATSAPP_NUMBER"
+        "RESEND_API_KEY"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
