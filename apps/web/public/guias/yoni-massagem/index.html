@@ -183,21 +183,19 @@
   }
   .cover-media img{
     width:100%; height:100%; object-fit:contain; object-position:100% 100%; display:block;
-    -webkit-mask-image:linear-gradient(to right, transparent 0%, black 46%);
-    mask-image:linear-gradient(to right, transparent 0%, black 46%);
+    -webkit-mask-image:linear-gradient(to bottom right, transparent 0%, black 46%);
+    mask-image:linear-gradient(to bottom right, transparent 0%, black 46%);
   }
   @media (max-width:820px){
     .cover-media img{
       object-position:50% 100%;
-      -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 42%);
-      mask-image:linear-gradient(to bottom, transparent 0%, black 42%);
+      -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 46%);
+      mask-image:linear-gradient(to bottom, transparent 0%, black 46%);
     }
   }
   .cover-media::after{
     content:""; position:absolute; inset:0; pointer-events:none;
-    background:
-      linear-gradient(to bottom, var(--cv-bg) 0%, transparent 18%, transparent 78%, var(--cv-bg) 100%),
-      linear-gradient(to right, transparent 60%, color-mix(in srgb, var(--cv-bg) 45%, transparent) 100%);
+    background:radial-gradient(120% 90% at 78% 62%, transparent 55%, color-mix(in srgb, var(--cv-bg) 55%, transparent) 100%);
   }
   .cover-content{
     position:relative; z-index:1; min-height:100svh;
