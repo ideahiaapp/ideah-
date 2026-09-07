@@ -1,0 +1,1273 @@
+<title>Yoni Massagem — Guia de Integração</title>
+<style>
+  /* ============================================================
+     TOKENS
+     ============================================================ */
+  :root{
+    --paper:      #f7f2ea;
+    --paper-2:    #f1e9db;
+    --sand:       #e8dcc6;
+    --nude:       #dcc7ac;
+    --clay:       #b9906c;
+    --terracotta: #a8613c;
+    --umber:      #3a2c20;
+    --umber-70:   rgba(58,44,32,.72);
+    --umber-45:   rgba(58,44,32,.48);
+    --umber-20:   rgba(58,44,32,.16);
+    --sage:       #838a6c;
+    --line:       rgba(58,44,32,.14);
+    --linen-a:    rgba(255,255,255,.5);
+    --linen-b:    rgba(58,44,32,.035);
+
+    --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans:  "Work Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+    --content-w: 640px;
+    --wide-w: 920px;
+    --edge: clamp(20px, 6vw, 64px);
+  }
+
+  *{box-sizing:border-box;}
+  html{background:var(--paper);}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--umber);
+    font-family:var(--sans);
+    font-size:16.5px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  ::selection{background:var(--clay); color:var(--paper);}
+
+  img{max-width:100%; display:block;}
+
+  h1,h2,h3,h4{
+    font-family:var(--serif);
+    font-weight:500;
+    color:var(--umber);
+    margin:0;
+    text-wrap:balance;
+  }
+
+  p{margin:0 0 1.1em; max-width:62ch;}
+  p:last-child{margin-bottom:0;}
+
+  a{color:inherit;}
+
+  .eyebrow{
+    font-family:var(--sans);
+    font-size:11.5px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--umber-45);
+    font-weight:600;
+  }
+
+  .linen{
+    background-image:
+      repeating-linear-gradient(115deg, var(--linen-a) 0px, var(--linen-a) 1px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(25deg, var(--linen-b) 0px, var(--linen-b) 1px, transparent 1px, transparent 3px);
+  }
+
+  /* ============================================================
+     TOP BAR
+     ============================================================ */
+  .topbar{
+    position:fixed; top:0; left:0; right:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px var(--edge);
+    background:rgba(247,242,234,.86);
+    backdrop-filter:blur(10px) saturate(1.1);
+    -webkit-backdrop-filter:blur(10px) saturate(1.1);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-mark{
+    display:flex; align-items:baseline; gap:8px;
+    font-family:var(--sans); font-size:11.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--umber-70); font-weight:600;
+  }
+  .topbar-mark .dot{color:var(--terracotta);}
+  .topbar-actions{display:flex; align-items:center; gap:10px;}
+
+  .btn-nav{
+    appearance:none; border:1px solid var(--umber-20); background:transparent;
+    color:var(--umber); font-family:var(--sans); font-size:12px; letter-spacing:.08em;
+    text-transform:uppercase; font-weight:600; padding:8px 14px; border-radius:2px;
+    cursor:pointer; transition:background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .btn-nav:hover{background:var(--umber); color:var(--paper); border-color:var(--umber);}
+  .btn-nav:focus-visible{outline:2px solid var(--terracotta); outline-offset:2px;}
+
+  .btn-pdf{
+    appearance:none; border:1px solid var(--terracotta); background:var(--terracotta);
+    color:var(--paper); font-family:var(--sans); font-size:12px; letter-spacing:.08em;
+    text-transform:uppercase; font-weight:600; padding:8px 16px; border-radius:2px;
+    cursor:pointer; transition:opacity .2s ease, transform .2s ease;
+  }
+  .btn-pdf:hover{opacity:.88;}
+  .btn-pdf:focus-visible{outline:2px solid var(--umber); outline-offset:2px;}
+
+  /* chapter index drawer */
+  .toc-scrim{
+    position:fixed; inset:0; background:rgba(58,44,32,.35); z-index:49;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .toc-scrim.open{opacity:1; pointer-events:auto;}
+  .toc{
+    position:fixed; top:0; right:0; height:100%; width:min(360px, 88vw); z-index:50;
+    background:var(--paper-2); border-left:1px solid var(--line);
+    padding:78px 28px 28px; overflow-y:auto;
+    transform:translateX(100%); transition:transform .32s cubic-bezier(.65,0,.35,1);
+  }
+  .toc.open{transform:translateX(0);}
+  .toc-close{
+    position:absolute; top:18px; right:20px; background:none; border:none; cursor:pointer;
+    font-family:var(--sans); font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--umber-70); padding:8px;
+  }
+  .toc-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column;}
+  .toc-list li{border-bottom:1px solid var(--line);}
+  .toc-list a{
+    display:flex; align-items:baseline; gap:12px; padding:13px 2px; text-decoration:none;
+    font-family:var(--serif); font-size:16.5px; color:var(--umber-70);
+    transition:color .2s ease, padding-left .2s ease;
+  }
+  .toc-list a:hover, .toc-list a.active{color:var(--umber); padding-left:6px;}
+  .toc-num{
+    font-family:var(--sans); font-size:11px; color:var(--terracotta); font-weight:600;
+    min-width:20px;
+  }
+
+  /* ============================================================
+     SECTION SCAFFOLDING
+     ============================================================ */
+  section{
+    position:relative;
+    padding:104px var(--edge) 88px;
+    border-bottom:1px solid var(--line);
+  }
+  section.tight{padding-top:88px; padding-bottom:72px;}
+  .wrap{max-width:var(--content-w); margin:0 auto;}
+  .wrap-wide{max-width:var(--wide-w); margin:0 auto;}
+
+  .chapter-head{margin-bottom:44px;}
+  .chapter-num{
+    font-family:var(--serif); font-style:italic; font-size:15px; color:var(--terracotta);
+    display:block; margin-bottom:10px;
+  }
+  .chapter-title{font-size:clamp(30px, 5vw, 44px); line-height:1.08;}
+  .chapter-sub{
+    font-family:var(--sans); font-size:14.5px; color:var(--umber-70); margin-top:10px;
+    font-weight:500; letter-spacing:.01em;
+  }
+
+  .lede{font-size:19px; line-height:1.65; color:var(--umber);}
+  .lede em{font-style:italic; color:var(--terracotta);}
+
+  section p{font-size:16.5px;}
+  section p + p{margin-top:1.1em;}
+
+  strong.mark{
+    font-family:var(--serif); font-style:italic; font-weight:500; color:var(--umber);
+  }
+
+  /* pull statement */
+  .pull{
+    margin:2.4em 0; padding:1.6em 0 1.6em 1.4em;
+    border-left:2px solid var(--clay);
+    font-family:var(--serif); font-size:clamp(21px, 3.4vw, 27px); line-height:1.4;
+    color:var(--umber); text-wrap:balance;
+  }
+  .pull span{display:block;}
+
+  hr.rule{border:none; border-top:1px solid var(--line); margin:2.2em 0;}
+
+  /* Osho / quote block */
+  .quote-block{
+    max-width:var(--wide-w); margin:64px auto 0; padding:56px var(--edge);
+    background:var(--umber); color:var(--paper); border-radius:2px;
+    text-align:center; position:relative;
+  }
+  .quote-block blockquote{
+    margin:0 auto; max-width:560px; font-family:var(--serif); font-style:italic;
+    font-size:clamp(22px, 3.6vw, 30px); line-height:1.5; color:var(--paper);
+  }
+  .quote-block cite{
+    display:block; margin-top:22px; font-family:var(--sans); font-style:normal;
+    font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--nude);
+  }
+
+  /* ============================================================
+     HERO / CAPA
+     ============================================================ */
+  .hero{
+    min-height:100svh;
+    display:flex; flex-direction:column; justify-content:space-between;
+    padding:120px var(--edge) 48px;
+    background:
+      radial-gradient(1200px 800px at 15% -10%, var(--paper-2), transparent 60%),
+      radial-gradient(900px 700px at 100% 110%, var(--sand), transparent 55%),
+      var(--paper);
+    border-bottom:1px solid var(--line);
+  }
+  .hero-top{display:flex; justify-content:space-between; align-items:flex-start; gap:24px;}
+  .hero-brand{
+    font-family:var(--sans); font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--umber-70); font-weight:600;
+  }
+  .hero-year{
+    font-family:var(--serif); font-style:italic; font-size:14px; color:var(--terracotta);
+  }
+  .hero-mid{margin:48px 0; text-align:center;}
+  .hero-title{
+    font-size:clamp(52px, 12vw, 118px); line-height:.94; letter-spacing:-.01em;
+    font-weight:400;
+  }
+  .hero-title .accent{color:var(--terracotta); font-style:italic; font-weight:400;}
+  .hero-subtitle{
+    margin-top:22px; font-family:var(--sans); font-size:clamp(14px,2vw,17px);
+    letter-spacing:.04em; color:var(--umber-70); font-weight:500;
+  }
+  .hero-line{
+    width:64px; height:1px; background:var(--clay); margin:34px auto 0;
+  }
+  .hero-bottom{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap;
+  }
+  .hero-motto{
+    font-family:var(--serif); font-style:italic; font-size:clamp(17px,2.4vw,22px);
+    color:var(--umber); max-width:360px; line-height:1.4;
+  }
+  .hero-sig{
+    text-align:right; font-family:var(--sans); font-size:12.5px; color:var(--umber-70);
+  }
+  .hero-sig strong{display:block; font-family:var(--serif); font-style:italic; font-size:16px; color:var(--umber); font-weight:500;}
+
+  /* ============================================================
+     PILLARS
+     ============================================================ */
+  .pillars-inline{display:flex; flex-direction:column; margin-top:2.2em;}
+  .pillar-row{
+    display:grid; grid-template-columns:120px 1fr; gap:18px 28px;
+    padding:22px 0; border-top:1px solid var(--line);
+  }
+  .pillar-row:last-child{border-bottom:1px solid var(--line);}
+  .pillar-word{
+    font-family:var(--serif); font-style:italic; font-size:20px; color:var(--terracotta);
+    align-self:start;
+  }
+  .pillar-desc{font-size:15.5px; color:var(--umber-70); align-self:start; margin:0;}
+
+  .pillars-grand{
+    background:var(--umber); color:var(--paper); padding:76px var(--edge);
+  }
+  .pillars-grand .chapter-head{color:var(--paper);}
+  .pillars-grand .chapter-num{color:var(--clay);}
+  .pillars-grand .chapter-sub{color:var(--nude);}
+  .pillars-grid{
+    max-width:var(--wide-w); margin:56px auto 0; display:grid;
+    grid-template-columns:repeat(4,1fr); gap:1px; background:rgba(247,242,234,.14);
+    border:1px solid rgba(247,242,234,.14);
+  }
+  .pillar-cell{
+    background:var(--umber); padding:34px 22px; min-height:260px;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .pillar-cell .num{font-family:var(--sans); font-size:11px; color:var(--clay); letter-spacing:.14em;}
+  .pillar-cell .word{
+    font-family:var(--serif); font-size:clamp(22px,2.6vw,28px); font-style:italic;
+    color:var(--paper); margin:20px 0 14px; line-height:1.1;
+  }
+  .pillar-cell p{font-size:13.8px; color:var(--nude); margin:0; max-width:none;}
+
+  /* ============================================================
+     REENCONTRANDO — carried words
+     ============================================================ */
+  .carry-list{
+    display:flex; flex-wrap:wrap; gap:10px 14px; margin:1.8em 0 2.2em;
+    padding:26px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+  }
+  .carry-list span{
+    font-family:var(--serif); font-style:italic; font-size:15.5px; color:var(--umber-70);
+  }
+  .carry-list span::after{content:"·"; margin-left:12px; color:var(--umber-20);}
+  .carry-list span:last-child::after{content:"";}
+
+  .ask-stack{margin:2em 0;}
+  .ask-stack p{
+    font-family:var(--serif); font-style:italic; font-size:clamp(18px,2.6vw,21px);
+    color:var(--umber); margin:0 0 .5em; text-wrap:balance;
+  }
+
+  /* ============================================================
+     CHECKLIST — Antes de iniciar
+     ============================================================ */
+  .checklist{list-style:none; margin:2em 0; padding:0; display:flex; flex-direction:column;}
+  .checklist li{
+    display:flex; align-items:flex-start; gap:16px; padding:15px 0;
+    border-top:1px solid var(--line); font-size:16px;
+  }
+  .checklist li:last-child{border-bottom:1px solid var(--line);}
+  .checklist .mark2{
+    width:9px; height:9px; margin-top:7px; border:1px solid var(--clay); flex:none;
+    transform:rotate(45deg);
+  }
+  .consent-note{
+    margin-top:2.4em; padding:26px 28px; background:var(--sage); background:color-mix(in srgb, var(--sage) 22%, var(--paper));
+    border-left:2px solid var(--sage);
+  }
+  .consent-note p{font-size:15.5px; margin:0;}
+  .consent-note p + p{margin-top:.6em;}
+
+  /* ============================================================
+     ANATOMY
+     ============================================================ */
+  .anatomy-grid{
+    display:grid; grid-template-columns:1fr; gap:36px; margin-top:2.4em;
+  }
+  @media(min-width:760px){ .anatomy-grid{grid-template-columns:1fr 1.15fr; align-items:center;} }
+  .anatomy-terms{display:flex; flex-direction:column; gap:22px;}
+  .term-row{padding-bottom:18px; border-bottom:1px solid var(--line);}
+  .term-row:last-child{border:none; padding-bottom:0;}
+  .term-name{font-family:var(--serif); font-style:italic; font-size:19px; color:var(--terracotta);}
+  .term-def{font-size:14.8px; color:var(--umber-70); margin:.35em 0 0;}
+  .anatomy-plate{
+    background:var(--paper-2); border:1px solid var(--line); padding:20px;
+  }
+  .anatomy-plate svg{width:100%; height:auto;}
+  .anatomy-caption{
+    text-align:center; margin-top:10px; font-size:11.5px; letter-spacing:.06em;
+    color:var(--umber-45); text-transform:uppercase;
+  }
+
+  /* ============================================================
+     MANOBRA — Section 11 visual guide
+     ============================================================ */
+  .manobras-intro{margin-bottom:16px;}
+  .manobra{
+    padding:44px 0; border-top:1px solid var(--line);
+    display:grid; grid-template-columns:1fr; gap:26px;
+    break-inside:avoid; page-break-inside:avoid;
+  }
+  .manobra:last-child{border-bottom:1px solid var(--line);}
+  @media(min-width:860px){
+    .manobra{grid-template-columns:340px 1fr; gap:44px;}
+  }
+  .manobra-head{display:flex; align-items:baseline; gap:14px; margin-bottom:10px;}
+  .manobra-index{font-family:var(--serif); font-style:italic; font-size:15px; color:var(--terracotta);}
+  .manobra-name{font-family:var(--serif); font-size:23px; font-weight:500;}
+  .manobra-text p{font-size:15.3px; margin-bottom:.85em;}
+  .perceba{
+    margin-top:16px; padding:16px 18px; background:var(--paper-2); border-left:2px solid var(--sage);
+  }
+  .perceba .label{
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--sage); font-weight:600;
+  }
+  .perceba p{font-size:14.3px; color:var(--umber-70); margin:.4em 0 0;}
+  .destaque-inline{
+    font-family:var(--serif); font-style:italic; color:var(--terracotta); font-size:15.6px;
+  }
+
+  .frame-grid{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:8px;
+  }
+  .frame-grid.single{grid-template-columns:1fr;}
+  .frame-grid.three{grid-template-columns:repeat(3,1fr);}
+  .photo-frame{
+    aspect-ratio:4/5; position:relative; overflow:hidden;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+  }
+  .photo-frame img{width:100%; height:100%; object-fit:cover;}
+  .photo-frame .tag{
+    position:absolute; left:8px; bottom:8px; font-family:var(--sans);
+    font-size:10.5px; letter-spacing:.06em; color:var(--paper);
+    background:rgba(58,44,32,.72); padding:3px 7px;
+  }
+  .photo-frame.placeholder{
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo-frame.placeholder .ph-num{
+    font-family:var(--serif); font-style:italic; font-size:22px; color:var(--umber-20);
+  }
+
+  /* ============================================================
+     INTEGRATION / RESPONSE LIST
+     ============================================================ */
+  .response-cloud{
+    display:flex; flex-wrap:wrap; gap:10px 12px; margin:1.8em 0 2em;
+  }
+  .response-cloud span{
+    font-family:var(--sans); font-size:13.5px; padding:7px 13px; border:1px solid var(--umber-20);
+    color:var(--umber-70); border-radius:1px;
+  }
+  .not-questions{
+    display:flex; flex-direction:column; gap:8px; margin:1.6em 0 2em; padding-left:2px;
+  }
+  .not-questions span{
+    font-family:var(--serif); font-style:italic; color:var(--umber-45); font-size:16.5px;
+    text-decoration:line-through; text-decoration-color:var(--umber-20); text-decoration-thickness:1px;
+  }
+
+  /* ============================================================
+     BIO / MEU CAMINHO
+     ============================================================ */
+  .bio-close{
+    margin-top:2.2em; font-family:var(--serif); font-style:italic; font-size:clamp(19px,2.6vw,23px);
+    line-height:1.55; color:var(--umber);
+  }
+  .bio-close span{display:block;}
+  .triad{
+    margin-top:2.4em; padding-top:2.2em; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .triad p{
+    font-family:var(--serif); font-size:clamp(21px,3vw,26px); font-style:italic; color:var(--terracotta);
+    margin:0; text-wrap:balance;
+  }
+  .sig-block{margin-top:2.6em;}
+  .sig-block .name{font-family:var(--serif); font-style:italic; font-size:19px; color:var(--umber);}
+  .sig-block .role{font-size:13px; color:var(--umber-70); margin-top:2px;}
+
+  /* ============================================================
+     FOOTER / NOTE
+     ============================================================ */
+  .note-final{
+    background:var(--paper-2);
+  }
+  .note-final .wrap{font-size:13.3px; color:var(--umber-70); text-align:center;}
+  .note-final p{max-width:56ch; margin:0 auto .6em;}
+
+  footer.site-foot{
+    padding:48px var(--edge) 120px; text-align:center; border-bottom:none;
+  }
+  footer.site-foot .mark{
+    font-family:var(--serif); font-style:italic; font-size:15px; color:var(--umber-70);
+  }
+  .back-top{
+    display:inline-block; margin-top:18px; font-size:11.5px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--terracotta); text-decoration:none; cursor:pointer; background:none; border:none;
+    font-family:var(--sans); font-weight:600;
+  }
+
+  /* scroll reveal */
+  .reveal{opacity:1; transform:none;}
+  @media(prefers-reduced-motion:no-preference){
+    .reveal{opacity:0; transform:translateY(14px); transition:opacity .7s ease, transform .7s ease;}
+    .reveal.in{opacity:1; transform:none;}
+  }
+
+  /* ============================================================
+     PRINT
+     ============================================================ */
+  @media print{
+    @page{ size:A4; margin:16mm 14mm; }
+    html, body{ background:#fff; }
+    *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .topbar, .toc, .toc-scrim, .btn-pdf, .back-top, footer.site-foot .back-top{ display:none !important; }
+    section{ padding:18px 0; border-bottom:none; page-break-after:auto; }
+    .hero{ min-height:auto; padding:10px 0 30px; }
+    .quote-block, .pillars-grand{ break-inside:avoid; page-break-inside:avoid; }
+    .manobra{ break-inside:avoid; page-break-inside:avoid; }
+    h1,h2,h3{ break-after:avoid; }
+    .photo-frame, .anatomy-plate{ break-inside:avoid; }
+    a{ text-decoration:none; color:inherit; }
+    body{ font-size:12.6px; }
+  }
+
+  @media(max-width:640px){
+    .pillars-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     TOP BAR
+     ============================================================ -->
+<div class="topbar">
+  <div class="topbar-mark"><span class="dot">●</span> Guia de prática · Método Daricha Sundari</div>
+  <div class="topbar-actions">
+    <button class="btn-nav" id="tocToggle" aria-haspopup="true" aria-controls="tocPanel">Capítulos</button>
+    <button class="btn-pdf" id="printBtn">Baixar PDF</button>
+  </div>
+</div>
+
+<div class="toc-scrim" id="tocScrim"></div>
+<nav class="toc" id="tocPanel" aria-label="Índice de capítulos">
+  <button class="toc-close" id="tocClose">Fechar ✕</button>
+  <ul class="toc-list">
+    <li><a href="#capa"><span class="toc-num">—</span>Capa</a></li>
+    <li><a href="#antes"><span class="toc-num">00</span>Antes de começar</a></li>
+    <li><a href="#cap01"><span class="toc-num">01</span>O corpo como caminho</a></li>
+    <li><a href="#cap02"><span class="toc-num">02</span>Reencontrando o corpo feminino</a></li>
+    <li><a href="#cap03"><span class="toc-num">03</span>O bloqueio do prazer</a></li>
+    <li><a href="#cap04"><span class="toc-num">04</span>Antes da Yoni, existe um corpo</a></li>
+    <li><a href="#cap05"><span class="toc-num">05</span>Yoni</a></li>
+    <li><a href="#cap06"><span class="toc-num">06</span>Yoni Massagem</a></li>
+    <li><a href="#cap07"><span class="toc-num">07</span>Anatomia do prazer feminino</a></li>
+    <li><a href="#cap08"><span class="toc-num">08</span>Antes de iniciar a prática</a></li>
+    <li><a href="#cap09"><span class="toc-num">09</span>Guia visual da Yoni Massagem</a></li>
+    <li><a href="#cap10"><span class="toc-num">10</span>Não persiga o orgasmo</a></li>
+    <li><a href="#cap11"><span class="toc-num">11</span>Quando o corpo responde</a></li>
+    <li><a href="#cap12"><span class="toc-num">12</span>Integração</a></li>
+    <li><a href="#cap13"><span class="toc-num">13</span>O Método Daricha Sundari</a></li>
+    <li><a href="#caminho"><span class="toc-num">—</span>Meu caminho</a></li>
+  </ul>
+</nav>
+
+<!-- ============================================================
+     CAPA
+     ============================================================ -->
+<section class="hero" id="capa">
+  <div class="hero-top">
+    <div class="hero-brand">Método Daricha Sundari</div>
+    <div class="hero-year">2026</div>
+  </div>
+  <div class="hero-mid">
+    <h1 class="hero-title">YONI<br><span class="accent">Massagem</span></h1>
+    <p class="hero-subtitle">Guia de integração e prática</p>
+    <div class="hero-line"></div>
+  </div>
+  <div class="hero-bottom">
+    <p class="hero-motto">&ldquo;Antes de aprender a tocar,<br>aprenda a perceber.&rdquo;</p>
+    <div class="hero-sig">
+      <strong>Daricha Sundari</strong>
+      Material complementar ao<br>Curso Privativo de Massagem Tântrica
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ANTES DE COMEÇAR
+     ============================================================ -->
+<section id="antes">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">Antes de começar</span>
+      <h2 class="chapter-title">Este guia não substitui o que seu corpo já aprendeu.</h2>
+    </div>
+    <p class="lede">Este não é um manual para simplesmente reproduzir movimentos. A técnica importa — é importante conhecer as manobras, compreender a anatomia, desenvolver segurança e saber o que as mãos estão fazendo. <em>Mas a técnica nunca vem antes da presença.</em></p>
+    <p>Durante o curso, você aprendeu a tocar. Mas, principalmente, foi convidado a perceber. Perceber o corpo de quem recebe. A respiração. As pequenas mudanças. A abertura e o recolhimento. O conforto e o desconforto. O ritmo. O silêncio. Os limites. E aquilo que muda de um momento para o outro.</p>
+    <p>É dessa escuta que nasce a Yoni Massagem dentro do Método Daricha Sundari.</p>
+    <p>Este guia foi criado para acompanhar você depois da experiência presencial. As orientações e imagens das próximas páginas funcionam como uma memória do caminho que percorremos juntos. Elas não representam uma coreografia obrigatória.</p>
+    <p>Volte a este material quando precisar lembrar uma manobra. Mas, quando estiver diante de um corpo real, volte primeiro para o corpo.</p>
+    <p class="pull"><span>A técnica oferece um caminho.</span><span>O corpo de quem recebe mostra por onde seguir.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     01 — O CORPO COMO CAMINHO
+     ============================================================ -->
+<section id="cap01">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">01</span>
+      <h2 class="chapter-title">O corpo como caminho</h2>
+      <p class="chapter-sub">Tantra, sexualidade e presença</p>
+    </div>
+    <p>Durante muito tempo fomos ensinados a separar. Corpo de um lado. Espiritualidade de outro. Prazer de um lado. Amor de outro.</p>
+    <p>E talvez uma das grandes provocações que o Tantra tenha me apresentado ao longo da minha trajetória seja justamente a possibilidade de não precisar fragmentar tanto a experiência humana.</p>
+    <p>O corpo também pode ser caminho. A sexualidade também pode ser espaço de consciência. O prazer não precisa ser tratado como algo menor, vergonhoso ou desconectado de quem somos.</p>
+    <p>Dentro do meu trabalho, o Tantra não é uma busca por técnicas sexuais extraordinárias. Ele é, antes de tudo, um convite para estar inteiro na experiência.</p>
+    <p>É perceber o que acontece enquanto acontece. É sair do automatismo. É diminuir o excesso de expectativa para conseguir sentir. É permitir que o corpo volte a participar daquilo que, muitas vezes, aprendemos a viver apenas pela mente.</p>
+    <p>Osho, uma das referências mais importantes da minha trajetória, fala sobre Mahamudra como um estado em que deixamos de nos perceber separados do todo. Essa compreensão sempre me tocou profundamente.</p>
+    <p>Porque talvez seja justamente isso que uma experiência corporal profunda possa nos lembrar: por alguns instantes, podemos abandonar a necessidade de controlar, explicar ou alcançar alguma coisa e simplesmente estar.</p>
+  </div>
+
+  <div class="quote-block reveal">
+    <blockquote>&ldquo;Mahamudra é um estado de seu ser, em que você não está separado do total.&rdquo;</blockquote>
+    <cite>— Osho</cite>
+  </div>
+
+  <div class="wrap reveal" style="margin-top:56px;">
+    <p>É desse lugar que eu quero que você compreenda este guia. Não como uma técnica para produzir prazer em alguém. <strong class="mark">Mas como um aprendizado sobre presença.</strong></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     02 — REENCONTRANDO O CORPO FEMININO
+     ============================================================ -->
+<section id="cap02">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">02</span>
+      <h2 class="chapter-title">Reencontrando o corpo feminino</h2>
+      <p class="chapter-sub">O prazer não precisa ser uma performance</p>
+    </div>
+    <p>Quero começar com uma pergunta que fazia parte do meu primeiro material sobre Yoni Massagem:</p>
+    <div class="ask-stack">
+      <p>Você gosta de ser mulher?</p>
+    </div>
+    <p>Hoje eu faria essa pergunta de uma maneira ainda mais profunda:</p>
+    <div class="ask-stack">
+      <p>Como você aprendeu a se relacionar com o seu corpo?</p>
+    </div>
+    <p>Porque ninguém chega à vida adulta com uma relação neutra com a sexualidade. Nós carregamos histórias.</p>
+
+    <div class="carry-list">
+      <span>Aquilo que ouvimos dentro de casa</span>
+      <span>O que aprendemos sobre sexo</span>
+      <span>O que nos disseram sobre desejo</span>
+      <span>O que entendemos sobre o que uma &ldquo;mulher deve ser&rdquo;</span>
+      <span>As experiências que tivemos</span>
+      <span>Os relacionamentos que construímos</span>
+      <span>Os silêncios</span>
+      <span>As vergonhas</span>
+      <span>As culpas</span>
+      <span>As comparações</span>
+    </div>
+
+    <p>E carregamos também experiências bonitas: descobertas, encontros, liberdade, intimidade, prazer e amor. Tudo isso participa da maneira como habitamos o nosso corpo.</p>
+    <p>Por isso, quando uma mulher encontra dificuldade para sentir, receber, relaxar, comunicar o que deseja ou simplesmente permanecer presente durante uma experiência íntima, não me interessa olhar para ela como um corpo que &ldquo;não funciona&rdquo;.</p>
+    <p>Interessa-me perguntar:</p>
+
+    <div class="ask-stack" style="margin-top:1.6em;">
+      <p>O que esse corpo aprendeu?</p>
+      <p>O que ele precisou proteger?</p>
+      <p>O que ele deseja agora?</p>
+    </div>
+
+    <p>Essa mudança de olhar é muito importante dentro do Método Daricha Sundari. O prazer não é uma prova. O orgasmo não é uma obrigação. E uma experiência não é bem-sucedida porque alguém chegou a determinado lugar.</p>
+    <p>Às vezes, uma das experiências mais profundas que uma pessoa pode ter é simplesmente perceber algo que nunca havia percebido antes.</p>
+    <p class="pull"><span>O corpo não está fazendo uma prova.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     03 — O BLOQUEIO DO PRAZER
+     ============================================================ -->
+<section id="cap03">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">03</span>
+      <h2 class="chapter-title">O bloqueio do prazer</h2>
+      <p class="chapter-sub">Aquilo que o corpo aprendeu também pode ser ressignificado</p>
+    </div>
+    <p>Dar um significado prazeroso ao sexo ou ao próprio toque pode parecer algo óbvio. Nem sempre é.</p>
+    <p>Aspectos sociais e culturais, nossa educação, experiências afetivas e sexuais e as crenças que construímos ao longo da vida podem influenciar profundamente nossa relação com o prazer.</p>
+    <p>Algumas pessoas aprenderam a esconder o corpo. Outras aprenderam a suportar. Algumas aprenderam a agradar. Outras aprenderam que receber é egoísmo. Há quem tenha aprendido que sexo precisa terminar em orgasmo. Há quem tenha aprendido que precisa parecer disponível mesmo quando não está. E há mulheres que simplesmente nunca tiveram a oportunidade de conhecer o próprio corpo sem julgamento.</p>
+    <p>É por isso que receber uma massagem tântrica pode representar muito mais do que experimentar determinados estímulos. Pode ser uma oportunidade de perceber o próprio corpo sob outra perspectiva.</p>
+    <p>Com curiosidade em vez de julgamento. Com escuta em vez de cobrança. Com respeito em vez de invasão. Com tempo.</p>
+    <p>Nem tudo precisa ser &ldquo;desbloqueado&rdquo;. Nem toda emoção precisa ser interpretada. Nem toda resposta corporal precisa significar alguma coisa. Às vezes, o corpo precisa apenas encontrar condições suficientemente seguras para ser percebido.</p>
+    <p style="margin-top:2em;">No Método Daricha Sundari, esse processo passa por quatro movimentos:</p>
+
+    <div class="pillars-inline">
+      <div class="pillar-row">
+        <span class="pillar-word">Conscientizar</span>
+        <p class="pillar-desc">Perceber o corpo, a história, os padrões, as sensações e as respostas que estão presentes.</p>
+      </div>
+      <div class="pillar-row">
+        <span class="pillar-word">Liberar</span>
+        <p class="pillar-desc">Permitir movimento àquilo que encontra espaço para se expressar, sem forçar respostas físicas ou emocionais.</p>
+      </div>
+      <div class="pillar-row">
+        <span class="pillar-word">Ressignificar</span>
+        <p class="pillar-desc">Construir novas experiências possíveis com o corpo, o toque, os limites, a intimidade e o prazer.</p>
+      </div>
+      <div class="pillar-row">
+        <span class="pillar-word">Integrar</span>
+        <p class="pillar-desc">Dar tempo para que a experiência encontre um lugar dentro de quem a viveu.</p>
+      </div>
+    </div>
+    <p style="margin-top:1.8em; color:var(--umber-70); font-size:15px;">Esses pilares atravessam toda a prática.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     04 — ANTES DA YONI, EXISTE UM CORPO
+     ============================================================ -->
+<section id="cap04">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">04</span>
+      <h2 class="chapter-title">Antes da Yoni, existe um corpo</h2>
+      <p class="chapter-sub">Sensitive Massagem</p>
+    </div>
+    <p>Uma das coisas mais importantes que quero que você leve deste curso é:</p>
+    <p class="pull"><span>A Yoni Massagem não começa na Yoni.</span></p>
+    <p>Ela começa muito antes. Começa na chegada. Na qualidade da presença. Na respiração. No primeiro contato das mãos com o corpo. Na capacidade de não ter pressa.</p>
+    <p>A Sensitive Massagem é uma etapa fundamental do Método Daricha Sundari porque convida a percepção a percorrer o corpo inteiro. A pele possui uma riqueza enorme de sensações.</p>
+
+    <div class="carry-list">
+      <span>Pressão</span><span>Temperatura</span><span>Textura</span><span>Movimento</span>
+      <span>Pausa</span><span>Arrepio</span><span>Calor</span><span>Relaxamento</span><span>Excitação</span>
+    </div>
+
+    <p>Quando tocamos lentamente diferentes regiões, oferecemos ao corpo a possibilidade de ampliar seu mapa sensorial. A atenção deixa de estar concentrada apenas nas regiões habitualmente associadas ao sexo.</p>
+    <p>E aqui está uma das diferenças mais importantes entre tocar para chegar a algum lugar e tocar para perceber o que está acontecendo.</p>
+    <p>Não tenha pressa de chegar à Yoni. Observe. Respire. Permaneça.</p>
+    <p class="pull"><span>A preparação também é a massagem.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     05 — YONI
+     ============================================================ -->
+<section id="cap05">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">05</span>
+      <h2 class="chapter-title">Yoni</h2>
+      <p class="chapter-sub">Um território de percepção</p>
+    </div>
+    <p>Yoni é uma palavra de origem sânscrita, tradicionalmente associada a ideias como fonte, origem, matriz e princípio gerador.</p>
+    <p>No meu trabalho, utilizo essa palavra para nomear a região íntima feminina dentro de uma abordagem de respeito e consciência.</p>
+    <p>Para algumas pessoas, utilizar uma palavra diferente para falar dessa região pode parecer estranho no início. Isso também pode provocar uma reflexão interessante:</p>
+    <div class="ask-stack"><p>Quais palavras você aprendeu a usar para falar das partes íntimas do corpo?</p></div>
+    <div class="carry-list">
+      <span>Carinho?</span><span>Vergonha?</span><span>Deboche?</span><span>Constrangimento?</span><span>Erotização?</span><span>Silêncio?</span>
+    </div>
+    <p>A maneira como nomeamos o corpo também pode revelar um pouco da maneira como aprendemos a nos relacionar com ele.</p>
+    <p>Mas não existe uma palavra que precise ser imposta. Yoni não precisa substituir vulva, clitóris ou vagina quando estamos falando de anatomia.</p>
+    <p>Ao contrário: <strong class="mark">conhecer e nomear corretamente o próprio corpo também é consciência.</strong></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     06 — YONI MASSAGEM
+     ============================================================ -->
+<section id="cap06">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">06</span>
+      <h2 class="chapter-title">Yoni Massagem</h2>
+      <p class="chapter-sub">Do estímulo à escuta</p>
+    </div>
+    <p>A Yoni Massagem, dentro do Método Daricha Sundari, é uma continuidade do trabalho sensorial iniciado no corpo inteiro.</p>
+    <p>Ela envolve toques e manobras na pelve, virilha e diferentes estruturas externas da vulva e do clitóris, sempre respeitando consentimento, conforto, limites e respostas individuais.</p>
+    <p>Mas existe uma diferença entre simplesmente tocar uma região íntima e escutá-la através das mãos. É essa diferença que estamos aprendendo.</p>
+    <p>As manobras oferecem possibilidades de contato que podem ser diferentes dos padrões aos quais aquela pessoa está habituada.</p>
+    <div class="carry-list">
+      <span>Pressões diferentes</span><span>Velocidades diferentes</span><span>Pausas</span>
+      <span>Contato contínuo</span><span>Movimentos pequenos</span><span>Mudanças sutis</span>
+    </div>
+    <p>O objetivo não é encontrar uma fórmula capaz de produzir determinada resposta. É ampliar repertório.</p>
+    <p>Uma mesma manobra pode ser muito agradável para uma pessoa e indiferente para outra. Pode ser agradável hoje e não amanhã. Pode pedir mais pressão. Pode pedir menos. Pode pedir continuidade. Ou pode pedir que você pare.</p>
+    <p>Por isso, não transforme a técnica em uma sequência automática.</p>
+    <p class="pull"><span>As mãos fazem a pergunta.</span><span>O corpo responde.</span></p>
+    <p>E quem toca precisa aprender a escutar essa resposta.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     07 — ANATOMIA DO PRAZER FEMININO
+     ============================================================ -->
+<section id="cap07">
+  <div class="wrap-wide reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">07</span>
+      <h2 class="chapter-title">Anatomia do prazer feminino</h2>
+      <p class="chapter-sub">Conhecer também é uma forma de cuidar</p>
+    </div>
+    <p style="max-width:62ch;">Durante muito tempo, a anatomia sexual feminina foi ensinada principalmente a partir de sua função reprodutiva. Mas compreender a anatomia da vulva e do clitóris é fundamental para tocar com mais consciência. É importante diferenciar alguns termos.</p>
+
+    <div class="anatomy-grid">
+      <div class="anatomy-terms">
+        <div class="term-row">
+          <div class="term-name">Vulva</div>
+          <p class="term-def">Conjunto das estruturas externas da região íntima feminina. Inclui, entre outras, os lábios externos e internos, o vestíbulo e a parte externa visível do clitóris.</p>
+        </div>
+        <div class="term-row">
+          <div class="term-name">Vagina</div>
+          <p class="term-def">Canal interno que se estende da abertura vaginal até o colo do útero. <em style="font-style:italic; color:var(--umber);">Vulva e vagina não são sinônimos.</em></p>
+        </div>
+        <div class="term-row">
+          <div class="term-name">Clitóris</div>
+          <p class="term-def">Estrutura muito maior do que a pequena parte que conseguimos visualizar externamente — a região visível é apenas parte de uma estrutura que se prolonga internamente. Durante a excitação, ocorre aumento do fluxo sanguíneo nos tecidos eréteis, provocando mudanças de volume, sensibilidade e percepção.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="anatomy-plate">
+          <svg viewBox="0 0 420 460" role="img" aria-labelledby="anatTitle anatDesc">
+            <title id="anatTitle">Ilustração esquemática da vulva</title>
+            <desc id="anatDesc">Diagrama de linha, discreto e didático, indicando monte pubiano, lábios externos e internos, clitóris, vestíbulo e abertura vaginal.</desc>
+            <g fill="none" stroke="#3a2c20" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M120 60 C 150 40, 270 40, 300 60 C 330 90, 335 150, 300 190" opacity=".35"/>
+              <path d="M140 90 C 120 140, 118 220, 150 280 C 170 320, 190 350, 210 372" />
+              <path d="M280 90 C 300 140, 302 220, 270 280 C 250 320, 230 350, 210 372" />
+              <path d="M168 130 C 155 175, 158 235, 185 275 C 198 296, 205 312, 210 328" />
+              <path d="M252 130 C 265 175, 262 235, 235 275 C 222 296, 215 312, 210 328" />
+              <ellipse cx="210" cy="118" rx="17" ry="14"/>
+              <path d="M193 108 C 198 92, 222 92, 227 108" />
+              <ellipse cx="210" cy="238" rx="20" ry="26" opacity=".9"/>
+              <path d="M186 238 C 186 300, 196 330, 210 372" opacity=".55"/>
+              <path d="M234 238 C 234 300, 224 330, 210 372" opacity=".55"/>
+            </g>
+            <g font-family="Work Sans, sans-serif" font-size="11" fill="#6b5a49" letter-spacing=".02em">
+              <line x1="210" y1="70" x2="210" y2="46" stroke="#c9b79c" stroke-width="1"/>
+              <text x="210" y="38" text-anchor="middle">MONTE PUBIANO</text>
+
+              <line x1="210" y1="112" x2="120" y2="112" stroke="#c9b79c" stroke-width="1"/>
+              <text x="24" y="115">GLANDE DO CLITÓRIS</text>
+
+              <line x1="170" y1="150" x2="70" y2="150" stroke="#c9b79c" stroke-width="1"/>
+              <text x="10" y="153">LÁBIO EXTERNO</text>
+
+              <line x1="192" y1="200" x2="70" y2="200" stroke="#c9b79c" stroke-width="1"/>
+              <text x="10" y="203">LÁBIO INTERNO</text>
+
+              <line x1="210" y1="238" x2="330" y2="238" stroke="#c9b79c" stroke-width="1"/>
+              <text x="336" y="242">VESTÍBULO</text>
+
+              <line x1="210" y1="330" x2="330" y2="330" stroke="#c9b79c" stroke-width="1"/>
+              <text x="336" y="334">ABERTURA VAGINAL</text>
+
+              <line x1="210" y1="372" x2="210" y2="410" stroke="#c9b79c" stroke-width="1"/>
+              <text x="210" y="424" text-anchor="middle">PERÍNEO</text>
+            </g>
+          </svg>
+        </div>
+        <p class="anatomy-caption">Ilustração esquemática · vista externa</p>
+      </div>
+    </div>
+
+    <p style="margin-top:2.2em; max-width:62ch;">E isso nos leva a algo fundamental para a prática: <strong class="mark">não existe uma única forma correta de estimular o clitóris.</strong></p>
+    <p style="max-width:62ch;">Para algumas pessoas, o contato direto pode ser agradável. Para outras, pode ser intenso demais. Algumas preferem movimentos ao redor. Outras gostam de pressão. Outras de movimentos extremamente sutis. Por isso anatomia e percepção precisam caminhar juntas.</p>
+    <p class="pull" style="max-width:62ch;"><span>Conhecer onde tocar é técnica.</span><span>Perceber como aquele corpo deseja ser tocado é presença.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     08 — ANTES DE INICIAR A PRÁTICA
+     ============================================================ -->
+<section id="cap08">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">08</span>
+      <h2 class="chapter-title">Antes de iniciar a prática</h2>
+      <p class="chapter-sub">Prepare o ambiente. E prepare-se.</p>
+    </div>
+    <p>Antes de tocar, organize o espaço. Evite começar uma prática sabendo que precisará terminá-la com pressa.</p>
+
+    <ul class="checklist">
+      <li><span class="mark2"></span>Privacidade</li>
+      <li><span class="mark2"></span>Conforto</li>
+      <li><span class="mark2"></span>Temperatura agradável</li>
+      <li><span class="mark2"></span>Tempo suficiente, sem pressa</li>
+      <li><span class="mark2"></span>Unhas cuidadas</li>
+      <li><span class="mark2"></span>Mãos higienizadas</li>
+      <li><span class="mark2"></span>Retirada de acessórios que possam arranhar</li>
+      <li><span class="mark2"></span>Produto apropriado para o tipo de contato</li>
+      <li><span class="mark2"></span>Atenção a possíveis sensibilidades ou alergias</li>
+    </ul>
+
+    <p>E, principalmente, <strong class="mark">converse.</strong></p>
+
+    <div class="consent-note">
+      <p><strong class="mark">O consentimento não acontece apenas no início.</strong> Ele continua durante toda a experiência.</p>
+      <p>Quem recebe pode pedir: mais, menos, mais devagar, mais rápido, aqui, não aqui, continue, pare. E pode mudar de ideia.</p>
+      <p><strong class="mark">Consentimento não interrompe a experiência. Consentimento faz parte da experiência.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     09 — GUIA VISUAL DA YONI MASSAGEM
+     ============================================================ -->
+<section id="cap09">
+  <div class="wrap-wide reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">09</span>
+      <h2 class="chapter-title">Guia visual da Yoni Massagem</h2>
+      <p class="chapter-sub">Da técnica à percepção</p>
+    </div>
+    <div class="manobras-intro" style="max-width:62ch;">
+      <p>A partir daqui, você encontrará as manobras que aprendeu durante o curso. As fotografias deste guia funcionam como uma memória visual da experiência presencial.</p>
+      <p>Não tente realizar todas as manobras simplesmente porque elas aparecem aqui. Escolha. Observe. Repita quando houver uma boa resposta. Mude quando fizer sentido. Pare quando for necessário.</p>
+    </div>
+  </div>
+
+  <div class="wrap-wide">
+
+    <!-- MANOBRA 01 -->
+    <div class="manobra reveal">
+      <div class="frame-grid">
+        <div class="photo-frame linen placeholder"><span class="ph-num">01</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">02</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 01</span><h3 class="manobra-name">Aproximação</h3></div>
+        <p>Comece pela parte interna das coxas. Utilize a palma das mãos em movimentos lentos e ascendentes em direção à virilha. Ainda não tenha pressa de chegar à Yoni.</p>
+        <p>Amplie gradualmente o contato para a virilha e a região pélvica. Faça movimentos suaves e circulares ao redor da pelve e do monte pubiano.</p>
+        <div class="perceba">
+          <span class="label">Perceba</span>
+          <p>Como está a respiração? O corpo relaxa ou se contrai? Há abertura para aproximar o toque?</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANOBRA 02 -->
+    <div class="manobra reveal">
+      <div class="frame-grid single">
+        <div class="photo-frame linen placeholder"><span class="ph-num">·</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 02</span><h3 class="manobra-name">Conexão com a Yoni</h3></div>
+        <p>Posicione a mão suavemente em formato de concha sobre a Yoni. Não faça movimentos imediatamente.</p>
+        <p>Permaneça. Respire. Permita que o corpo reconheça o contato antes de iniciar qualquer estímulo.</p>
+        <p class="destaque-inline">A pausa também é toque.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 03 -->
+    <div class="manobra reveal">
+      <div class="frame-grid single">
+        <div class="photo-frame linen placeholder"><span class="ph-num">03</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 03</span><h3 class="manobra-name">Movimento de integração</h3></div>
+        <p>Com as mãos lubrificadas, realize um movimento ascendente partindo da região do períneo, passando pela Yoni e seguindo pelo abdômen em direção ao centro do tórax.</p>
+        <p>Este movimento pode ser utilizado entre diferentes manobras. Ele ajuda a devolver a percepção ao corpo inteiro e evita que toda a experiência fique concentrada apenas na região íntima.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 04 -->
+    <div class="manobra reveal">
+      <div class="frame-grid three">
+        <div class="photo-frame linen placeholder"><span class="ph-num">04</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">05</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">06</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">07</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">08</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 04</span><h3 class="manobra-name">Lábios externos</h3></div>
+        <p>Utilizando a polpa dos polegares, faça movimentos suaves para cima e para baixo na região dos lábios externos.</p>
+        <p>Comece lentamente. Aumente intensidade ou velocidade somente a partir das respostas de quem recebe e da comunicação entre vocês.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 05 -->
+    <div class="manobra reveal">
+      <div class="frame-grid">
+        <div class="photo-frame linen placeholder"><span class="ph-num">09</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">10</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">11</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">12</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 05</span><h3 class="manobra-name">Movimento alternado</h3></div>
+        <p>Repita o contato na região dos lábios, desta vez alternando os dedos: enquanto um sobe, o outro desce.</p>
+        <p>Procure manter continuidade e fluidez. Não confunda velocidade com intensidade — às vezes, diminuir o movimento aumenta a percepção.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 06 -->
+    <div class="manobra reveal">
+      <div class="frame-grid three">
+        <div class="photo-frame linen placeholder"><span class="ph-num">18</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">19</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">20</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 06</span><h3 class="manobra-name">Exploração dos lábios internos</h3></div>
+        <p>Aproxime-se gradualmente dos lábios internos. Utilize contatos delicados entre os dedos, reconhecendo a anatomia antes de intensificar qualquer movimento.</p>
+        <p>Faça um lado de cada vez. Observe diferenças de sensibilidade entre uma região e outra — não presuma que os dois lados responderão da mesma maneira.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 07 -->
+    <div class="manobra reveal">
+      <div class="frame-grid three">
+        <div class="photo-frame linen placeholder"><span class="ph-num">21</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">23</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">24</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 07</span><h3 class="manobra-name">Aproximação do clitóris</h3></div>
+        <p>Aproxime-se do clitóris gradualmente. Explore inicialmente suas laterais e a região ao redor. O contato indireto pode ser tão importante quanto o contato direto.</p>
+        <div class="perceba">
+          <span class="label">Perceba</span>
+          <p>O corpo pede aproximação ou mais tempo? Há aumento da excitação? Há excesso de sensibilidade? Não tenha pressa.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANOBRA 08 -->
+    <div class="manobra reveal">
+      <div class="frame-grid">
+        <div class="photo-frame linen placeholder"><span class="ph-num">25</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">26</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">27</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">28</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">29</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 08</span><h3 class="manobra-name">Deslizamentos laterais</h3></div>
+        <p>Utilizando a polpa dos dedos, realize pequenos deslizamentos nas laterais da região externa do clitóris. Experimente um lado e depois o outro.</p>
+        <p>Movimentos pequenos permitem perceber diferenças que movimentos grandes e rápidos podem esconder.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 09 -->
+    <div class="manobra reveal">
+      <div class="frame-grid three">
+        <div class="photo-frame linen placeholder"><span class="ph-num">31</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">32</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">33</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 09</span><h3 class="manobra-name">Mobilização suave</h3></div>
+        <p>Com os dedos posicionados de maneira confortável, realize movimentos delicados que mobilizem os tecidos ao redor do clitóris.</p>
+        <p>Não busque força. Trabalhe com precisão, presença e resposta. Se houver desconforto, reduza a pressão ou interrompa.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 10 -->
+    <div class="manobra reveal">
+      <div class="frame-grid">
+        <div class="photo-frame linen placeholder"><span class="ph-num">34</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">35</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">36</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">37</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 10</span><h3 class="manobra-name">Variações de direção</h3></div>
+        <p>Explore movimentos laterais e pequenas mudanças de direção. Observe a resposta antes de modificar velocidade ou pressão.</p>
+        <p>Quando encontrar um ritmo ou movimento que provoque uma resposta agradável, permaneça nele. Um erro comum é descobrir algo que está funcionando e mudar imediatamente para a próxima técnica.</p>
+        <p class="destaque-inline">Você não precisa mostrar tudo o que aprendeu.</p>
+      </div>
+    </div>
+
+    <!-- MANOBRA 11 -->
+    <div class="manobra reveal">
+      <div class="frame-grid three">
+        <div class="photo-frame linen placeholder"><span class="ph-num">38</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">39</span></div>
+        <div class="photo-frame linen placeholder"><span class="ph-num">40</span></div>
+      </div>
+      <div class="manobra-text">
+        <div class="manobra-head"><span class="manobra-index">Manobra 11</span><h3 class="manobra-name">Vibração</h3></div>
+        <p>Quando fizer parte da prática acordada entre vocês, um recurso vibratório pode ser utilizado externamente ao redor do clitóris. Algumas pessoas preferem não utilizar.</p>
+        <p>Comece com intensidade baixa. Explore gradualmente as laterais e regiões próximas antes de permanecer em um ponto. A vibração pode ser bastante intensa para algumas pessoas.</p>
+        <p>Observe e pergunte.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     10 — NÃO PERSIGA O ORGASMO
+     ============================================================ -->
+<section id="cap10">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">10</span>
+      <h2 class="chapter-title">Não persiga o orgasmo</h2>
+    </div>
+    <p>Talvez esta seja uma das partes mais importantes deste guia.</p>
+    <p>Durante uma Yoni Massagem podem acontecer muitas coisas:</p>
+    <div class="response-cloud">
+      <span>Excitação</span><span>Relaxamento</span><span>Calor</span><span>Arrepios</span>
+      <span>Contrações</span><span>Lubrificação</span><span>Orgasmo</span><span>Emoções</span>
+      <span>Silêncio</span><span>Vontade de rir</span><span>Vontade de chorar</span><span>Ou aparentemente muito pouco</span>
+    </div>
+    <p>Nenhuma dessas respostas, isoladamente, determina a qualidade da experiência.</p>
+    <p><strong class="mark">Não transforme o orgasmo em meta.</strong></p>
+    <p>Quando quem aplica começa a perseguir uma resposta, deixa de perceber o corpo que está diante dele. E quando quem recebe sente que &ldquo;precisa chegar lá&rdquo;, a experiência pode novamente se transformar em performance.</p>
+    <p>Orgasmos podem acontecer. Inclusive mais de um. Mas não são certificados de que a massagem foi bem executada.</p>
+    <p class="pull"><span>O prazer não precisa provar nada.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     11 — QUANDO O CORPO RESPONDE
+     ============================================================ -->
+<section id="cap11">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">11</span>
+      <h2 class="chapter-title">Quando o corpo responde</h2>
+    </div>
+    <p>Durante a prática, você poderá perceber mudanças na respiração, no tônus muscular, nos movimentos da pelve, nos sons, na temperatura da pele e em muitas outras respostas.</p>
+    <p>Observe sem interpretar imediatamente.</p>
+    <div class="not-questions">
+      <span>Um tremor não significa necessariamente uma liberação emocional.</span>
+      <span>Uma lágrima não precisa ser trauma.</span>
+      <span>Uma contração não precisa ser orgasmo.</span>
+      <span>Um silêncio não significa necessariamente desconforto.</span>
+    </div>
+    <p>O corpo é complexo. Por isso, troque a necessidade de interpretar pela capacidade de estar presente. Quando houver dúvida, pergunte.</p>
+    <p class="pull"><span>Escuta corporal não é adivinhação.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     12 — INTEGRAÇÃO
+     ============================================================ -->
+<section id="cap12">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">12</span>
+      <h2 class="chapter-title">Integração</h2>
+      <p class="chapter-sub">A massagem não termina quando as mãos param</p>
+    </div>
+    <p>Depois de uma experiência com muitos estímulos, dê tempo ao corpo. Não termine abruptamente.</p>
+    <p>Diminua gradualmente a intensidade. Volte ao corpo inteiro. Permita que a respiração encontre seu próprio ritmo.</p>
+    <p>Depois, retire as mãos e deixe alguns minutos de silêncio e integração. Não existe obrigação de conversar imediatamente.</p>
+    <p>Evite transformar o final em uma avaliação:</p>
+    <div class="not-questions">
+      <span>&ldquo;Você gozou?&rdquo;</span>
+      <span>&ldquo;Foi bom?&rdquo;</span>
+      <span>&ldquo;Qual foi a melhor parte?&rdquo;</span>
+    </div>
+    <p>Dê espaço. Quando houver vontade de compartilhar, escute sem tentar explicar a experiência da outra pessoa.</p>
+    <p class="pull"><span>Integração também faz parte da prática.</span></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     13 — MÉTODO DARICHA SUNDARI
+     ============================================================ -->
+<section id="cap13" style="padding:0; border-bottom:1px solid var(--line);">
+  <div class="pillars-grand">
+    <div class="wrap-wide">
+      <div class="chapter-head">
+        <span class="chapter-num">13</span>
+        <h2 class="chapter-title">O Método Daricha Sundari</h2>
+        <p class="chapter-sub">Conscientizar. Liberar. Ressignificar. Integrar.</p>
+      </div>
+      <p style="max-width:62ch; color:var(--nude);">Ao longo de mais de quinze anos trabalhando com Tantra, sexualidade e desenvolvimento humano, minha compreensão sobre o toque também mudou. Aprendi muitas técnicas. Ensinei muitas técnicas. Acompanhei muitos corpos.</p>
+      <p style="max-width:62ch; color:var(--nude);">E, quanto mais experiência adquiri, mais compreendi que a profundidade deste trabalho não está na quantidade de movimentos que conhecemos. <em style="color:var(--paper); font-style:italic;">Está na qualidade da presença que conseguimos sustentar.</em></p>
+      <p style="max-width:62ch; color:var(--nude);">Foi dessa trajetória que nasceu o Método Daricha Sundari.</p>
+
+      <div class="pillars-grid">
+        <div class="pillar-cell">
+          <span class="num">01</span>
+          <div class="word">Conscientizar</div>
+          <p>Porque não podemos transformar aquilo que sequer conseguimos perceber.</p>
+        </div>
+        <div class="pillar-cell">
+          <span class="num">02</span>
+          <div class="word">Liberar</div>
+          <p>Porque o corpo precisa encontrar espaço para sair de automatismos e experimentar novas possibilidades.</p>
+        </div>
+        <div class="pillar-cell">
+          <span class="num">03</span>
+          <div class="word">Ressignificar</div>
+          <p>Porque uma nova experiência pode oferecer outra referência para a maneira como nos relacionamos com o corpo, com o prazer e com o outro.</p>
+        </div>
+        <div class="pillar-cell">
+          <span class="num">04</span>
+          <div class="word">Integrar</div>
+          <p>Porque nenhuma experiência profunda termina no instante em que ela acontece. Ela precisa encontrar lugar dentro de nós.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     MEU CAMINHO
+     ============================================================ -->
+<section id="caminho">
+  <div class="wrap reveal">
+    <div class="chapter-head">
+      <span class="chapter-num">Meu caminho</span>
+    </div>
+    <p>O Tantra faz parte da minha vida desde 2011. Ao longo dessa trajetória, foram milhares de atendimentos e centenas de pessoas acompanhadas em cursos, workshops, formações e imersões.</p>
+    <p>Mas os anos também mudaram a minha maneira de compreender aquilo que faço. Hoje sei que meu trabalho não cabe apenas na definição de massagem tântrica.</p>
+    <p class="pull"><span>O corpo é a porta de entrada.</span></p>
+    <p>A sexualidade revela histórias, crenças, medos, desejos, formas de amar, formas de se proteger e formas de se relacionar consigo e com o outro.</p>
+    <p>Por isso, quando ensino Yoni Massagem, não estou ensinando apenas onde colocar as mãos.</p>
+
+    <div class="bio-close">
+      <span>Estou ensinando uma maneira de perceber.</span>
+      <span>De escutar.</span>
+      <span>De respeitar.</span>
+      <span>De permanecer.</span>
+      <span>De reconhecer que existe uma pessoa inteira naquele corpo.</span>
+    </div>
+
+    <p style="margin-top:1.6em;">E talvez seja justamente aí que o toque deixe de ser apenas uma técnica e se transforme em encontro.</p>
+
+    <div class="triad">
+      <p>Toque é presença.</p>
+      <p>Corpo é rezo.</p>
+      <p>Amor é rito.</p>
+    </div>
+
+    <div class="sig-block">
+      <div class="name">Daricha Sundari</div>
+      <div class="role">Criadora do Método Daricha Sundari</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     NOTA FINAL
+     ============================================================ -->
+<section class="note-final tight">
+  <div class="wrap">
+    <p>Este guia é um material complementar ao aprendizado presencial no Método Daricha Sundari.</p>
+    <p>Ele não substitui formação profissional, avaliação médica, psicológica ou acompanhamento especializado quando necessário.</p>
+  </div>
+</section>
+
+<footer class="site-foot">
+  <div class="mark">Método Daricha Sundari · ATMAN Consciência &amp; Tantra</div>
+  <button class="back-top" id="backTop">Voltar ao início ↑</button>
+</footer>
+
+<script>
+(function(){
+  var tocToggle = document.getElementById('tocToggle');
+  var tocClose  = document.getElementById('tocClose');
+  var tocPanel  = document.getElementById('tocPanel');
+  var tocScrim  = document.getElementById('tocScrim');
+  var printBtn  = document.getElementById('printBtn');
+  var backTop   = document.getElementById('backTop');
+
+  function openToc(){ tocPanel.classList.add('open'); tocScrim.classList.add('open'); tocToggle.setAttribute('aria-expanded','true'); }
+  function closeToc(){ tocPanel.classList.remove('open'); tocScrim.classList.remove('open'); tocToggle.setAttribute('aria-expanded','false'); }
+
+  tocToggle && tocToggle.addEventListener('click', openToc);
+  tocClose && tocClose.addEventListener('click', closeToc);
+  tocScrim && tocScrim.addEventListener('click', closeToc);
+  document.querySelectorAll('.toc-list a').forEach(function(a){
+    a.addEventListener('click', closeToc);
+  });
+
+  printBtn && printBtn.addEventListener('click', function(){ window.print(); });
+  backTop && backTop.addEventListener('click', function(){
+    window.scrollTo({top:0, behavior: (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')});
+  });
+
+  // active chapter highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc-list a'));
+  var targets = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var idx = targets.indexOf(entry.target);
+        if(idx === -1) return;
+        if(entry.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          links[idx].classList.add('active');
+        }
+      });
+    }, {rootMargin:'-45% 0px -50% 0px'});
+    targets.forEach(function(t){ io.observe(t); });
+  }
+
+  // reveal on scroll
+  var reveals = document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var ro = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){ entry.target.classList.add('in'); ro.unobserve(entry.target); }
+      });
+    }, {threshold:.08, rootMargin:'0px 0px -6% 0px'});
+    reveals.forEach(function(el){ ro.observe(el); });
+  } else {
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  }
+})();
+</script>
