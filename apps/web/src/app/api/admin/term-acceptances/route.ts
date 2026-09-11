@@ -17,12 +17,13 @@ export async function GET(req: NextRequest) {
     await requireAdmin(req);
     const supabaseAdmin = serviceClient();
 
-    const [{ data: profiles, error: profilesErr }, { data: acceptances, error: acceptErr }] = await Promise.all([
+    const [{ data: profiles, error: profilesErr }, { data: acceptances, error: acceptErr }, { data: adminRows }] = await Promise.all([
       supabaseAdmin.from("therapist_profiles").select("user_id, email, created_at"),
       supabaseAdmin
         .from("pilot_term_acceptances")
         .select("user_id, email, name, term_version, accepted_at")
         .eq("term_version", PILOT_TERM_VERSION),
+      supabaseAdmin.from("admins").select("email"),
     ]);
     if (profilesErr) throw profilesErr;
     if (acceptErr) throw acceptErr;
@@ -42,6 +43,26 @@ export async function GET(req: NextRequest) {
         acceptedAt: acceptance?.accepted_at ?? null,
       };
     });
+
+    // Admins também usam o Paideia e precisam aceitar o termo, mas contas admin "puras"
+    // (cadastradas direto na tabela admins) não têm linha em therapist_profiles.
+    const listedEmails = new Set(result.map(t => t.email?.toLowerCase().trim()));
+    for (const row of adminRows ?? []) {
+      const adminEmail = row.email?.toLowerCase().trim();
+      if (!adminEmail || listedEmails.has(adminEmail)) continue;
+      const adminUser = users.find(u => u.email?.toLowerCase().trim() === adminEmail);
+      if (!adminUser) continue;
+      const acceptance = acceptanceMap.get(adminUser.id);
+      result.push({
+        userId:     adminUser.id,
+        email:      adminUser.email ?? adminEmail,
+        name:       adminUser.user_metadata?.name ?? adminUser.email?.split("@")[0] ?? "—",
+        createdAt:  adminUser.created_at,
+        accepted:   !!acceptance,
+        acceptedAt: acceptance?.accepted_at ?? null,
+      });
+      listedEmails.add(adminEmail);
+    }
 
     result.sort((a, b) => {
       if (a.accepted !== b.accepted) return a.accepted ? 1 : -1;
