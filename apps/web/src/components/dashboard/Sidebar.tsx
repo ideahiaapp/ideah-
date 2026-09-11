@@ -16,6 +16,7 @@ import {
   ClipboardList,
   BarChart3,
   BookOpen,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/dashboard/certificate",  icon: Award,           label: "Certificado",                adminOnly: false },
   { href: "/dashboard/survey",       icon: ClipboardList,   label: "Pesquisa de Satisfação",      adminOnly: false },
   { href: "/dashboard/survey-results", icon: BarChart3,     label: "Resultados da Pesquisa",      adminOnly: true },
+  { href: "/dashboard/term-acceptances", icon: ShieldCheck, label: "Aceites do Termo",             adminOnly: true },
   { href: "/dashboard/manual",       icon: BookOpen,        label: "Manual",                     adminOnly: false },
 ];
 
