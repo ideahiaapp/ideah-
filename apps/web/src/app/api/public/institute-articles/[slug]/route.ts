@@ -12,7 +12,7 @@ function serviceClient() {
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
-  "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+  "Cache-Control": "no-store",
 };
 
 // GET /api/public/institute-articles/[slug] — um artigo publicado, texto completo.
