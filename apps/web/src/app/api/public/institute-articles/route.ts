@@ -25,10 +25,13 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from("institute_articles")
     .select("slug, category, title, excerpt, illustration, published_at")
-    .eq("published", true)
-    .order("published_at", { ascending: false })
-    .limit(limit);
+    .eq("published", true);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: CORS_HEADERS });
-  return NextResponse.json({ articles: data ?? [] }, { headers: CORS_HEADERS });
+
+  const articles = (data ?? [])
+    .sort((a, b) => new Date(b.published_at ?? 0).getTime() - new Date(a.published_at ?? 0).getTime())
+    .slice(0, limit);
+
+  return NextResponse.json({ articles }, { headers: CORS_HEADERS });
 }
