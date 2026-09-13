@@ -6,7 +6,11 @@ export const dynamic = "force-dynamic";
 function serviceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    // Next.js intercepta o fetch global e cacheia chamadas internas do
+    // supabase-js mesmo com a rota marcada como force-dynamic. Sem isso,
+    // esta rota pública pode devolver dados desatualizados após uma edição.
+    { global: { fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }) } }
   );
 }
 
