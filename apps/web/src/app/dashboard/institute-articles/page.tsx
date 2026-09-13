@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Newspaper, Loader2, AlertTriangle, Plus, Pencil, Trash2, ArrowLeft,
-  Eye, EyeOff, Save, ExternalLink,
+  Eye, EyeOff, Save, ExternalLink, ImagePlus, X,
 } from "lucide-react";
-import { adminHeaders } from "@/lib/supabase";
+import { adminHeaders, supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/auth.store";
 import { API_BASE } from "@/lib/api-base";
+import { ArticleRichTextEditor } from "@/components/ui/ArticleRichTextEditor";
 
 type ArticleListItem = {
   id: string;
@@ -16,6 +17,7 @@ type ArticleListItem = {
   title: string;
   excerpt: string;
   illustration: string;
+  image_url: string | null;
   published: boolean;
   published_at: string | null;
   created_by: string | null;
@@ -25,13 +27,6 @@ type ArticleListItem = {
 
 type ArticleFull = ArticleListItem & { body: string };
 
-const ILLUSTRATIONS: { id: string; label: string }[] = [
-  { id: "network", label: "Constelação (rede de pontos)" },
-  { id: "path",    label: "Trajetória (círculos crescentes)" },
-  { id: "circles", label: "Diálogo (círculos sobrepostos)" },
-  { id: "loop",    label: "Laço (troca/retorno)" },
-];
-
 const SITE_INSTITUTO_URL = "https://site-instituto-indol.vercel.app";
 
 function formatDate(iso: string | null): string {
@@ -39,8 +34,8 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function emptyDraft(): { title: string; category: string; excerpt: string; body: string; illustration: string; published: boolean } {
-  return { title: "", category: "Artigo", excerpt: "", body: "", illustration: "network", published: false };
+function emptyDraft(): { title: string; category: string; excerpt: string; body: string; illustration: string; image_url: string | null; published: boolean } {
+  return { title: "", category: "Artigo", excerpt: "", body: "", illustration: "circles", image_url: null, published: false };
 }
 
 export default function InstituteArticlesPage() {
@@ -56,6 +51,9 @@ export default function InstituteArticlesPage() {
   const [draft, setDraft] = useState(emptyDraft());
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function load() {
     setLoading(true); setError(null);
@@ -92,15 +90,43 @@ export default function InstituteArticlesPage() {
       const a = d.article as ArticleFull;
       setDraft({
         title: a.title, category: a.category, excerpt: a.excerpt,
-        body: a.body, illustration: a.illustration, published: a.published,
+        body: a.body, illustration: a.illustration, image_url: a.image_url,
+        published: a.published,
       });
     } else {
       setSaveError(d.error ?? "Erro ao carregar artigo.");
     }
   }
 
+  async function uploadImage(file: File) {
+    setUploading(true); setUploadError(null);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token ?? "";
+      const formData = new FormData();
+      formData.append("file", file);
+      const r = await fetch(`${API_BASE}/api/admin/institute-articles/upload-image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Erro ao enviar imagem.");
+      setDraft(prev => ({ ...prev, image_url: d.url }));
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Erro ao enviar imagem.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function isBodyEmpty(html: string): boolean {
+    return !html.replace(/<[^>]*>/g, "").trim();
+  }
+
   async function save(publishOverride?: boolean) {
-    if (!draft.title.trim() || !draft.excerpt.trim() || !draft.body.trim()) {
+    if (!draft.title.trim() || !draft.excerpt.trim() || isBodyEmpty(draft.body)) {
       setSaveError("Preencha título, resumo e texto.");
       return;
     }
@@ -169,26 +195,48 @@ export default function InstituteArticlesPage() {
         )}
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Categoria/tag</label>
-              <input
-                type="text" value={draft.category}
-                onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
-                placeholder="Ensaio, Artigo, Revisão..."
-                className="w-full text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Ilustração do card</label>
-              <select
-                value={draft.illustration}
-                onChange={e => setDraft(d => ({ ...d, illustration: e.target.value }))}
-                className="w-full text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300"
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Categoria/tag</label>
+            <input
+              type="text" value={draft.category}
+              onChange={e => setDraft(d => ({ ...d, category: e.target.value }))}
+              placeholder="Ensaio, Artigo, Revisão..."
+              className="w-full text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Imagem do card</label>
+            {uploadError && (
+              <p className="text-xs text-red-600 mb-1.5">{uploadError}</p>
+            )}
+            {draft.image_url ? (
+              <div className="relative w-full max-w-xs">
+                <img src={draft.image_url} alt="" className="w-full aspect-[16/10] object-cover rounded-xl border border-gray-200" />
+                <button
+                  type="button"
+                  onClick={() => setDraft(d => ({ ...d, image_url: null }))}
+                  className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white text-gray-600 hover:text-red-600 rounded-full shadow-sm transition-colors"
+                  title="Remover imagem"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-300 hover:bg-gray-100 disabled:opacity-50 rounded-xl px-4 py-6 w-full max-w-xs justify-center transition-colors"
               >
-                {ILLUSTRATIONS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}
-              </select>
-            </div>
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                {uploading ? "Enviando..." : "Enviar imagem"}
+              </button>
+            )}
+            <input
+              ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); }}
+            />
           </div>
 
           <div>
@@ -213,14 +261,9 @@ export default function InstituteArticlesPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">Texto completo</label>
-            <p className="text-[11px] text-gray-400 mb-1.5">
-              Separe parágrafos com uma linha em branco. Pra criar um subtítulo, comece a linha com <code className="bg-gray-100 px-1 rounded">## </code> (ex.: <code className="bg-gray-100 px-1 rounded">## Considerações finais</code>).
-            </p>
-            <textarea
-              value={draft.body} rows={16}
-              onChange={e => setDraft(d => ({ ...d, body: e.target.value }))}
-              placeholder={"## Primeiro subtítulo\n\nPrimeiro parágrafo...\n\nSegundo parágrafo..."}
-              className="w-full text-sm bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-300 font-mono resize-y"
+            <ArticleRichTextEditor
+              value={draft.body}
+              onChange={html => setDraft(d => ({ ...d, body: html }))}
             />
           </div>
         </div>

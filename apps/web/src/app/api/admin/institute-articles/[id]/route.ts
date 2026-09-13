@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
+import { sanitizeArticleHtml } from "@/lib/sanitizeArticleHtml";
 
 function serviceClient() {
   return createClient(
@@ -40,7 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await req.json() as {
       title?: string; category?: string; excerpt?: string; body?: string;
-      illustration?: string; published?: boolean;
+      illustration?: string; image_url?: string | null; published?: boolean;
     };
 
     const { data: current, error: currentErr } = await supabaseAdmin
@@ -52,8 +53,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.title !== undefined)        update.title = body.title.trim();
     if (body.category !== undefined)     update.category = body.category.trim() || "Artigo";
     if (body.excerpt !== undefined)      update.excerpt = body.excerpt.trim();
-    if (body.body !== undefined)         update.body = body.body.trim();
+    if (body.body !== undefined)         update.body = sanitizeArticleHtml(body.body.trim());
     if (body.illustration !== undefined) update.illustration = body.illustration.trim() || "circles";
+    if (body.image_url !== undefined)    update.image_url = body.image_url?.trim() || null;
     if (body.published !== undefined) {
       update.published = body.published;
       // Só carimba a primeira publicação; despublicar não apaga o histórico da data.

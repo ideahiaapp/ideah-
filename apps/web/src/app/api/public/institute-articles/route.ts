@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const supabaseAdmin = serviceClient();
   const { data, error } = await supabaseAdmin
     .from("institute_articles")
-    .select("slug, category, title, excerpt, illustration, published_at")
+    .select("slug, category, title, excerpt, illustration, image_url, published_at")
     .eq("published", true);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: CORS_HEADERS });
