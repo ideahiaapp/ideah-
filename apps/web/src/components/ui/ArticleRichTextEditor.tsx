@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -47,6 +48,15 @@ export function ArticleRichTextEditor({ value, onChange }: {
       },
     },
   });
+
+  // O Tiptap só usa `content` como valor inicial — se o artigo chega depois
+  // (fetch assíncrono do editor), o texto nunca aparece sem isso.
+  useEffect(() => {
+    if (!editor) return;
+    if (value !== editor.getHTML()) {
+      editor.commands.setContent(value, false);
+    }
+  }, [value, editor]);
 
   if (!editor) return null;
 
