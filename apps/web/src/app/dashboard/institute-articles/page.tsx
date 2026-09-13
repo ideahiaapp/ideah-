@@ -271,7 +271,7 @@ export default function InstituteArticlesPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => save(false)}
-            disabled={saving}
+            disabled={saving || uploading}
             className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-50 px-4 py-2.5 rounded-xl transition-colors"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -279,12 +279,15 @@ export default function InstituteArticlesPage() {
           </button>
           <button
             onClick={() => save(true)}
-            disabled={saving}
+            disabled={saving || uploading}
             className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 disabled:opacity-50 px-4 py-2.5 rounded-xl transition-colors shadow-sm"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
             Salvar e publicar
           </button>
+          {uploading && (
+            <span className="text-xs text-gray-400">Aguarde o envio da imagem terminar...</span>
+          )}
         </div>
       </div>
     );
