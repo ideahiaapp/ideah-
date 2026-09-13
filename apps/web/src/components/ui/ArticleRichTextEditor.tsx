@@ -4,9 +4,11 @@ import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
 import {
   Bold, Italic, Heading2, Heading3, List, ListOrdered,
   Quote, LinkIcon, Undo2, Redo2,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +41,7 @@ export function ArticleRichTextEditor({ value, onChange }: {
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Link.configure({ openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" } }),
+      TextAlign.configure({ types: ["heading", "paragraph"], alignments: ["left", "center", "right", "justify"] }),
     ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -99,6 +102,19 @@ export function ArticleRichTextEditor({ value, onChange }: {
         </ToolbarButton>
         <ToolbarButton title="Link" active={editor.isActive("link")} onClick={setLink}>
           <LinkIcon className="w-4 h-4" />
+        </ToolbarButton>
+        <div className="w-px h-5 bg-gray-200 mx-1" />
+        <ToolbarButton title="Alinhar à esquerda" active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()}>
+          <AlignLeft className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Centralizar" active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()}>
+          <AlignCenter className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Alinhar à direita" active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()}>
+          <AlignRight className="w-4 h-4" />
+        </ToolbarButton>
+        <ToolbarButton title="Justificar" active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
+          <AlignJustify className="w-4 h-4" />
         </ToolbarButton>
         <div className="w-px h-5 bg-gray-200 mx-1" />
         <ToolbarButton title="Desfazer" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
