@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const { data, error } = await supabaseAdmin
     .from("institute_articles")
-    .select("slug, category, title, excerpt, body, illustration, published_at")
+    .select("slug, category, title, excerpt, body, illustration, image_url, published_at")
     .eq("slug", slug)
     .eq("published", true)
     .maybeSingle();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/adminAuth";
+import { sanitizeArticleHtml } from "@/lib/sanitizeArticleHtml";
 
 function serviceClient() {
   return createClient(
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from("institute_articles")
-      .select("id, slug, category, title, excerpt, illustration, published, published_at, created_by, created_at, updated_at")
+      .select("id, slug, category, title, excerpt, illustration, image_url, published, published_at, created_by, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -45,9 +46,10 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json() as {
       title?: string; category?: string; excerpt?: string; body?: string;
-      illustration?: string; published?: boolean;
+      illustration?: string; image_url?: string; published?: boolean;
     };
-    if (!body.title?.trim() || !body.excerpt?.trim() || !body.body?.trim()) {
+    const bodyText = body.body?.replace(/<[^>]*>/g, "").trim();
+    if (!body.title?.trim() || !body.excerpt?.trim() || !bodyText) {
       return NextResponse.json({ error: "Título, resumo e texto são obrigatórios." }, { status: 400 });
     }
 
@@ -68,8 +70,9 @@ export async function POST(req: NextRequest) {
         title: body.title.trim(),
         category: body.category?.trim() || "Artigo",
         excerpt: body.excerpt.trim(),
-        body: body.body.trim(),
+        body: sanitizeArticleHtml(body.body!.trim()),
         illustration: body.illustration?.trim() || "circles",
+        image_url: body.image_url?.trim() || null,
         published,
         published_at: published ? new Date().toISOString() : null,
         created_by: adminEmail,
