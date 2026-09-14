@@ -282,13 +282,13 @@ export default function ClientDetailPage() {
   const [deletingSupervisionId, setDeletingSupervisionId] = useState<string | null>(null);
 
   async function handleDeleteSupervision(sv: Supervision) {
-    if (!confirm(`Excluir a supervisão "${sv.title}"? Essa ação não pode ser desfeita.`)) return;
+    if (!confirm(`Excluir a evolução "${sv.title}"? Essa ação não pode ser desfeita.`)) return;
     setDeletingSupervisionId(sv.id);
     try {
       await deleteSupervision(sv.id);
       setSupervisions(prev => prev.filter(s => s.id !== sv.id));
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao excluir supervisão.");
+      alert(e instanceof Error ? e.message : "Erro ao excluir evolução.");
     } finally {
       setDeletingSupervisionId(null);
     }
@@ -480,7 +480,7 @@ export default function ClientDetailPage() {
             <div className="flex gap-2">
               <Link href={`/dashboard/supervision?client=${client.id}`}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 border border-brand-200 text-xs font-semibold text-brand-700 transition-colors">
-                <Sparkles className="w-3.5 h-3.5" /> Supervisionar
+                <Sparkles className="w-3.5 h-3.5" /> Evoluir
               </Link>
             </div>
           </div>
@@ -671,18 +671,18 @@ export default function ClientDetailPage() {
         </div>
       )}
 
-      {/* Tab: Supervisões */}
+      {/* Tab: Evolução */}
       {tab === "supervisoes" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">{supervisions.length} supervisões sobre este caso</p>
+            <p className="text-sm text-gray-500">{supervisions.length} evoluções sobre este caso</p>
             <Link href={`/dashboard/supervision?client=${client.id}`}
               className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 hover:text-brand-700">
-              <Plus className="w-3.5 h-3.5" /> Nova supervisão
+              <Plus className="w-3.5 h-3.5" /> Nova evolução
             </Link>
           </div>
           {supervisions.length === 0 ? (
-            <EmptyState icon={MessageSquare} text="Nenhuma supervisão sobre este caso ainda." />
+            <EmptyState icon={MessageSquare} text="Nenhuma evolução sobre este caso ainda." />
           ) : (
             supervisions.map(sv => (
               <div key={sv.id} className="relative group">
@@ -709,7 +709,7 @@ export default function ClientDetailPage() {
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteSupervision(sv); }}
                   disabled={deletingSupervisionId === sv.id}
-                  aria-label="Excluir supervisão"
+                  aria-label="Excluir evolução"
                   className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
                   {deletingSupervisionId === sv.id
