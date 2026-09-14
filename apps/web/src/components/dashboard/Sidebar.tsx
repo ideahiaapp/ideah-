@@ -26,7 +26,7 @@ import { API_BASE } from "@/lib/api-base";
 
 const NAV = [
   { href: "/dashboard/home",         icon: Home,            label: "Home",                     adminOnly: false },
-  { href: "/dashboard/supervision",  icon: MessageSquare,   label: "Supervisão",                adminOnly: false },
+  { href: "/dashboard/supervision",  icon: MessageSquare,   label: "Evolução",                  adminOnly: false },
   { href: "/dashboard/clients",      icon: Users,           label: "Clientes",                  adminOnly: false },
   { href: "/dashboard/schedule",     icon: CalendarDays,    label: "Agenda",                     adminOnly: false },
   { href: "/dashboard/reports",      icon: Briefcase,       label: "Meu escritório",              adminOnly: false },
