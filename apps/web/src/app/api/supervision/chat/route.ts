@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
           const chunks = await searchChunks(lastUserMsg.content, therapistId, voyageKey, 5, approach);
           if (chunks.length > 0) {
             ragFound = true;
-            ragContext = `\n\n---\nCONTEÚDO DA BASE DE CONHECIMENTO DO TERAPEUTA (ÚNICA FONTE PERMITIDA):\n${chunks.map((c, i) => `[${i + 1}] ${c}`).join("\n\n")}\n---`;
+            ragContext = `\n\n---\nCONTEÚDO DA BASE DE CONHECIMENTO DO TERAPEUTA (ÚNICA FONTE PERMITIDA):\n${chunks.map((c, i) => `[${i + 1}] Fonte: ${c.source}\n${c.content}`).join("\n\n")}\n---`;
           }
         }
       } catch (ragErr) {
@@ -102,7 +102,7 @@ Leve em conta todo esse material ao formular hipóteses e intervenções.`
       : "";
 
     const ragInstruction = ragFound
-      ? `\n\nREGRA ABSOLUTA: Responda EXCLUSIVAMENTE com base nos trechos da base de conhecimento acima. NÃO use conhecimento próprio do modelo, treinamento geral, nem informações externas. Cada afirmação clínica deve ser fundamentada nos trechos fornecidos. Se os trechos não cobrirem algum aspecto da pergunta, diga explicitamente: "Não encontrei material na sua base de conhecimento sobre isso."`
+      ? `\n\nREGRA ABSOLUTA: Responda EXCLUSIVAMENTE com base nos trechos da base de conhecimento acima. NÃO use conhecimento próprio do modelo, treinamento geral, nem informações externas. Cada afirmação clínica deve ser fundamentada nos trechos fornecidos. Se os trechos não cobrirem algum aspecto da pergunta, diga explicitamente: "Não encontrei material na sua base de conhecimento sobre isso."\n\nREGRA DE CITAÇÃO: cada trecho acima já vem rotulado com sua fonte ("Fonte: <nome do documento>"). Sempre que citar, parafrasear de forma direta ou se apoiar num trecho específico, informe explicitamente de qual documento ele veio, no formato:\n> "trecho ou paráfrase"\n— Fonte: <nome do documento>\nNunca apresente uma citação ou referência teórica sem indicar a fonte correspondente.`
       : `\n\nREGRA ABSOLUTA: Não há material relevante na base de conhecimento do terapeuta para esta pergunta. Informe isso claramente ao terapeuta e não responda com base em conhecimento próprio do modelo. Diga: "Não encontrei conteúdo na sua base de conhecimento que responda a isso. Faça upload de materiais teóricos relacionados para que eu possa te apoiar com base no seu próprio estudo."`;
 
     const systemWithContext = `${systemPrompt}${ragContext}${ragInstruction}${anamneseContext}${intentionContext}${evolutionContext}
@@ -112,7 +112,7 @@ REFERENCIAL TEÓRICO ATIVO NESTA MENSAGEM: ${approach}. Toda a sua resposta deve
 Contexto desta supervisão: O terapeuta está trazendo material clínico referente ao cliente "${clientName || "cliente"}".
 Responda de forma estruturada quando apropriado, usando:
 - **Negrito** para conceitos-chave
-- > Citações para referências teóricas relevantes
+- > Citações para referências teóricas relevantes, sempre com a fonte indicada logo abaixo (ex.: "— Fonte: <nome do documento>")
 - Seções como "Hipóteses clínicas:", "Recursos teóricos:", "Questões para reflexão:" quando pertinente
 - Mantenha respostas entre 150-400 palavras — consistentes mas não exaustivas`;
 
