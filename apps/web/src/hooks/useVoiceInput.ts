@@ -45,6 +45,9 @@ function getSpeechRecognition(): SpeechRecognitionCtor | null {
   );
 }
 
+// Erros depois dos quais reiniciar não adianta — o usuário precisa agir.
+const FATAL_ERRORS = new Set(["not-allowed", "service-not-allowed", "audio-capture"]);
+
 /* ── Hook ─────────────────────────────────────────── */
 interface UseVoiceInputOptions {
   onInterim?: (text: string) => void;
@@ -55,18 +58,29 @@ interface UseVoiceInputOptions {
 export function useVoiceInput({ onInterim, onFinal, lang = "pt-BR" }: UseVoiceInputOptions) {
   const [state,       setState]   = useState<VoiceState>("idle");
   const [interimText, setInterim] = useState("");
-  const recRef                    = useRef<MySpeechRecognition | null>(null);
+  const recRef       = useRef<MySpeechRecognition | null>(null);
+  // Continua true enquanto o usuário quiser gravar — mesmo que o navegador
+  // encerre sozinho o reconhecimento no meio do caminho (ele faz isso a
+  // cada poucos segundos de silêncio, mesmo com continuous=true).
+  const shouldRunRef = useRef(false);
+  const onFinalRef   = useRef(onFinal);
+  const onInterimRef = useRef(onInterim);
+  const langRef       = useRef(lang);
+
+  useEffect(() => { onFinalRef.current = onFinal; }, [onFinal]);
+  useEffect(() => { onInterimRef.current = onInterim; }, [onInterim]);
+  useEffect(() => { langRef.current = lang; }, [lang]);
 
   useEffect(() => {
     if (!getSpeechRecognition()) setState("unsupported");
   }, []);
 
-  const start = useCallback(() => {
+  const createAndStart = useCallback(() => {
     const Ctor = getSpeechRecognition();
     if (!Ctor) { setState("unsupported"); return; }
 
     const rec = new Ctor();
-    rec.lang            = lang;
+    rec.lang            = langRef.current;
     rec.interimResults  = true;
     rec.continuous      = true;
     rec.maxAlternatives = 1;
@@ -81,23 +95,40 @@ export function useVoiceInput({ onInterim, onFinal, lang = "pt-BR" }: UseVoiceIn
         if (ev.results[i].isFinal) finals += t + " ";
         else interim += t;
       }
-      if (finals) { onFinal(finals.trim()); }
+      if (finals) { onFinalRef.current(finals.trim()); }
       setInterim(interim);
-      onInterim?.(interim);
+      onInterimRef.current?.(interim);
     };
 
     rec.onerror = (ev) => {
       if (ev.error !== "no-speech") console.warn("Voice error:", ev.error);
-      setState("idle"); setInterim("");
+      if (FATAL_ERRORS.has(ev.error)) shouldRunRef.current = false;
+      // Outros erros (ex.: "no-speech", "aborted") são tratados no onend,
+      // que decide se reinicia ou encerra de vez.
     };
 
-    rec.onend = () => { setState("idle"); setInterim(""); };
+    rec.onend = () => {
+      // O navegador encerra o reconhecimento sozinho após qualquer pausa
+      // curta na fala, mesmo com continuous=true. Reinicia na hora se o
+      // usuário ainda não pediu pra parar.
+      if (shouldRunRef.current) {
+        createAndStart();
+      } else {
+        setState("idle"); setInterim("");
+      }
+    };
 
     recRef.current = rec;
     rec.start();
-  }, [lang, onFinal, onInterim]);
+  }, []);
+
+  const start = useCallback(() => {
+    shouldRunRef.current = true;
+    createAndStart();
+  }, [createAndStart]);
 
   const stop = useCallback(() => {
+    shouldRunRef.current = false;
     recRef.current?.stop();
     setState("idle"); setInterim("");
   }, []);
@@ -106,7 +137,7 @@ export function useVoiceInput({ onInterim, onFinal, lang = "pt-BR" }: UseVoiceIn
     state === "recording" ? stop() : start();
   }, [state, start, stop]);
 
-  useEffect(() => () => { recRef.current?.abort(); }, []);
+  useEffect(() => () => { shouldRunRef.current = false; recRef.current?.abort(); }, []);
 
   return { state, interimText, toggle, start, stop };
 }
