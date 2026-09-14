@@ -5,19 +5,19 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Phone, Mail, Briefcase, Clock, Calendar, FileText,
-  MessageSquare, Plus, ChevronRight, Pencil, Sparkles, Target,
+  MessageSquare, Plus, Pencil, Sparkles, Target,
   UserCheck, Hourglass, Activity, Loader2, ClipboardList,
   ChevronDown, Save, AlertTriangle, Trash2, Link2, Copy, Check, X, ExternalLink,
 } from "lucide-react";
-import { getClient, getEvolutionsByClient, getSupervisionsByClient, deleteSupervision } from "@/lib/db";
+import { getClient, getSupervisionsByClient, deleteSupervision } from "@/lib/db";
 import { formatDate, cn, maskCpf, isValidCpf } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
-import type { Client, Evolution, Supervision } from "@/lib/database.types";
+import type { Client, Supervision } from "@/lib/database.types";
 import { TemplateAnswersView, TemplateFormSection, serializeTemplateForm } from "@/components/ui/TemplateFormSection";
 import { TextareaWithMic } from "@/components/ui/VoiceField";
 import { API_BASE } from "@/lib/api-base";
 
-type Tab = "prontuario" | "anamnese" | "evolucoes" | "supervisoes";
+type Tab = "prontuario" | "anamnese" | "supervisoes";
 
 interface Anamnese {
   id: string; name: string; email: string; phone: string | null; cpf: string | null;
@@ -273,7 +273,6 @@ export default function ClientDetailPage() {
   const fillTemplateRef = useRef<HTMLDivElement>(null);
 
   const [client,      setClient]      = useState<Client | null>(null);
-  const [evolutions,  setEvolutions]  = useState<Evolution[]>([]);
   const [supervisions,setSupervisions]= useState<Supervision[]>([]);
   const [anamnese,      setAnamnese]      = useState<Anamnese | null>(null);
   const [templateHtml,  setTemplateHtml]  = useState<string | null>(null);
@@ -298,10 +297,9 @@ export default function ClientDetailPage() {
   useEffect(() => {
     Promise.all([
       getClient(id),
-      getEvolutionsByClient(id),
       getSupervisionsByClient(id),
     ])
-      .then(([c, evs, svs]) => { setClient(c); setEvolutions(evs); setSupervisions(svs); })
+      .then(([c, svs]) => { setClient(c); setSupervisions(svs); })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
@@ -494,7 +492,6 @@ export default function ClientDetailPage() {
         {([
           { id: "prontuario",  label: "Prontuário",                              icon: FileText      },
           { id: "anamnese",    label: "Anamnese",                                icon: ClipboardList },
-          { id: "evolucoes",   label: `Evoluções (${evolutions.length})`,        icon: Target        },
           { id: "supervisoes", label: `Supervisões (${supervisions.length})`,    icon: MessageSquare },
         ] as { id: Tab; label: string; icon: React.ElementType }[]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -670,49 +667,6 @@ export default function ClientDetailPage() {
                 </ProntuarioSection>
               )}
             </>
-          )}
-        </div>
-      )}
-
-      {/* Tab: Evoluções */}
-      {tab === "evolucoes" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">{evolutions.length} evoluções registradas</p>
-            <Link href={`/dashboard/supervision?client=${client.id}`}
-              className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 hover:text-brand-700">
-              <Sparkles className="w-3.5 h-3.5" /> Supervisionar
-            </Link>
-          </div>
-          {evolutions.length === 0 ? (
-            <EmptyState icon={FileText} text="Nenhuma evolução registrada para este cliente." />
-          ) : (
-            evolutions.map(ev => (
-              <Link key={ev.id} href={`/dashboard/evolutions/${ev.id}`}
-                className="block bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-brand-200 hover:shadow-md transition-all p-5 group">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {formatDate(new Date(ev.session_date))}
-                      </span>
-                      {ev.session_number && <>
-                        <span className="text-xs text-gray-300">·</span>
-                        <span className="text-xs text-gray-400">Sessão #{ev.session_number}</span>
-                      </>}
-                    </div>
-                    {ev.hypothesis && <p className="text-sm font-semibold text-brand-600 mb-1">{ev.hypothesis}</p>}
-                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{ev.content}</p>
-                    {ev.ai_hypothesis && (
-                      <div className="mt-2 flex items-center gap-1 text-xs text-purple-500">
-                        <Sparkles className="w-3 h-3" /> Hipótese IA
-                      </div>
-                    )}
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-brand-400 flex-shrink-0 mt-1 transition-colors" />
-                </div>
-              </Link>
-            ))
           )}
         </div>
       )}
