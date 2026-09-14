@@ -433,7 +433,7 @@ export default function ClientDetailPage() {
         </div>
         <Link href={`/dashboard/clients/${client.id}/edit`}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-          <Pencil className="w-3.5 h-3.5" /> Editar
+          <Pencil className="w-3.5 h-3.5" /> Editar Prontuário
         </Link>
       </div>
 
@@ -492,7 +492,7 @@ export default function ClientDetailPage() {
         {([
           { id: "prontuario",  label: "Prontuário",                              icon: FileText      },
           { id: "anamnese",    label: "Anamnese",                                icon: ClipboardList },
-          { id: "supervisoes", label: `Supervisões (${supervisions.length})`,    icon: MessageSquare },
+          { id: "supervisoes", label: `Evolução (${supervisions.length})`,       icon: MessageSquare },
         ] as { id: Tab; label: string; icon: React.ElementType }[]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={cn(
