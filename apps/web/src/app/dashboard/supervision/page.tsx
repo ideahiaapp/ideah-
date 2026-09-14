@@ -38,10 +38,10 @@ function clientApproachLabels(c: Client): string[] {
 }
 
 const SUPERVISION_HOW_IT_WORKS: HowItWorksContent = {
-  title: "Supervisão clínica",
+  title: "Evolução clínica",
   subtitle: "Um espaço de reflexão dialógica para investigar seus casos a partir da abordagem teórica escolhida.",
   steps: [
-    { title: "Escolha o cliente", desc: "Selecione, na lista à esquerda, o caso que deseja supervisionar." },
+    { title: "Escolha o cliente", desc: "Selecione, na lista à esquerda, o caso que deseja evoluir." },
     { title: "Inicie a reflexão", desc: "Traga suas impressões, dúvidas ou situações da sessão. O Paideia dialoga com você por meio de perguntas, não de respostas prontas." },
     { title: "Finalize e gere a evolução", desc: "Ao encerrar, registre impressões e hipótese — a conversa vira automaticamente um registro de evolução clínica." },
   ],
@@ -345,7 +345,7 @@ function EvolutionCard({ evolution }: { evolution: Evolution }) {
                   Data da sessão: {new Date(evolution.session_date + "T12:00:00").toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric" })}
                   {evolution.session_time && ` às ${evolution.session_time.slice(0, 5)} h`}
                   {evolution.duration_seconds != null &&
-                    `; Supervisionado em ${new Date(evolution.created_at).toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric" })} por ${formatDuration(evolution.duration_seconds)} horas`}
+                    `; Realizada em ${new Date(evolution.created_at).toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric" })} por ${formatDuration(evolution.duration_seconds)} horas`}
                 </span>
                 {mood && <span className="text-sm">{mood.emoji}</span>}
               </div>
@@ -441,7 +441,7 @@ function StartSupervisionModal({
             <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
               <PlayCircle className="w-5 h-5 text-brand-500" strokeWidth={1.8} />
             </div>
-            <h2 className="text-sm font-bold text-gray-900">Iniciar supervisão</h2>
+            <h2 className="text-sm font-bold text-gray-900">Iniciar evolução</h2>
           </div>
           <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors">
             <X className="w-4 h-4" />
@@ -511,13 +511,13 @@ function ConfirmEndSupervisionModal({ onConfirm, onCancel, title, message }: {
           <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
             <StopCircle className="w-5 h-5 text-amber-500" strokeWidth={1.8} />
           </div>
-          <h2 className="text-sm font-bold text-gray-900">{title ?? "Deseja finalizar a supervisão?"}</h2>
+          <h2 className="text-sm font-bold text-gray-900">{title ?? "Deseja finalizar a evolução?"}</h2>
         </div>
-        <p className="text-sm text-gray-500 mb-4">{message ?? "A supervisão em andamento será encerrada."}</p>
+        <p className="text-sm text-gray-500 mb-4">{message ?? "A evolução em andamento será encerrada."}</p>
         <div className="flex items-center gap-2">
           <button onClick={onCancel}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors">
-            Continuar supervisão
+            Continuar evolução
           </button>
           <button onClick={onConfirm}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors">
@@ -547,7 +547,7 @@ function FinishSupervisionModal({
             <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
               <FileText className="w-5 h-5 text-emerald-600" strokeWidth={1.8} />
             </div>
-            <h2 className="text-sm font-bold text-gray-900">Encerrar supervisão</h2>
+            <h2 className="text-sm font-bold text-gray-900">Encerrar evolução</h2>
           </div>
           <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors">
             <X className="w-4 h-4" />
@@ -607,7 +607,7 @@ function PostFinishChoiceModal({ onNewSupervision, onViewEvolution }: {
           <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
             <CheckCircle className="w-5 h-5 text-emerald-600" strokeWidth={1.8} />
           </div>
-          <h2 className="text-sm font-bold text-gray-900">Supervisão encerrada</h2>
+          <h2 className="text-sm font-bold text-gray-900">Evolução encerrada</h2>
         </div>
         <p className="text-sm text-gray-500 mb-4">O que você deseja fazer agora?</p>
         <div className="flex flex-col gap-2">
@@ -617,7 +617,7 @@ function PostFinishChoiceModal({ onNewSupervision, onViewEvolution }: {
           </button>
           <button onClick={onNewSupervision}
             className="w-full py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 border border-gray-200 transition-colors">
-            Realizar nova supervisão
+            Realizar nova evolução
           </button>
         </div>
       </div>
@@ -818,7 +818,7 @@ export default function WorkspacePage() {
   function selectClientImpl(clientId: string) {
     const client = clients.find(c => c.id === clientId);
     if (client && !client.anamnese_id) {
-      alert("Para fazer a primeira supervisão é OBRIGATÓRIO o preenchimento da anamnese");
+      alert("Para fazer a primeira evolução é OBRIGATÓRIO o preenchimento da anamnese");
       return;
     }
     setSelectedClientId(clientId);
@@ -881,7 +881,7 @@ export default function WorkspacePage() {
     sendMessageText(text);
   }
 
-  /* Clique direto no botão "Encerrar Supervisão" — sem ação pendente após salvar */
+  /* Clique direto no botão "Encerrar Evolução" — sem ação pendente após salvar */
   function handleFinishSupervision() {
     if (input.trim()) {
       setConfirmFinishWithUnsent(true);
@@ -939,7 +939,7 @@ export default function WorkspacePage() {
           client_id:         selectedClient.id,
           session_date:      sessionMeta?.date ?? new Date().toISOString().split("T")[0],
           session_time:      sessionMeta?.time ?? null,
-          content:           content || "Supervisão realizada.",
+          content:           content || "Evolução realizada.",
           hypothesis:        hypothesis.trim() || null,
           next_session_plan: nextSessionPlan.trim() || null,
           mood:              null,
@@ -949,7 +949,7 @@ export default function WorkspacePage() {
         setEvolutions(prev => [ev, ...prev]);
         createdEvolutionId = ev.id;
       } catch {
-        setError("Não foi possível salvar a evolução desta supervisão.");
+        setError("Não foi possível salvar esta evolução.");
       }
     }
 
@@ -1007,7 +1007,7 @@ export default function WorkspacePage() {
     if (!text || loading || !selectedClientId || !user) return;
 
     if (!selectedClient?.anamnese_id) {
-      setError("Para supervisionar é OBRIGATÓRIO o preenchimento da anamnese");
+      setError("Para evoluir é OBRIGATÓRIO o preenchimento da anamnese");
       return;
     }
 
@@ -1071,7 +1071,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="flex h-full -m-6 overflow-hidden">
-      <h1 className="sr-only">Supervisão e Evolução</h1>
+      <h1 className="sr-only">Evolução</h1>
 
       {/* ══ SIDEBAR ══ */}
       <aside aria-label="Lista de clientes" className="hidden md:flex w-[248px] flex-shrink-0 bg-white border-r border-gray-100 flex-col overflow-hidden">
@@ -1082,7 +1082,7 @@ export default function WorkspacePage() {
               selectedClientId ? "bg-brand-500 hover:bg-brand-600 text-white" : "bg-gray-100 text-gray-500 cursor-not-allowed"
             )}>
             <Plus className="w-4 h-4" strokeWidth={2.5} />
-            Nova supervisão
+            Nova evolução
           </button>
         </div>
 
@@ -1145,7 +1145,7 @@ export default function WorkspacePage() {
           <button
             onClick={newSession}
             disabled={!selectedClientId}
-            aria-label="Nova supervisão"
+            aria-label="Nova evolução"
             className={cn(
               "flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
               selectedClientId ? "bg-brand-500 hover:bg-brand-600 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"
@@ -1169,7 +1169,7 @@ export default function WorkspacePage() {
                   <span className="text-xs text-gray-500">{clientApproachLabels(selectedClient).join(", ")}</span>
                   <span className="text-gray-200">·</span>
                   <span className="text-xs text-gray-500">
-                    {evolutions.length} {evolutions.length === 1 ? "evolução" : "evoluções"} · {supervisions.length} supervisões
+                    {evolutions.length} {evolutions.length === 1 ? "evolução" : "evoluções"}
                   </span>
                 </div>
               </div>
@@ -1198,7 +1198,7 @@ export default function WorkspacePage() {
                 <MessageSquare className="w-7 h-7 text-brand-400" strokeWidth={1.5} />
               </div>
               <div>
-                <h2 className="text-base font-bold text-gray-700">Supervisão & Evolução</h2>
+                <h2 className="text-base font-bold text-gray-700">Evolução</h2>
                 <p className="text-sm text-gray-500 mt-1 max-w-xs leading-relaxed">
                   Selecione um cliente para acessar o workspace clínico integrado.
                 </p>
@@ -1217,7 +1217,7 @@ export default function WorkspacePage() {
               {(messages.length > 0 || activeSessionId) && (
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 h-px bg-brand-100" />
-                  <span className="text-[10px] font-semibold text-brand-400 uppercase tracking-wide">Supervisão atual</span>
+                  <span className="text-[10px] font-semibold text-brand-400 uppercase tracking-wide">Evolução atual</span>
                   <div className="flex-1 h-px bg-brand-100" />
                 </div>
               )}
@@ -1233,7 +1233,7 @@ export default function WorkspacePage() {
               <div>
                 <h3 className="text-base font-bold text-gray-800">Início do acompanhamento</h3>
                 <p className="text-sm text-gray-500 mt-1 max-w-sm leading-relaxed">
-                  Traga um recorte da sessão ou da anamnese de <strong>{selectedClient.name}</strong> para iniciar a supervisão.
+                  Traga um recorte da sessão ou da anamnese de <strong>{selectedClient.name}</strong> para iniciar a evolução.
                 </p>
                 {clientAnamnese && <AnamneseSummaryCard anamnese={clientAnamnese} templateHtml={templateHtml} />}
               </div>
@@ -1288,7 +1288,7 @@ export default function WorkspacePage() {
                     onKeyDown={handleKeyDown}
                     readOnly={isRecording}
                     disabled={!canWrite}
-                    placeholder={!canWrite ? (supervisionPaused ? "Supervisão pausada…" : "Inicie a supervisão para escrever…") : isRecording ? "Ouvindo…" : "Traga o recorte do caso — o que apareceu na sessão…"}
+                    placeholder={!canWrite ? (supervisionPaused ? "Evolução pausada…" : "Inicie a evolução para escrever…") : isRecording ? "Ouvindo…" : "Traga o recorte do caso — o que apareceu na sessão…"}
                     rows={1}
                     className={cn(
                       "w-full bg-transparent px-4 pt-3 pb-2 text-sm text-gray-800 placeholder-gray-400 resize-none focus:outline-none disabled:cursor-not-allowed",
@@ -1368,7 +1368,7 @@ export default function WorkspacePage() {
                       <button onClick={handleResumeSupervision}
                         className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
                         <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
-                        Retomar supervisão
+                        Retomar evolução
                       </button>
                     </div>
                   ) : supervisionActive ? (
@@ -1386,24 +1386,24 @@ export default function WorkspacePage() {
                         className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-colors shadow-sm">
                         <StopCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.8} />
                         <span className="sm:hidden">Encerrar</span>
-                        <span className="hidden sm:inline">Encerrar Supervisão</span>
+                        <span className="hidden sm:inline">Encerrar Evolução</span>
                       </button>
                     </div>
                   ) : (
                     <button onClick={handleStartSupervision}
                       className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-500 hover:bg-brand-600 px-5 py-2.5 rounded-xl transition-colors shadow-sm">
                       <PlayCircle className="w-4 h-4" strokeWidth={1.8} />
-                      Iniciar supervisão
+                      Iniciar evolução
                     </button>
                   )}
                 </div>
 
                 <p className="text-[10px] text-gray-500 text-center mt-3">
                   {supervisionActive && supervisionPaused
-                    ? "Supervisão pausada. Retome para continuar escrevendo."
+                    ? "Evolução pausada. Retome para continuar escrevendo."
                     : supervisionActive
                     ? "Apoio ao raciocínio clínico — sem diagnósticos. O julgamento clínico é sempre do terapeuta."
-                    : "Inicie a supervisão para liberar o campo de escrita."}
+                    : "Inicie a evolução para liberar o campo de escrita."}
                 </p>
               </div>
           </div>
@@ -1428,7 +1428,7 @@ export default function WorkspacePage() {
       {confirmFinishWithUnsent && (
         <ConfirmEndSupervisionModal
           title="Deseja realmente finalizar a sessão?"
-          message="A supervisão ainda está em andamento."
+          message="A evolução ainda está em andamento."
           onConfirm={handleConfirmFinishWithUnsent}
           onCancel={() => setConfirmFinishWithUnsent(false)}
         />
